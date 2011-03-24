@@ -1,0 +1,20 @@
+{
+    "name": "beseda"
+  , "description": "The cross-browser PubSub server"
+  , "version": "0.0.1"
+  , "author": "Ivan Shumkov <ivan@shumkov.ru>"
+  , "contributors": [
+        { "name": "Sergey Kononenko", "email": "kononencheg@gmail.com" },
+        { "name": "Mikhail Shamin", "email": "munki13@gmail.com" }
+    ]
+  , "licenses": [{
+        "type": "MIT"
+      , "url": "http://github.com/learnboost/Socket.IO-node/raw/master/README.md"
+    }]
+  , "repository": {
+        "type": "git"
+      , "url": "http://github.com/learnboost/Socket.IO-node.git"
+    }
+  , "engine": [ "node >=0.1.102" ]
+  , "main": "./index"
+}
