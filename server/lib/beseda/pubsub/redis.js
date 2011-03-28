@@ -1,4 +1,4 @@
-var redis = require('redis-node');
+var redis = require('redis');
 
 RedisPubSub = module.exports = function(options) {
     this.clientSubscribe = redis.createClient(options.port, options.host, options.options);
@@ -24,11 +24,10 @@ RedisPubSub.prototype.unsubscribe = function(channel) {
     }.bind(this));
 }
 
-RedisPubSub.prototype.publish = function(channel, message, callback) {
+RedisPubSub.prototype.publish = function(channel, message) {
     this.clientPublish.publish(channel, JSON.stringify(message), function(error, recipientCount) {
         if (error) {
             throw error;
         }
-        callback(recipientCount);
     });
 }

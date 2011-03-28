@@ -1,6 +1,7 @@
-PublicationRequest = module.exports = function(session, channel) {
+PublicationRequest = module.exports = function(session, channel, message) {
     this.session = session;
     this.channel = channel;
+	this.message = message;
 
     this.isApproved = false;
 
@@ -15,7 +16,7 @@ PublicationRequest.prototype.approve = function() {
 
     this.isApproved = true;
 
-	this.channel.publish(message);
+	this.channel.publish(this.message);
 
     this.session.sendPublicationResponse(this.channel, true);
 

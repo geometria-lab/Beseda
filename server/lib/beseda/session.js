@@ -55,7 +55,7 @@ Session.prototype.sendConnectionResponse = function(successful, error) {
 }
 
 Session.prototype.subscribe = function(channels) {
-    for (channel in channels) {
+    for (var channel in channels) {
 		channel.subscribe(this);
 	}
 
@@ -109,7 +109,7 @@ Session.prototype.send = function(message) {
 Session.prototype.destroy = function() {
     Session.remove(session.id);
 
-    for (channel in Channel.getAll()) {
+    for (var channel in Channel.getAll()) {
         if (channel.isSubscribed(this)) {
             channel.unsubscribe(this);
         }

@@ -13,7 +13,7 @@ Router.prototype.dispatch = function(client, messages) {
         }]);
     }
 
-    for (message in messages) {
+    for (var message in messages) {
         if (message.channel == undefined || message.clientId == undefined) {
             client.send([{
                 channel : '/meta/error',
@@ -91,7 +91,7 @@ Router.prototype._subscribe = function(client, message) {
 
 	var channels = [];
     var subscriptions = this._ensureArray(message.subscription);
-    for (channelName in subscriptions) {
+    for (var channelName in subscriptions) {
 		if (channelName.indexOf('/meta/') == 0) {
 			return client.send({
                 channel      : '/meta/subscribe',
@@ -156,7 +156,7 @@ Router.prototype._unsubscribe = function(client, message) {
 
 	var channels = [];
     var subscriptions = this._ensureArray(message.subscription);
-    for (channelName in subscriptions) {
+    for (var channelName in subscriptions) {
 		if (!channel.isSubscribed(session)) {
             return client.send({
                 channel      : '/meta/unsubscribe',

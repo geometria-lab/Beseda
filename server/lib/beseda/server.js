@@ -4,15 +4,14 @@ var fs          = require('fs'),
     http        = require('http'),
     https       = require('https'),
     nodeStatic  = require('node-static'),
-    io          = require('/../../vendor/socket.io');
+    io          = require('./../../vendor/socket.io');
 
-var Options     = require('./options.js'),
-    Router      = require('./router.js');
+var Router = require('./router.js');
 
 Server = module.exports = function(options) {
     process.EventEmitter.call(this);
 
-    this.options({
+    this.setOptions({
         host : null,
         port : 8080,
         ssl  : false,
@@ -62,24 +61,24 @@ Server = module.exports = function(options) {
             this.httpServer = http.createServer();
         }
     } else {
-        // Use http from options
+        // Use server from options
         this.httpServer = this.options.server;
     }
 
     // Add request listener with node-static before other
-    var listeners = this.server.listeners('request');
+    var listeners = this.httpServer.listeners('request');
 	this.httpServer.removeAllListeners('request');
 
-    var fileServer = new nodeStatic.Server(__dirname + "/../../public");
+    var fileServer = new nodeStatic.Server(__dirname + '/../../../client/js');
 
-    this.httpServer.addListener('request', function(request, response) {
+    this.server.addListener('request', function(request, response) {
         fileServer.serve(request, response, function (err, result) {
             if (error) {
-                for (listener in listeners) {
+                for (var listener in listeners) {
                     listener.call(this, request, response);
                 }
             } else {
-                this.log("Static file request: " + request.url + " - " + response.message);
+                this.log('Static file request: ' + request.url + ' - ' + response.message);
             }
         }.bind(this));
 	});
@@ -128,15 +127,10 @@ Server = module.exports = function(options) {
     }
 }
 
-sys.inherits(Server, process.EventEmitter);
-sys.inherits(Server, Options);
-
-Server.prototype.log = function(message) {
-    return this.options.log(message);
-}
+sys.inherits(Beseda, process.EventEmitter);
 
 Server.prototype.listen = function(port, host) {
-    if (this.options.server) {
+    if (this.options.httpServer) {
         throw 'You must call you server listen method';
     }
 
@@ -146,6 +140,14 @@ Server.prototype.listen = function(port, host) {
     this.log('Start listening: ' + host + ':' + port);
 
     this.httpServer.listen(port, host);
+}
+
+Server.prototype.log = function(message) {
+    return this.options.log(message);
+}
+
+Server.prototype.setOptions = function(options, extend) {
+    this.options = this._mergeObjects(options, extend);
 }
 
 Server.prototype._onConnection = function(client) {
@@ -173,12 +175,22 @@ Server.prototype._onDisconnect = function(client) {
     }   
 }
 
-Server.prototype._cloneObject(object) {
-	var newObject = {};
+Server.prototype._cloneObject = function(object) {
+	return this._mergeObjects({}, object);
+}
 
-    for (p in object) {
-        newObject[p] = p;
+Server.prototype._mergeObjects = function(object, extend) {
+	for (var p in extend) {
+    	try {
+        	if (extend[p].constructor == Object) {
+            	object[p] = this._mergeObjects(object[p], extend[p]);
+            } else {
+                object[p] = extend[p];
+            }
+        } catch (e) {
+            object[p] = extend[p];
+        }
     }
 
-    return newObject;
+	return object;
 }

@@ -1,6 +1,6 @@
 {
-    "name": "beseda"
-  , "description": "The cross-browser PubSub server"
+    "name": "Beseda"
+  , "description": "PubSub server based on Socket.IO"
   , "version": "0.0.1"
   , "author": "Ivan Shumkov <ivan@shumkov.ru>"
   , "contributors": [
@@ -13,8 +13,8 @@
     }]
   , "repository": {
         "type": "git"
-      , "url": "http://github.com/learnboost/Socket.IO-node.git"
+      , "url": "https://github.com/geometria-lab/Beseda"
     }
   , "engine": [ "node >=0.1.102" ]
-  , "main": "./index"
+  , "main": "./index.js"
 }
