@@ -3,7 +3,7 @@ var fs          = require('fs'),
     sys         = require('sys'),
     http        = require('http'),
     https       = require('https'),
-    nodeStatic  = require('node-static'),
+    static      = require('node-static'),
     io          = require('./../../vendor/socket.io');
 
 var Router = require('./router.js');
@@ -12,7 +12,7 @@ Server = module.exports = function(options) {
     process.EventEmitter.call(this);
 
     this.setOptions({
-        host : null,
+        host : '127.0.0.1',
         port : 8080,
         ssl  : false,
 
@@ -69,19 +69,23 @@ Server = module.exports = function(options) {
     var listeners = this.httpServer.listeners('request');
 	this.httpServer.removeAllListeners('request');
 
-    var fileServer = new nodeStatic.Server(__dirname + '/../../../client/js');
+    var fileServer = new static.Server('./client/js');
 
-    this.server.addListener('request', function(request, response) {
-        fileServer.serve(request, response, function (err, result) {
-            if (error) {
-                for (var listener in listeners) {
-                    listener.call(this, request, response);
+    this.httpServer.addListener('request', function(request, response) {
+        request.addListener('end', function () {
+            fileServer.serve(request, response, function (error, result) {
+                if (error) {
+                    for (var listener in listeners) {
+                        listener.call(this, request, response);
+                    }
+                } else {
+                    this.log('Static file served: ' + request.url);
                 }
-            } else {
-                this.log('Static file request: ' + request.url + ' - ' + response.message);
-            }
+            }.bind(this));
+
+
         }.bind(this));
-	});
+	}.bind(this));
 
     /**
      *  Setup Socket.IO
@@ -102,7 +106,15 @@ Server = module.exports = function(options) {
     }
 
     // Add connection listener
-    this.socketIO.on('connection', this._onConnection.bind(this));
+    this.socketIO.on('connection', function(client) {
+        client.on('message', function(message) {
+            this._onMessage(client, message);
+        }.bind(this));
+
+        client.on('disconnect', function() {
+            this._onDisconnect(client);
+        }.bind(this))
+    }.bind(this));
 
     /**
      *  Setup Router
@@ -112,34 +124,38 @@ Server = module.exports = function(options) {
     /**
      *  Setup PubSub
      **/
-    if (this.options.pubSub instanceof String) {
-        this.pubSub = new require('./pubsub/' + this.options.pubSub);
-    } else if (this.options.pubSub.constructor == Object) {
-        var pubSubOptions = this._cloneObject(this.options.pubSub);
-        var type = pubSubOptions.type;
-        delete pubSubOptions.type;
+    try {
+        if (this.options.pubSub instanceof String) {
+            this.pubSub = new require('./pubsub/' + this.options.pubSub);
+        } else if (this.options.pubSub.constructor == Object) {
+            var pubSubOptions = this._cloneObject(this.options.pubSub);
+            var type = pubSubOptions.type;
+            delete pubSubOptions.type;
 
-        var PubSub = require('./pubsub/' + type);
-        this.pubSub = new PubSub(pubSubOptions);
-    } else {
-        // Use PubSub from options
-        this.pubSub = this.options.pubSub;
+            var PubSub = require('./pubsub/' + type);
+            this.pubSub = new PubSub(pubSubOptions);
+        } else {
+            // Use PubSub from options
+            this.pubSub = this.options.pubSub;
+        }
+    } catch (e) {
+
     }
 }
 
-sys.inherits(Beseda, process.EventEmitter);
+sys.inherits(Server, process.EventEmitter);
 
 Server.prototype.listen = function(port, host) {
-    if (this.options.httpServer) {
+    if (this.options.server) {
         throw 'You must call you server listen method';
     }
 
     host = host || this.options.host;
     port = port || this.options.port;
 
-    this.log('Start listening: ' + host + ':' + port);
-
     this.httpServer.listen(port, host);
+
+    this.log('Beseda started on ' + host + ':' + port);
 }
 
 Server.prototype.log = function(message) {
@@ -148,17 +164,6 @@ Server.prototype.log = function(message) {
 
 Server.prototype.setOptions = function(options, extend) {
     this.options = this._mergeObjects(options, extend);
-}
-
-Server.prototype._onConnection = function(client) {
-    // TODO: Replace closures
-    client.on('message', function(message) {
-        this._onMessage(client, message);
-    }.bind(this));
-
-    client.on('disconnect', function(){
-        this._onDisconnect(client);
-    }.bind(this));
 }
 
 Server.prototype._onMessage = function(client, message) {
@@ -172,7 +177,7 @@ Server.prototype._onDisconnect = function(client) {
 		this.emit('disconnect', client.session);
     } else {
         throw 'Client without session!';
-    }   
+    }
 }
 
 Server.prototype._cloneObject = function(object) {

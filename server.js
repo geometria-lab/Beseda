@@ -1,7 +1,6 @@
-var Beseda = require("./index");
+var Beseda = require('./index');
 
 var beseda = new Beseda({
-	host : '127.0.0.1',
-	port : 3000,
+	port : 3002
 });
 beseda.listen();

@@ -1,8 +1,13 @@
-var redis = require('redis');
+var redis = require('redis-node');
 
 RedisPubSub = module.exports = function(options) {
-    this.clientSubscribe = redis.createClient(options.port, options.host, options.options);
+    this.options = options;
+    this._connectionError = false;
+
     this.clientPublish   = redis.createClient(options.port, options.host, options.options);
+    this.clientSubscribe = redis.createClient(options.port, options.host, options.options);
+    this.clientPublish.on('connection error', this._oneConnectionError.bind(this));
+    this.clientSubscribe.on('connection error', this._oneConnectionError.bind(this));
 }
 
 RedisPubSub.prototype.subscribe = function(channel, callback) {
@@ -30,4 +35,8 @@ RedisPubSub.prototype.publish = function(channel, message) {
             throw error;
         }
     });
+}
+
+RedisPubSub.prototype._oneConnectionError = function(error) {
+    throw 'Can\'t connect to redis: ' + this.options.host + ':' + this.options.port;
 }

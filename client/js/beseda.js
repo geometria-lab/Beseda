@@ -1,28 +1,38 @@
 var Beseda = function(options) {
 	this.setOptions({
-		
+		host : document.location.host
 	}, options);
 
-	this._connect();
+    this.isConnected = false;
+    this.clientId = Beseda.uid(22, 64);
+
+
+    var host = this.options.host
+    delete this.options.host
+
+    this.io = new io.Socket(host, options);
 }
 Beseda.prototype.subscribe = function(channel) {
 	
-} 
+}
 Beseda.prototype.unsubscribe = function(channel) {
 	
 }
 Beseda.prototype.publish = function(channel, message) {
 	
 }
+Beseda.prototype.connect = function()
+{
+    this._isConnected = false;
+}
 Beseda.prototype.setOptions = function(options, extend) {
     this.options = this._mergeObjects(options, extend);
-}
-
-Beseda.prototype._cloneObject(object) {
+}}
+Beseda.prototype._cloneObject = function(object) {
 	return this._mergeObjects({}, object);
 }
 
-Beseda.prototype._mergeObjects(object, extend) {
+Beseda.prototype._mergeObjects = function(object, extend) {
 	for (var p in extend) {
     	try {
         	if (extend[p].constructor == Object) {
@@ -36,6 +46,17 @@ Beseda.prototype._mergeObjects(object, extend) {
     }
 
 	return object;
+}
+
+Beseda.uid = function() {
+    var chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-_'.split('');
+    var uid = [];
+
+    for (var i = 0; i < 22; i++) {
+        uid[i] = chars[0 | Math.random() * 64];
+    }
+
+    return uid.join('');
 }
 
 
@@ -156,13 +177,7 @@ Beseda.prototype._mergeObjects(object, extend) {
 		},
 
     UUID: function(len, radix) {
-  		var BASE64CHARS = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-_'.split(''); 
-      var chars = BASE64CHARS, uuid = [], i=0;
-      radix = radix || chars.length;
-      len = len || 22;
 
-      for (i = 0; i < len; i++) uuid[i] = chars[0 | Math.random()*radix];
-      return uuid.join('');
     }
 	};
 
