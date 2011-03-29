@@ -1,33 +1,163 @@
 var Beseda = function(options) {
 	this.setOptions({
-		host : document.location.host
+		socketIO : {
+			host : document.location.host
+			port : document.location.port || 80
+		}
 	}, options);
-
+	
+	this.events = {};
     this.isConnected = false;
-    this.clientId = Beseda.uid(22, 64);
+    this.clientId = Beseda.uid();
 
+	// Setup Socket.io
+	if (this.options.socketIO.constructor == Object) {
+		var socketOptions = this._cloneObject(this.options.socketIO);
 
-    var host = this.options.host
-    delete this.options.host
+		var host = socketOptions.host;
+	    delete socketOptions.host;
 
-    this.io = new io.Socket(host, options);
+		this.io = new io.Socket(host, socketOptions);
+	} else {
+		this.socketIO = this.options.socketIO;
+	}
+
+	this.socketIO.on('message', this._dispatchMessage.bind(this));
+	this.socketIO.on('reconnect', this.emit.bind(this, 'reconnect'));
+	this.socketIO.on('disconnect', this.emit.bind(this, 'disconnect'));
 }
-Beseda.prototype.subscribe = function(channel) {
-	
+
+Beseda.prototype.subscribe = function(channel, message) {
+	this.connect();
+
+	message = message || {};
+	message.subscription = channel;
+
+	return this._sendMessage('/meta/subscribe', message);
 }
-Beseda.prototype.unsubscribe = function(channel) {
-	
+
+Beseda.prototype.unsubscribe = function(channel, message) {
+	message = message || {};
+	message.subscription = channel;
+
+	return this._sendMessage('/meta/unsubscribe', message);
 }
+
 Beseda.prototype.publish = function(channel, message) {
+	this.connect();
 	
+	return this._sendMessage(channel, message);
 }
-Beseda.prototype.connect = function()
+
+Beseda.prototype.connect = function(message)
 {
-    this._isConnected = false;
+	if (this.isConnected) {
+		return false;
+	}
+
+	this.socketIO.connect();
+
+	this._sendMessage('/meta/connect', message || {});
 }
+
+Beseda.prototype.disconnect = function() {
+	this.socketIO.disconnect();
+	this.isConnected = false;
+}
+
+Beseda.prototype.on = function(event, listener) {
+	if (!(event in this._events)) {
+		this._events[event] = [];
+	}
+	this._events[event].push(listener);
+}
+
+Beseda.prototype.addListener = Beseda.prototype.on;
+
+Beseda.prototype.removeListener = function(event, listener) {
+	if (event in this._events) {
+		for (var i = 0, length = this._events[event].length; i < length; i++) {
+			if (this._events[name][i] == listener) {
+				this._events[name].splice(i, 1);
+			}
+		}
+	}
+}
+
+Beseda.prototype.removeAllListeners = function(event) {
+	if (event in this._events) {
+		this._events[event] = [];
+	}
+}
+
+Beseda.prototype.emit = function() {
+	var event = arguments.shift();
+
+	if (event in this._events) {
+		for (var listener in this._events[event]) {
+			listener.apply(this, arguments);
+		}
+    }
+}
+
+Beseda.prototype.listeners = function(event) {
+	return event in this._events ? this._events[event] : [];
+}
+
 Beseda.prototype.setOptions = function(options, extend) {
     this.options = this._mergeObjects(options, extend);
-}}
+}
+
+Beseda.prototype._sendMessage(channel, message, callback) {
+	//message.id       = Beseda.uid();
+	message.channel  = channel;
+	message.clientId = this.clientId;
+
+	return this.socket.send([message]);
+}
+
+Beseda.protoype._dispatchMessage = function(message) {
+    switch (message.channel) {
+		case '/meta/connect':
+			if (!message.successful && this.listeners('connection').length == 0) {
+				throw 'Cannot connect: ' + message.error;
+			} else {
+				this.emit('connection', message);
+			}
+			break;
+		case '/meta/error':
+			if (this.listeners('error').length == 0) {
+				throw 'Error: ' + message.error;
+			} else {
+				this.emit('error', message);
+			}
+            break;
+		case '/meta/subscribe':
+			if (!message.successful && this.listeners('subscribe').length == 0) {
+				throw 'Cannot subscribe: ' + message.error;
+			} else {
+				this.emit('subscribe', message);
+			}
+			break;
+		case '/meta/unsubscribe':
+			this.emit('unsubscribe', message);
+			break;
+		default:
+			if (successful in message) {
+				
+			}
+		
+			if (console in window &&
+				this.listeners('message').length == 0 &&
+				this.listeners('message:' + message.channel).length == 0) {
+				console.log(message);
+			} else {
+				this.emit('message', message.channel, message);
+				this.emit('message:' + message.channel);
+			}
+	}
+}
+
 Beseda.prototype._cloneObject = function(object) {
 	return this._mergeObjects({}, object);
 }
@@ -58,128 +188,3 @@ Beseda.uid = function() {
 
     return uid.join('');
 }
-
-
-//adds a PushIt(options); function 
-(function(global) {
-	function PushIt(options) {
-		var self = this;
-		this.last_message_timestamp = 0; //get from server.
-		this.messageCallbacks = {};
-		this.agentId = this.UUID(22, 64);
-
-		this.channels = [window.location.href];
-		
-		options.credentials || (options.credentials = "it is meeeee");
-    
-		if (options.channels) {
-			this.channels = this.channels.concat(options.channels);
-		}
-
-		$(function() {
-			self.initConnection(options);
-		});
-	};
-
-	PushIt.prototype = {
-		initConnection: function(options) {
-			var self = this;
-
-			var joinRequest = {
-        data: { credentials: options.credentials },
-				channel: "/meta/connect"
-			};
-
-      if(!options.hostname){
-        alert("You must pass a hostname to initialize Push-It");
-      }
-      
-      socket = new io.Socket(options.hostname);
-      this.socket = socket;
-      socket.connect();
-      
-      this.sendMessage(joinRequest);
-      
-      socket.addEvent('message', function(message){
-        var chan = message.channel;
-        switch(chan){
-          case '/meta/succesful':
-            self.messageCallbacks[message.uuid].onSuccess();
-            break;
-          case '/meta/error':
-            self.messageCallbacks[message.uuid].onSuccess();
-            break;
-          default:
-            console.log(message);
-            self.onMessageReceived(message);
-        }
-      });
-      
-		},
-
-		onMessageReceived: function(message) {
-		  console.log("message: ", message);
-			console.error("you must define an onMessageReceived callback!");
-		},
-
-    subscribe: function(channel, onError, onSuccess) {
-			this.sendMessage({
-			  "channel": "/meta/subscribe",
-			  "data": {
-			    "channel": channel
-			  }
-			});
-    },
-    
-    unsubscribe: function(channel) {
-			this.sendMessage({
-			  "channel": "/meta/unsubscribe",
-			  "data": {
-			    "channel": channel
-			  }
-			});
-    },
-    
-		publish: function(message, onError, onSuccess) {
-      //For a little while, `data` and message were confused in this function,
-      //  and i was requiring clients to send the body of the message in a 
-      //    param named "message", but this was confusing because the rest of the system calls it "data"
-      //  I am pretty sure that this is the result of a refactoring gone wrong =(
-      //  Anyway, the three lines that follow this comment are there to allow older clients to "just work"
-      //  while making it so that the error handling console statements are still correct.
-			if(!message.hasOwnProperty("data") && message.hasOwnProperty("message")){
-			  message.data = message.message;
-			}
-			
-			if (!message.hasOwnProperty("channel") || !message.hasOwnProperty("data")) {
-				console.log("error: the object sent to publish must have channel and data properties");
-				return;
-			}
-			
-			onError || (onError = function(){});
-			onSuccess || (onSuccess = function(){});
-
-      var sent = this.sendMessage({
-        "data": message.message,
-        "channel": message.channel
-      }, onError, onSuccess);
-		},
-		
-		sendMessage: function(obj, errorHandler, successHandler){
-		  obj.uuid = this.UUID(22, 64);
-		  obj.agentId = this.agentId;
-		  if( errorHandler || successHandler){
-		    this.messageCallbacks[obj.uuid] = {onError: errorHandler, onSuccess: successHandler};		    
-		  }
-		 
-		  this.socket.send(obj);
-		  return obj;
-		},
-
-    UUID: function(len, radix) {
-
-    }
-	};
-
-	global.PushIt = PushIt;
-})(this);

@@ -13,7 +13,7 @@ Server = module.exports = function(options) {
 
     this.setOptions({
         host : '127.0.0.1',
-        port : 8080,
+        port : 80,
         ssl  : false,
 
         server : null,
@@ -124,22 +124,18 @@ Server = module.exports = function(options) {
     /**
      *  Setup PubSub
      **/
-    try {
-        if (this.options.pubSub instanceof String) {
-            this.pubSub = new require('./pubsub/' + this.options.pubSub);
-        } else if (this.options.pubSub.constructor == Object) {
-            var pubSubOptions = this._cloneObject(this.options.pubSub);
-            var type = pubSubOptions.type;
-            delete pubSubOptions.type;
+	if (this.options.pubSub instanceof String) {
+    	this.pubSub = new require('./pubsub/' + this.options.pubSub);
+    } else if (this.options.pubSub.constructor == Object) {
+    	var pubSubOptions = this._cloneObject(this.options.pubSub);
+        var type = pubSubOptions.type;
+        delete pubSubOptions.type;
 
-            var PubSub = require('./pubsub/' + type);
-            this.pubSub = new PubSub(pubSubOptions);
-        } else {
-            // Use PubSub from options
-            this.pubSub = this.options.pubSub;
-        }
-    } catch (e) {
-
+        var PubSub = require('./pubsub/' + type);
+        this.pubSub = new PubSub(pubSubOptions);
+	} else {
+    	// Use PubSub from options
+        this.pubSub = this.options.pubSub;
     }
 }
 
