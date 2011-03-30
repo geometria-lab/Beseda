@@ -43,8 +43,8 @@ MemoryPubSub.publish = function(channel, message) {
 
     var subscription = {};
     var length = channel.length;
-    for (var pattern in this.wildcardSubscriptions) {
-        subscription = this.wildcardSubscriptions[pattern];
+    for (var i = 0; i < this.wildcardSubscriptions.length; i++) {
+        subscription = this.wildcardSubscriptions[i];
         if (subscription &&
             length >= subscription.length &&
             channel.substr(0, subscription.length) == subscription.channel) {

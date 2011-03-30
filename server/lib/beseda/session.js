@@ -34,22 +34,20 @@ Session.remove = function(id) {
 
 Session.prototype.connect = function() {
     this.isConnected = true;
-
-    this.log('Session ' + this.id + ' connected!');
 }
 
 Session.prototype.subscribe = function(channels) {
     channels = Array.ensure(channels);
-    for (var channel in channels) {
-        channel.subscribe(this);
-    }
+	for (var i = 0; i < channels.length; i++) {
+		channels[i].subscribe(this);
+	}
 }
 
 Session.prototype.unsubscribe = function(channels) {
     channels = Array.ensure(channels);
-    for (var channel in channels) {
-        channel.unsubscribe(this);
-    }
+	for (var i = 0; i < channels.length; i++) {
+		channels[i].unsubscribe(this);
+	}
 }
 
 Session.prototype.send = function(message) {
@@ -57,13 +55,14 @@ Session.prototype.send = function(message) {
 }
 
 Session.prototype.destroy = function() {
+	delete this.client.session;
+
     Session.remove(this.id);
 
     var channels = Channel.getAll();
-
-    for (var channel in channels) {
-        if (channel.isSubscribed(this)) {
-            channel.unsubscribe(this);
+	for (var i = 0; i < channels.length; i++) {
+		if (channels[i].isSubscribed(this)) {
+            channels[i].unsubscribe(this);
         }
-    }
+	}
 }

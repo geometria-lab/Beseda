@@ -95,19 +95,19 @@ Router.prototype._subscribe = function(client, message) {
 
     var channels = [];
     var subscriptions = Array.ensure(message.subscription);
-    for (var channelName in subscriptions) {
-        if (channelName.indexOf('/meta/') == 0) {
+    for (var i = 0; i < subscriptions.length; i++) {
+        if (subscriptions[i].indexOf('/meta/') == 0) {
             return client.send({
                 id           : message.id,
                 channel      : '/meta/subscribe',
                 clientId     : message.clientId,
                 successful   : false,
                 subscription : message.subscription,
-                error        : 'You can\'t subscribe to meta channel ' + channelName
+                error        : 'You can\'t subscribe to meta channel ' + subscriptions[i]
             });
         }
 
-        if (channelName.indexOf('*') != -1) {
+        if (subscriptions[i].indexOf('*') != -1) {
             return client.send({
                 id           : message.id,
                 channel      : '/meta/subscribe',
@@ -118,9 +118,9 @@ Router.prototype._subscribe = function(client, message) {
             });
         }
 
-        var channel = Channel.get(channelName);
+        var channel = Channel.get(subscriptions[i]);
         if (!channel) {
-            channel = new Channel(this, channelName);
+            channel = new Channel(this, subscriptions[i]);
         }
 
         if (channel.isSubscribed(session)) {
@@ -129,7 +129,7 @@ Router.prototype._subscribe = function(client, message) {
                 channel      : '/meta/subscribe',
                 successful   : false,
                 subscription : message.subscription,
-                error        : 'You already subscribed to ' + channelName
+                error        : 'You already subscribed to ' + subscriptions[i]
             });
         }
 
@@ -176,8 +176,8 @@ Router.prototype._unsubscribe = function(client, message) {
 
     var channels = [];
     var subscriptions = Array.ensure(message.subscription);
-    for (var channelName in subscriptions) {
-        if (channelName.indexOf('*') != -1) {
+    for (var i = 0; i < subscriptions.length; i++) {
+        if (subscriptions[i].indexOf('*') != -1) {
             return client.send({
                 id           : message.id,
                 channel      : '/meta/unsubscribe',
@@ -188,9 +188,9 @@ Router.prototype._unsubscribe = function(client, message) {
             });
         }
 
-        var channel = Channel.get(channelName);
+        var channel = Channel.get(subscriptions[i]);
         if (!channel) {
-            throw 'Can\'t unsubscribe from ' + chanelName + ', becouse channel not present';
+            throw 'Can\'t unsubscribe from ' + subscriptions[i] + ', becouse channel not present';
         }
 
         if (!channel.isSubscribed(session)) {
@@ -200,7 +200,7 @@ Router.prototype._unsubscribe = function(client, message) {
                 clientId     : message.clientId,
                 successful   : false,
                 subscription : message.subscription,
-                error        : 'You not subscribed to ' + channelName
+                error        : 'You not subscribed to ' + subscriptions[i]
             });
         }
 

@@ -78,8 +78,8 @@ Server = module.exports = function(options) {
         request.addListener('end', function () {
             fileServer.serve(request, response, function (error, result) {
                 if (error) {
-                    for (var listener in listeners) {
-                        listener.call(this, request, response);
+                    for (var i = 0; i < listeners.length; i++) {
+                        listeners[i].call(this, request, response);
                     }
                 } else {
                     this.log('Static file served: ' + request.url);

@@ -58,7 +58,7 @@ Channel.prototype.unsubscribe = function(session) {
 }
 
 Channel.prototype._deliverMessage = function(message) {
-    for (var sessionId in this.subscriptions) {
-        this.subscriptions[sessionId].send(message);
-    }
+	for (var i = 0; i < this.subscriptions.length; i++) {
+		this.subscriptions[i].send(message);
+	}
 }
