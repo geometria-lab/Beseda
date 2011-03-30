@@ -2,22 +2,16 @@ Beseda.Router = function(client) {
     this.client = client;
 }
 
-Beseda.Router.prototype.dispatch = function(messages) {
-    if (!io.util.isArray(messages)) {
-        this._triggerError('Messages must be array');
-    }
-
-    for (var message in messages) {
-        if (message.channel.indexOf('/meta/') == 0) {
-            var metaChannel = message.channel.substr(6);
-            if (!metaChannel in ['connect', 'error', 'subscribe', 'unsubscribe']) {
-                this._triggerError('Unsupported meta channel ' + message.channel);
-            }
-
-            this['_' + metaChannel].call(this, message);
-        } else {
-            this._message(message);
+Beseda.Router.prototype.dispatch = function(message) {
+    if (message.channel.indexOf('/meta/') == 0) {
+        var metaChannel = message.channel.substr(6);
+        if (!metaChannel in ['connect', 'error', 'subscribe', 'unsubscribe']) {
+            this._triggerError('Unsupported meta channel ' + message.channel);
         }
+
+        this['_' + metaChannel].call(this, message);
+    } else {
+        this._message(message);
     }
 }
 

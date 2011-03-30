@@ -8,7 +8,7 @@ UnsubscriptionRequest = module.exports = function(session, requestMessage, chann
     this._timeout = setTimeout(this.decline.bind(this),
                                this.session.server.options.unsubscriptionTimeout);
 
-    this.session.log('Session ' + this.session.id + ' unsubscription request to channel ' + this._getChannelNames() + ' started');
+    this.session.server.log('Session ' + this.session.id + ' unsubscription request to channel ' + this._getChannelNames() + ' started');
 }
 
 UnsubscriptionRequest.prototype.approve = function() {
@@ -36,14 +36,14 @@ UnsubscriptionRequest.prototype.decline = function(error) {
 }
 
 UnsubscriptionRequest.prototype._sendResponse = function(successful, error) {
-    return this.send([{
+    return this.send({
         id           : this.requestMessage.id,
         channel      : '/meta/unsubscribe',
         clientId     : this.id,
         successful   : successful,
         error        : error,
         subscription : this.requestMessage.subscription
-    }]);
+    });
 }
 
 UnsubscriptionRequest.prototype._getChannelNames = function() {

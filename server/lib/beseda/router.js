@@ -12,55 +12,43 @@ Router = module.exports = function(server) {
     this.server = server;
 }
 
-Router.prototype.dispatch = function(client, messages) {
-    if (!Array.isArray(messages)) {
-        client.send([{
+Router.prototype.dispatch = function(client, message) {
+    if (message.channel == undefined || message.clientId == undefined || message.id == undefined) {
+        return client.send({
             channel : '/meta/error',
-            data    : 'Unsupported data (must be array of messages)'
-        }]);
+            data    : 'channel, clientId or id not present'
+        });
     }
 
-    for (var message in messages) {
-        if (message.channel == undefined || message.clientId == undefined || message.id == undefined) {
-            client.send([{
-                channel : '/meta/error',
-                data    : 'channel, clientId or id not present'
-            }]);
+    if (message.channel.indexOf('/meta/') == 0) {
+        var metaChannel = message.channel.substr(6);
 
-            continue;
-        }
-
-        if (message.channel.indexOf('/meta/') == 0) {
-            var metaChannel = message.channel.substr(6);
-
-            if (!metaChannel in ['connect', 'subscribe', 'unsubscribe']) {
-                client.send([{
-                    id       : message.id,
-                    channel  : '/meta/error',
-                    clientId : message.clientId,
-                    data     : 'Meta channel ' + message.channel + ' not supported'
-                }]);
-
-                continue;
-            }
-            this['_' + metaChannel].call(this, client, message);
-        } else if (message.channel.indexOf('/service/') == 0) {
-            client.send([{
+        if (!metaChannel in ['connect', 'subscribe', 'unsubscribe']) {
+            return client.send({
                 id       : message.id,
                 channel  : '/meta/error',
                 clientId : message.clientId,
-                data     : 'Service channels not supported'
-            }]);
-        } else if (message.channel.indexOf('/') == 0) {
-            this._publish(client, message);
-        } else {
-            client.send([{
-                id       : message.id,
-                channel  : '/meta/error',
-                clientId : message.clientId,
-                data     : 'Channel name must be start with /'
-            }]);
+                data     : 'Meta channel ' + message.channel + ' not supported'
+            });
         }
+
+        this['_' + metaChannel].call(this, client, message);
+    } else if (message.channel.indexOf('/service/') == 0) {
+        return client.send({
+            id       : message.id,
+            channel  : '/meta/error',
+            clientId : message.clientId,
+            data     : 'Service channels not supported'
+        });
+    } else if (message.channel.indexOf('/') == 0) {
+        return this._publish(client, message);
+    } else {
+        return client.send({
+            id       : message.id,
+            channel  : '/meta/error',
+            clientId : message.clientId,
+            data     : 'Channel name must be start with /'
+        });
     }
 }
 
@@ -79,26 +67,26 @@ Router.prototype._connect = function(client, message) {
 
 Router.prototype._subscribe = function(client, message) {
     if (message.subscription == undefined) {
-        return client.send([{
+        return client.send({
             id           : message.id,
             channel      : '/meta/subscribe',
             clientId     : message.clientId,
             successful   : false,
             subscription : '',
             error        : 'You must have a subscription in your subscribe message'
-        }]);
+        });
     }
 
     var session = client.session;
     if (!session) {
-        return client.send([{
+        return client.send({
             id           : message.id,
             channel      : '/meta/subscribe',
             clientId     : message.clientId,
             successful   : false,
             subscription : message.subscription,
             error        : 'You must send connection message before'
-        }]);
+        });
     }
 
     if (session.id != message.clientId) {
@@ -160,26 +148,26 @@ Router.prototype._subscribe = function(client, message) {
 
 Router.prototype._unsubscribe = function(client, message) {
     if (message.subscription == undefined) {
-        return client.send([{
+        return client.send({
             id           : message.id,
             channel      : '/meta/unsubscribe',
             clientId     : message.clientId,
             successful   : false,
             subscription : '',
             error        : 'You must have a subscription in your unsubscribe message'
-        }]);
+        });
     }
 
     var session = client.session;
     if (!session) {
-        return client.send([{
+        return client.send({
             id           : message.id,
             channel      : '/meta/unsubscribe',
             clientId     : message.clientId,
             successful   : false,
             subscription : message.subscription,
             error        : 'You must send connection message before'
-        }]);
+        });
     }
 
     if (session.id != message.clientId) {
@@ -232,13 +220,13 @@ Router.prototype._unsubscribe = function(client, message) {
 Router.prototype._publish = function(client, message) {
     var session = client.session;
     if (!session) {
-        return client.send([{
+        return client.send({
             id           : message.id,
             channel      : message.channel,
             clientId     : message.clientId,
             successful   : false,
             error        : 'You must send connection message before'
-        }]);
+        });
     }
 
     if (session.id != message.clientId) {
@@ -246,13 +234,13 @@ Router.prototype._publish = function(client, message) {
     }
 
     if (message.channel.indexOf('*') != -1) {
-        return client.send([{
+        return client.send({
             id           : message.id,
             channel      : message.channel,
             clientId     : message.clientId,
             successful   : false,
             error        : 'Wildcards not supported yet'
-        }]);
+        });
     }
 
     var channel = Channel.get(message.channel);

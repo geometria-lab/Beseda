@@ -8,7 +8,7 @@ PublicationRequest = module.exports = function(session, requestMessage, channel)
     this._timeout = setTimeout(this.decline.bind(this),
                                this.session.server.options.publicationTimeout);
 
-    this.session.log('Session ' + this.session.id + ' publication request to channel ' + this.channel.name + ' started');
+    this.session.server.log('Session ' + this.session.id + ' publication request to channel ' + this.channel.name + ' started');
 }
 
 PublicationRequest.prototype.approve = function() {
@@ -36,12 +36,12 @@ PublicationRequest.prototype.decline = function(error) {
 }
 
 PublicationRequest.prototype._sendResponse = function(successful, error) {
-    return this.send([{
+    return this.send({
         id           : this.requestMessage.id,
         channel      : this.channel.name,
         clientId     : this.id,
         successful   : successful,
         error        : error
-    }]);
+    });
 }
 

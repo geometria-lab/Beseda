@@ -8,7 +8,7 @@ SubscriptionRequest = module.exports = function(session, requestMessage, channel
     this._timeout = setTimeout(this.decline.bind(this),
                                this.session.server.options.subscriptionTimeout);
 
-    this.session.log('Session ' + this.session.id + ' subscription request to channel ' + this._getChannelNames() + ' started');
+    this.session.server.log('Session ' + this.session.id + ' subscription request to channel ' + this._getChannelNames() + ' started');
 }
 
 SubscriptionRequest.prototype.approve = function() {
@@ -36,14 +36,14 @@ SubscriptionRequest.prototype.decline = function(error) {
 }
 
 SubscriptionRequest.prototype._sendResponse = function(successful, error) {
-    return this.send([{
+    return this.send({
         id           : this.requestMessage.id,
         channel      : '/meta/subscribe',
         clientId     : this.id,
         successful   : successful,
         error        : error,
         subscription : this.requestMessage.subscription
-    }]);
+    });
 }
 
 SubscriptionRequest.prototype._getChannelNames = function() {

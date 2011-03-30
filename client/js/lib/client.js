@@ -100,9 +100,9 @@ Beseda.prototype.connect = function(callback, additionalMessage) {
 
     this.socketIO.connect();
 
-    var message = additionalMessage || {};
+    var message = this._createMessage('/meta/connect', additionalMessage);
 
-    this._sendMessage('/meta/connect', message);
+    this.socketIO.send(message);
 }
 
 Beseda.prototype.disconnect = function() {
@@ -119,17 +119,25 @@ Beseda.prototype._sendMessage = function(channel, message) {
         throw 'You must connect before send message';
     }
 
-    message.id       = Beseda.utils.uid();
-    message.channel  = channel;
-    message.clientId = this.clientId;
+    message = this._createMessage(channel, message);
 
     if (this.isConnecting()) {
         this._messageQueue.push(message);
     } else {
-        this.socketIO.send([message]);
+        this.socketIO.send(message);
     }
 
     return message.id;
+}
+
+Beseda.prototype._createMessage = function(channel, message) {
+    message = message || {};
+
+    message.id       = Beseda.utils.uid();
+    message.channel  = channel;
+    message.clientId = this.clientId;
+
+    return message;
 }
 
 Beseda.prototype._onReconnect = function() {

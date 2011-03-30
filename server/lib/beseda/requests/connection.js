@@ -7,7 +7,7 @@ ConnectionRequest = module.exports = function(session, requestMessage) {
     this._timeout = setTimeout(this.decline.bind(this),
                                this.session.server.options.connectionTimeout);
 
-    this.session.log('Session ' + this.session.id + ' connection request started');
+    this.session.server.log('Session ' + this.session.id + ' connection request started');
 }
 
 ConnectionRequest.prototype.approve = function() {
@@ -35,11 +35,11 @@ ConnectionRequest.prototype.decline = function(error) {
 }
 
 ConnectionRequest.prototype._sendResponse = function(successful, error) {
-    return this.session.send([{
+    return this.session.send({
         id         : this.requestMessage.id,
         channel    : '/meta/connect',
         clientId   : this.id,
         successful : successful,
         error      : error
-    }]);
+    });
 }
