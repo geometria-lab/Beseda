@@ -1,50 +1,58 @@
-$(function() {
-	window.pushIt = new PushIt({
-		prefix: "/push-it",
-		channels: [],
-		hostname: document.domain
-	});
+var beseda = new Beseda();
 
-	$(document).delegate('#post', 'submit', function(event) {
-		event.preventDefault();
+$(document).delegate('#post', 'submit', function(event) {
+    event.preventDefault();
 
-		var channel = $('#post .channel').val();
-		var message = $('#post .message').val();
-		$('#post .channel, #post .message').val('');
+    var channel = $('#post .channel').val();
+    var message = $('#post .message').val();
+    $('#post .channel, #post .message').val('');
 
-		if (message.length) {
-			window.pushIt.publish({
-				channel: channel,
-				message: message
-			});
-		}
+    if (message.length) {
+        beseda.publish(channel, message);
+    }
 
-		return false;
-	});
+    return false;
+});
 
+$(document).delegate('#subscribe', 'submit', function(event) {
+    event.preventDefault();
 
-	$(document).delegate('#subscribe', 'submit', function(event) {
-		event.preventDefault();
+    var channel = $('#subscribe .channel').val();
+    $('#subscribe .channel').val('');
 
-		var channel = $('#subscribe .channel').val();
-		$('#subscribe .channel').val('');
+    if (channel.length) {
+        beseda.subscribe(channel, function(error) {
+            if (error) {
+                console.log(error);
+            } else {
+                $('#subscriptions').append('<li class="' + channel + '">' + channel + '</li>');
+            }
+        });
+    }
 
-    window.console.log("channel: "+channel);
-		if (channel.length) {
-			window.pushIt.subscribe(channel);
-		}
+    return false;
+});
 
-		return false;
-	});
+$(document).delegate('#unsubscribe', 'submit', function(event) {
+    event.preventDefault();
 
-	pushIt.onMessageReceived = function(message){
-	 console.log("aaaah", message)
-	 var li = $('<li/>');
-	 li.append('<span class="channel">'+message.channel+'</span> ');
+    var channel = $('#unsubscribe .channel').val();
+    $('#unsubscribe .channel').val('');
 
-	 li.append('<span class="timestamp">'+(new Date().toString())+'</span>');
-	 li.append('<pre class="data">'+JSON.stringify(message)+'</pre>');
-	 $('#messages').prepend(li);
-	};
+    if (channel.length) {
+        beseda.unsubscribe(channel, function(error) {
+            if (error) {
+                console.log(error);
+            } else {
+                $('#subscriptions .' + channel).remove();
+            }
+        });
+    }
 
+    return false;
+});
+
+beseda.on('message', function(channel, message, fullMessage) {
+    console.log('Message', fullMessage);
+    $('#messages').prepend('<li><span class="channel">' + channel + '</span><span class="timestamp">' + (new Date().toString()) + '</span></li><pre class="data">' + JSON.stringify(fullMessage) + '</pre>');
 });

@@ -6,7 +6,7 @@ Channel = module.exports = function(server, name) {
     this.name   = name;
     this.subscriptions = {};
 
-	this._isConnectedToPubSub = false;
+    this._isConnectedToPubSub = false;
 
     if (channels[name]) {
         throw 'Channel ' + name + 'already exists';
@@ -24,7 +24,7 @@ Channel.getAll = function() {
 }
 
 Channel.prototype.publish = function(message) {
-	this.server.pubSub.publish(this.name, message);
+    this.server.pubSub.publish(this.name, message);
 }
 
 Channel.prototype.subscribe = function(session) {
@@ -34,10 +34,10 @@ Channel.prototype.subscribe = function(session) {
 
     this.subscriptions[session.id] = session;
 
-	if (!this._isConnectedToPubSub) {
-		this.server.pubSub.subscribe(this.name, this._deliverMessage.bind(this));
-		this._isConnectedToPubSub = true;
-	}
+    if (!this._isConnectedToPubSub) {
+        this.server.pubSub.subscribe(this.name, this._deliverMessage.bind(this));
+        this._isConnectedToPubSub = true;
+    }
 }
 
 Channel.prototype.isSubscribed = function(session){
@@ -51,14 +51,14 @@ Channel.prototype.unsubscribe = function(session) {
 
     delete this.subscriptions[session.id];
 
-	if (this.subscriptions.length == 0) {
-		this.server.pubSub.unsubscribe(this.name);
-		this._isConnectedToPubSub = false;
-	}
+    if (!this.subscriptions.length) {
+        this.server.pubSub.unsubscribe(this.name);
+        this._isConnectedToPubSub = false;
+    }
 }
 
 Channel.prototype._deliverMessage = function(message) {
-	for (var sessionId in this.subscriptions) {
-		this.subscriptions[sessionId].send(message);
-	}
+    for (var sessionId in this.subscriptions) {
+        this.subscriptions[sessionId].send(message);
+    }
 }

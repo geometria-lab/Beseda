@@ -8,6 +8,8 @@ var fs          = require('fs'),
 
 var Router = require('./router.js');
 
+require('./utils.js');
+
 Server = module.exports = function(options) {
     process.EventEmitter.call(this);
 
@@ -30,10 +32,11 @@ Server = module.exports = function(options) {
             sys.log(message)
         },
 
-        connectionTimeout   : 10000,
-        subscriptionTimeout : 100,
-        publicationTimeout  : 100
-	}, options);
+        connectionTimeout     : 10000,
+        subscriptionTimeout   : 100,
+        publicationTimeout    : 100,
+        unsubscriptionTimeout : 100
+    }, options);
 
     /**
      *  Setup server
@@ -67,7 +70,7 @@ Server = module.exports = function(options) {
 
     // Add request listener with node-static before other
     var listeners = this.httpServer.listeners('request');
-	this.httpServer.removeAllListeners('request');
+    this.httpServer.removeAllListeners('request');
 
     var fileServer = new static.Server('./client/js');
 
@@ -82,17 +85,15 @@ Server = module.exports = function(options) {
                     this.log('Static file served: ' + request.url);
                 }
             }.bind(this));
-
-
         }.bind(this));
-	}.bind(this));
+    }.bind(this));
 
     /**
      *  Setup Socket.IO
      **/
     if (this.options.socketIO.constructor == Object) {
         // Create socketIO from options
-        var socketOptions = this._cloneObject(this.options.socketIO);
+        var socketOptions = Object.clone(this.options.socketIO);
 
         // Set our log to socketIo
         if (socketOptions.log == undefined) {
@@ -124,17 +125,17 @@ Server = module.exports = function(options) {
     /**
      *  Setup PubSub
      **/
-	if (this.options.pubSub instanceof String) {
-    	this.pubSub = new require('./pubsub/' + this.options.pubSub);
+    if (this.options.pubSub instanceof String) {
+        this.pubSub = new require('./pubsub/' + this.options.pubSub);
     } else if (this.options.pubSub.constructor == Object) {
-    	var pubSubOptions = this._cloneObject(this.options.pubSub);
+        var pubSubOptions = Object.clone(this.options.pubSub);
         var type = pubSubOptions.type;
         delete pubSubOptions.type;
 
         var PubSub = require('./pubsub/' + type);
         this.pubSub = new PubSub(pubSubOptions);
-	} else {
-    	// Use PubSub from options
+    } else {
+        // Use PubSub from options
         this.pubSub = this.options.pubSub;
     }
 }
@@ -159,7 +160,7 @@ Server.prototype.log = function(message) {
 }
 
 Server.prototype.setOptions = function(options, extend) {
-    this.options = this._mergeObjects(options, extend);
+    this.options = Object.merge(options, extend);
 }
 
 Server.prototype._onMessage = function(client, message) {
@@ -170,28 +171,8 @@ Server.prototype._onDisconnect = function(client) {
     if (client.session) {
         client.session.destroy();
 
-		this.emit('disconnect', client.session);
+        this.emit('disconnect', client.session);
     } else {
         throw 'Client without session!';
     }
-}
-
-Server.prototype._cloneObject = function(object) {
-	return this._mergeObjects({}, object);
-}
-
-Server.prototype._mergeObjects = function(object, extend) {
-	for (var p in extend) {
-    	try {
-        	if (extend[p].constructor == Object) {
-            	object[p] = this._mergeObjects(object[p], extend[p]);
-            } else {
-                object[p] = extend[p];
-            }
-        } catch (e) {
-            object[p] = extend[p];
-        }
-    }
-
-	return object;
 }

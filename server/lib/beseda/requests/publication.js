@@ -1,7 +1,7 @@
-PublicationRequest = module.exports = function(session, channel, message) {
-    this.session = session;
-    this.channel = channel;
-	this.message = message;
+PublicationRequest = module.exports = function(session, requestMessage, channel) {
+    this.session        = session;
+    this.channel        = channel;
+	this.requestMessage = requestMessage;
 
     this.isApproved = false;
 
@@ -16,9 +16,9 @@ PublicationRequest.prototype.approve = function() {
 
     this.isApproved = true;
 
-	this.channel.publish(this.message);
+	this.channel.publish(this.requestMessage);
 
-    this.session.sendPublicationResponse(this.channel, true);
+    this._sendResponse(true);
 
     this.session.server.log('Session ' + this.id + ' publication request to channel ' + this.channel.name + ' APPROVED');
 }
@@ -30,7 +30,18 @@ PublicationRequest.prototype.decline = function(error) {
         throw 'Session ' + this.session.id + ' publication request to channel ' + this.channel.name + ' already approved';
     }
 
-    this.session.sendPublicationResponse(this.channel, false, error || 'Publication declined');
+    this._sendResponse(false, error || 'Publication declined');
 
-    this.session.server.log('Session ' + this.id + ' publication request to channel ' + this.channel.name + ' DECLINED');
+    this.session.server.log('Session ' + this.id + ' publication request to channel ' + this.channel.name + ' DECLINED' + (error ? ': ' + error : ''));
 }
+
+PublicationRequest.prototype._sendResponse = function(successful, error) {
+    return this.send([{
+        id           : this.requestMessage.id,
+        channel      : this.channel.name,
+        clientId     : this.id,
+        successful   : successful,
+        error        : error
+    }]);
+}
+

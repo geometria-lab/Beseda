@@ -1,6 +1,4 @@
 var Beseda = require('./index');
 
-var beseda = new Beseda({
-	port : 3002
-});
+var beseda = new Beseda();
 beseda.listen();

@@ -1,5 +1,6 @@
-ConnectionRequest = module.exports = function(session) {
-    this.session = session;
+ConnectionRequest = module.exports = function(session, requestMessage) {
+    this.session        = session;
+    this.requestMessage = requestMessage;
 
     this.isApproved = false;
 
@@ -16,6 +17,8 @@ ConnectionRequest.prototype.approve = function() {
 
     this.session.connect();
 
+    this._sendResponse(true);
+
     this.session.server.log('Session ' + this.session.id + ' connection request APPROVED');
 }
 
@@ -26,7 +29,17 @@ ConnectionRequest.prototype.decline = function(error) {
         throw 'Session ' + this.session.id + ' connection request already approved';
     }
 
-    this.session.sendConnectionResponse(false, error || 'Connection declined');
+    this._sendResponse(false, error || 'Connection declined');
 
-    this.session.server.log('Session ' + this.session.id + ' connection request DECLINED');
+    this.session.server.log('Session ' + this.session.id + ' connection request DECLINED' + (error ? ': ' + error : ''));
+}
+
+ConnectionRequest.prototype._sendResponse = function(successful, error) {
+    return this.session.send([{
+        id         : this.requestMessage.id,
+        channel    : '/meta/connect',
+        clientId   : this.id,
+        successful : successful,
+        error      : error
+    }]);
 }
