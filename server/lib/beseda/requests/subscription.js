@@ -20,7 +20,7 @@ SubscriptionRequest.prototype.approve = function() {
 
     this._sendResponse(true);
 
-    this.session.server.log('Session ' + this.id + ' subscription request to channel ' + this._getChannelNames() + ' APPROVED');
+    this.session.server.log('Session ' + this.session.id + ' subscription request to channel ' + this._getChannelNames() + ' APPROVED');
 }
 
 SubscriptionRequest.prototype.decline = function(error) {
@@ -32,14 +32,14 @@ SubscriptionRequest.prototype.decline = function(error) {
 
     this._sendResponse(false, error || 'Subscription declined');
 
-    this.session.server.log('Session ' + this.id + ' subscription request to channel ' + this._getChannelNames() + ' DECLINED' + (error ? ': ' + error : ''));
+    this.session.server.log('Session ' + this.session.id + ' subscription request to channel ' + this._getChannelNames() + ' DECLINED' + (error ? ': ' + error : ''));
 }
 
 SubscriptionRequest.prototype._sendResponse = function(successful, error) {
-    return this.send({
+    return this.session.send({
         id           : this.requestMessage.id,
         channel      : '/meta/subscribe',
-        clientId     : this.id,
+        clientId     : this.session.id,
         successful   : successful,
         error        : error,
         subscription : this.requestMessage.subscription

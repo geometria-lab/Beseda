@@ -38,7 +38,7 @@ ConnectionRequest.prototype._sendResponse = function(successful, error) {
     return this.session.send({
         id         : this.requestMessage.id,
         channel    : '/meta/connect',
-        clientId   : this.id,
+        clientId   : this.session.id,
         successful : successful,
         error      : error
     });

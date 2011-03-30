@@ -169,8 +169,8 @@ Server.prototype._onMessage = function(client, message) {
 
 Server.prototype._onDisconnect = function(client) {
     if (client.session) {
+		this.log('Session ' + client.session.id + ' is disconnected');
         client.session.destroy();
-        this.log('Session ' + session.id + ' is disconnected');
     } else {
         this.log('Client without session is disconnected')
     }

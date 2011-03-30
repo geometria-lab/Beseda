@@ -20,7 +20,7 @@ PublicationRequest.prototype.approve = function() {
 
     this._sendResponse(true);
 
-    this.session.server.log('Session ' + this.id + ' publication request to channel ' + this.channel.name + ' APPROVED');
+    this.session.server.log('Session ' + this.session.id + ' publication request to channel ' + this.channel.name + ' APPROVED');
 }
 
 PublicationRequest.prototype.decline = function(error) {
@@ -32,14 +32,14 @@ PublicationRequest.prototype.decline = function(error) {
 
     this._sendResponse(false, error || 'Publication declined');
 
-    this.session.server.log('Session ' + this.id + ' publication request to channel ' + this.channel.name + ' DECLINED' + (error ? ': ' + error : ''));
+    this.session.server.log('Session ' + this.session.id + ' publication request to channel ' + this.channel.name + ' DECLINED' + (error ? ': ' + error : ''));
 }
 
 PublicationRequest.prototype._sendResponse = function(successful, error) {
-    return this.send({
+    return this.session.send({
         id           : this.requestMessage.id,
         channel      : this.channel.name,
-        clientId     : this.id,
+        clientId     : this.session.id,
         successful   : successful,
         error        : error
     });

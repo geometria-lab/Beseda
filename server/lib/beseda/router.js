@@ -120,7 +120,7 @@ Router.prototype._subscribe = function(client, message) {
 
         var channel = Channel.get(subscriptions[i]);
         if (!channel) {
-            channel = new Channel(this, subscriptions[i]);
+            channel = new Channel(this.server, subscriptions[i]);
         }
 
         if (channel.isSubscribed(session)) {

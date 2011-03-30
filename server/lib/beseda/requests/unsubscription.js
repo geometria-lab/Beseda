@@ -20,7 +20,7 @@ UnsubscriptionRequest.prototype.approve = function() {
 
     this._sendResponse(true);
 
-    this.session.server.log('Session ' + this.id + ' unsubscription request to channel ' + this._getChannelNames() + ' APPROVED');
+    this.session.server.log('Session ' + this.session.id + ' unsubscription request to channel ' + this._getChannelNames() + ' APPROVED');
 }
 
 UnsubscriptionRequest.prototype.decline = function(error) {
@@ -32,14 +32,14 @@ UnsubscriptionRequest.prototype.decline = function(error) {
 
     this._sendResponse(false, error || 'Unsubscription declined');
 
-    this.session.server.log('Session ' + this.id + ' unsubscription request to channel ' + this._getChannelNames() + ' DECLINED' + (error ? ': ' + error : ''));
+    this.session.server.log('Session ' + this.session.id + ' unsubscription request to channel ' + this._getChannelNames() + ' DECLINED' + (error ? ': ' + error : ''));
 }
 
 UnsubscriptionRequest.prototype._sendResponse = function(successful, error) {
-    return this.send({
+    return this.session.send({
         id           : this.requestMessage.id,
         channel      : '/meta/unsubscribe',
-        clientId     : this.id,
+        clientId     : this.session.id,
         successful   : successful,
         error        : error,
         subscription : this.requestMessage.subscription

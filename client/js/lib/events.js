@@ -9,7 +9,7 @@ Beseda.prototype.addListener = Beseda.prototype.on;
 
 Beseda.prototype.removeListener = function(event, listener) {
     if (event in this._events) {
-        for (var i = 0, length = this._events[event].length; i < length; i++) {
+        for (var i = 0; i < this._events[event].length; i++) {
             if (this._events[event][i] == listener) {
                 this._events[event].splice(i, 1);
             }
@@ -24,11 +24,12 @@ Beseda.prototype.removeAllListeners = function(event) {
 }
 
 Beseda.prototype.emit = function() {
-    var event = arguments.shift();
+	var args = Array.prototype.slice.call(arguments);
+    var event = args.shift();
 
     if (event in this._events) {
-        for (var listener in this._events[event]) {
-            listener.apply(this, arguments);
+        for (var i = 0; i < this._events[event].length; i++) {
+            this._events[event][i].apply(this, args);
         }
     }
 }
