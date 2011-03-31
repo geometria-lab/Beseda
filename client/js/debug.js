@@ -22,10 +22,8 @@ $(document).delegate('#subscribe', 'submit', function(event) {
 
     if (channel.length) {
         beseda.subscribe(channel, function(error) {
-            if (error) {
-                console.log(error);
-            } else {
-                $('#subscriptions').append('<li class="' + channel + '">' + channel + '</li>');
+            if (!error) {
+                $('#subscriptions').append('<li class="' + channel.replace('/', '_____') + '">' + channel + '</li>');
             }
         });
     }
@@ -41,10 +39,8 @@ $(document).delegate('#unsubscribe', 'submit', function(event) {
 
     if (channel.length) {
         beseda.unsubscribe(channel, function(error) {
-            if (error) {
-                console.log(error);
-            } else {
-                $('#subscriptions .' + channel).remove();
+            if (!error) {
+                $('#subscriptions .' + channel.replace('/', '_____')).remove();
             }
         });
     }
@@ -53,6 +49,5 @@ $(document).delegate('#unsubscribe', 'submit', function(event) {
 });
 
 beseda.on('message', function(channel, message, fullMessage) {
-    console.log('Message', fullMessage);
     $('#messages').prepend('<li><span class="channel">' + channel + '</span><span class="timestamp">' + (new Date().toString()) + '</span></li><pre class="data">' + JSON.stringify(fullMessage) + '</pre>');
 });

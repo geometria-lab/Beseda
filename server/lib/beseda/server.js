@@ -1,6 +1,6 @@
 var fs          = require('fs'),
     path        = require('path'),
-    sys         = require('sys'),
+    util        = require(process.binding('natives').util ? 'util' : 'sys'),
     http        = require('http'),
     https       = require('https'),
     static      = require('node-static'),
@@ -29,7 +29,7 @@ Server = module.exports = function(options) {
         },
 
         log : function(message) {
-            sys.log(message)
+            util.log(message)
         },
 
         connectionTimeout     : 10000,
@@ -140,7 +140,7 @@ Server = module.exports = function(options) {
     }
 }
 
-sys.inherits(Server, process.EventEmitter);
+util.inherits(Server, process.EventEmitter);
 
 Server.prototype.listen = function(port, host) {
     if (this.options.server) {

@@ -3,13 +3,17 @@ var Beseda = function(options) {
         socketIO : {
             host : document.location.hostname,
             port : document.location.port || 80
+        },
+        log : function() {
+            if ('console' in window && 'log' in console) {
+                console.log.apply(console, arguments);
+            }
         }
     }, options);
 
-    this._events          = {};
-    this._status          = Beseda._statuses.DISCONNECTED;
-    this._messageQueue    = [];
-    this._forceDisconnect = false;
+    this._events       = {};
+    this._status       = Beseda._statuses.DISCONNECTED;
+    this._messageQueue = [];
 
     this.router   = new Beseda.Router(this);
     this.clientId = Beseda.utils.uid();
@@ -51,30 +55,34 @@ Beseda.prototype.subscribe = function(channel, callback, additionalMessage) {
     var message = additionalMessage || {};
     message.subscription = channel;
 
-    var id = this._sendMessage('/meta/subscribe', message);
+    message = this._sendMessage('/meta/subscribe', message);
+
+    this.log('Send subscribe request', message);
 
     if (callback) {
-        this.on('subscribe:' + id, callback);
+        this.on('subscribe:' + message.id, callback);
     }
 
-    return id;
+    return this;
 }
 
 Beseda.prototype.unsubscribe = function(channel, callback, additionalMessage) {
     if (this.isDisconnected()) {
-        throw 'You must subscribe before :)';
+        this.connect();
     }
 
     var message = additionalMessage || {};
     message.subscription = channel;
 
-    var id = this._sendMessage('/meta/unsubscribe', message);
+    message = this._sendMessage('/meta/unsubscribe', message);
+
+    this.log('Send unsubscribe request', message);
 
     if (callback) {
-        this.on('unsubscribe:' + id, callback);
+        this.on('unsubscribe:' + message.id, callback);
     }
 
-    return id;
+    return this;
 }
 
 Beseda.prototype.publish = function(channel, message, callback) {
@@ -82,13 +90,15 @@ Beseda.prototype.publish = function(channel, message, callback) {
         this.connect();
     }
 
-    var id = this._sendMessage(channel, { data : message });
+    message = this._sendMessage(channel, { data : message });
+
+    this.log('Send publish request', message);
 
     if (callback) {
-        this.on('message:' + channel + ':' + id, callback);
+        this.on('message:' + channel + ':' + message.id, callback);
     }
 
-    return id;
+    return this;
 }
 
 Beseda.prototype.connect = function(callback, additionalMessage) {
@@ -103,15 +113,22 @@ Beseda.prototype.connect = function(callback, additionalMessage) {
     var message = this._createMessage('/meta/connect', additionalMessage);
 
     this.socketIO.send(message);
+
+    this.log('Send connection request', message);
+
+    return this;
 }
 
 Beseda.prototype.disconnect = function() {
     this.socketIO.disconnect();
-    this._status = Beseda._statuses.DISCONNECTED;
 }
 
 Beseda.prototype.setOptions = function(options, extend) {
     this.options = Beseda.utils.mergeObjects(options, extend);
+}
+
+Beseda.prototype.log = function() {
+    this.options.log.apply(this, arguments);
 }
 
 Beseda.prototype._sendMessage = function(channel, message) {
@@ -127,7 +144,7 @@ Beseda.prototype._sendMessage = function(channel, message) {
         this.socketIO.send(message);
     }
 
-    return message.id;
+    return message;
 }
 
 Beseda.prototype._createMessage = function(channel, message) {
@@ -141,22 +158,16 @@ Beseda.prototype._createMessage = function(channel, message) {
 }
 
 Beseda.prototype._onReconnect = function() {
-    if ('console' in window && !this.listeners('reconnect').length) {
-        console.log('Beseda reconnected with ' + this.socketIO.transport.type);
-    } else {
-        this.emit('reconnect');
-    }
+    this.log('Beseda reconnected');
+    this.emit('reconnect');
 }
 
 Beseda.prototype._onDisconnect = function() {
-    if (this._forceDisconnect) {
-        return;
-    }
-    if ('console' in window && !this.listeners('disconnect').length) {
-        console.log('Beseda disconnected');
-    } else {
-        this.emit('disconnect');
-    }
+    this._status == Beseda._statuses.DISCONNECTED;
+
+    this.emit('disconnect');
+
+    this.log('Beseda disconnected');
 }
 
 Beseda._statuses = {

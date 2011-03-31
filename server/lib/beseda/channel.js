@@ -1,6 +1,8 @@
 // TODO: Needs channels clenup!
 var channels = {};
 
+sys = require('sys');
+
 Channel = module.exports = function(server, name) {
     this.server = server;
     this.name   = name;
@@ -11,7 +13,7 @@ Channel = module.exports = function(server, name) {
     if (channels[name]) {
         throw 'Channel ' + name + 'already exists';
     } else {
-        channels[name] = name;
+        channels[name] = this;
     }
 }
 
@@ -45,7 +47,7 @@ Channel.prototype.isSubscribed = function(session){
 }
 
 Channel.prototype.unsubscribe = function(session) {
-    if (!this.isSubscribed[session]) {
+    if (!this.isSubscribed(session)) {
         throw 'Session ' + session.id + ' not subscribed to channel ' + this.name;
     }
 
@@ -58,6 +60,8 @@ Channel.prototype.unsubscribe = function(session) {
 }
 
 Channel.prototype._deliverMessage = function(message) {
+    sys.log('Start deliver: ' + this.name);
+
 	for (var i = 0; i < this.subscriptions.length; i++) {
 		this.subscriptions[i].send(message);
 	}

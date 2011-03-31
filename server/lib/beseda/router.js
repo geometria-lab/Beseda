@@ -96,6 +96,17 @@ Router.prototype._subscribe = function(client, message) {
     var channels = [];
     var subscriptions = Array.ensure(message.subscription);
     for (var i = 0; i < subscriptions.length; i++) {
+        if (subscriptions[i].indexOf('/') != 0) {
+            return client.send({
+                id           : message.id,
+                channel      : '/meta/subscribe',
+                clientId     : message.clientId,
+                successful   : false,
+                subscription : message.subscription,
+                error        : 'Channel name must be start with /'
+            });
+        }
+
         if (subscriptions[i].indexOf('/meta/') == 0) {
             return client.send({
                 id           : message.id,
@@ -177,6 +188,17 @@ Router.prototype._unsubscribe = function(client, message) {
     var channels = [];
     var subscriptions = Array.ensure(message.subscription);
     for (var i = 0; i < subscriptions.length; i++) {
+        if (subscriptions[i].indexOf('/') != 0) {
+            return client.send({
+                id           : message.id,
+                channel      : '/meta/unsubscribe',
+                clientId     : message.clientId,
+                successful   : false,
+                subscription : message.subscription,
+                error        : 'Channel name must be start with /'
+            });
+        }
+
         if (subscriptions[i].indexOf('*') != -1) {
             return client.send({
                 id           : message.id,
@@ -189,11 +211,8 @@ Router.prototype._unsubscribe = function(client, message) {
         }
 
         var channel = Channel.get(subscriptions[i]);
-        if (!channel) {
-            throw 'Can\'t unsubscribe from ' + subscriptions[i] + ', becouse channel not present';
-        }
 
-        if (!channel.isSubscribed(session)) {
+        if (!channel || !channel.isSubscribed(session)) {
             return client.send({
                 id           : message.id,
                 channel      : '/meta/unsubscribe',
