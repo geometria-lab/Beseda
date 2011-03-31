@@ -1,8 +1,6 @@
 // TODO: Needs channels clenup!
 var channels = {};
 
-sys = require('sys');
-
 Channel = module.exports = function(server, name) {
     this.server = server;
     this.name   = name;
@@ -60,9 +58,11 @@ Channel.prototype.unsubscribe = function(session) {
 }
 
 Channel.prototype._deliverMessage = function(message) {
-    sys.log('Start deliver: ' + this.name);
+    for (var sessionId in this.subscriptions) {
+        if (this.subscriptions.hasOwnProperty(sessionId)) {
+            this.subscriptions[sessionId].send(message);
+        }
+    }
 
-	for (var i = 0; i < this.subscriptions.length; i++) {
-		this.subscriptions[i].send(message);
-	}
+    this.server.log('Receive new message to "' + this.name + '" and deliver to ' + this.subscriptions.length + ' subscribers');
 }

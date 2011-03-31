@@ -49,5 +49,5 @@ $(document).delegate('#unsubscribe', 'submit', function(event) {
 });
 
 beseda.on('message', function(channel, message, fullMessage) {
-    $('#messages').prepend('<li><span class="channel">' + channel + '</span><span class="timestamp">' + (new Date().toString()) + '</span></li><pre class="data">' + JSON.stringify(fullMessage) + '</pre>');
+    $('#messages').prepend('<li><span class="channel">' + channel + '</span><span class="date">' + (new Date()).toString()+ '</span><pre class="message">' + JSON.stringify(fullMessage) + '</pre></li>');
 });

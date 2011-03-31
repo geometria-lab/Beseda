@@ -3,16 +3,21 @@ Beseda.Router = function(client) {
 }
 
 Beseda.Router.prototype.dispatch = function(message) {
-    if (message.channel.indexOf('/meta/') == 0) {
-        var metaChannel = message.channel.substr(6);
-        if (!metaChannel in ['connect', 'error', 'subscribe', 'unsubscribe']) {
-            this.client.log('Unsupported meta channel ' + message.channel);
-            this.client.emit('error', message);
-        }
-
-        this['_' + metaChannel].call(this, message);
+    if (message.channel == undefined || message.clientId == undefined || message.id == undefined) {
+        this.client.log('Beseda receive incorrect message', message);
+        this.client.emit('error', message);
     } else {
-        this._message(message);
+        if (message.channel.indexOf('/meta/') == 0) {
+            var metaChannel = message.channel.substr(6);
+            if (!metaChannel in ['connect', 'error', 'subscribe', 'unsubscribe']) {
+                this.client.log('Unsupported meta channel ' + message.channel);
+                this.client.emit('error', message);
+            }
+
+            this['_' + metaChannel].call(this, message);
+        } else {
+            this._message(message);
+        }
     }
 }
 
