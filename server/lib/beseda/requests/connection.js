@@ -29,9 +29,9 @@ ConnectionRequest.prototype.decline = function(error) {
 
     this._sendResponse(false, error || 'Connection declined');
 
-	this.session.destroy();
-
     this.session.server.log('Session ' + this.session.id + ' connection request DECLINED' + (error ? ': ' + error : ''));
+
+    this.session.destroy();
 }
 
 ConnectionRequest.prototype._sendResponse = function(successful, error) {

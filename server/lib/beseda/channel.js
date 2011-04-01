@@ -58,11 +58,13 @@ Channel.prototype.unsubscribe = function(session) {
 }
 
 Channel.prototype._deliverMessage = function(message) {
+    var count = 0;
     for (var sessionId in this.subscriptions) {
         if (this.subscriptions.hasOwnProperty(sessionId)) {
+            count++;
             this.subscriptions[sessionId].send(message);
         }
     }
 
-    this.server.log('Receive new message to "' + this.name + '" and deliver to ' + this.subscriptions.length + ' subscribers');
+    this.server.log('Receive new message to "' + this.name + '" and deliver to ' + count + ' subscribers');
 }

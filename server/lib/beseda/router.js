@@ -52,6 +52,7 @@ Router.prototype.dispatch = function(client, message) {
     }
 }
 
+// TODO: Disconnect after timeout if no one events or connection declined
 Router.prototype._connect = function(client, message) {
     var session = new Session(this.server, message.clientId, client);
 

@@ -1,14 +1,3 @@
-var fs = require('fs');
-
-function readJsFiles() {
-    var javascript = '';
-    ['client', 'events', 'router', 'utils'].forEach(function(file){
-        javascript += fs.readFileSync('./client/js/lib/' + file + '.js') + "\n\n";
-    });
-
-    return javascript;
-}
-
 desc('Show tasks');
 task('default', [], function(params) {
     var exec = require('child_process').exec;
@@ -18,24 +7,22 @@ task('default', [], function(params) {
 });
 
 desc('Glue and compress javascript client');
-task('glueJs', [], function(params) {
-    var javascript = readJsFiles();
+task('compressJs', [], function(params) {
+    var fs = require('fs'),
+        mjs = require('./vendor/minifyjs');
+
+    var javascript = '';
+    ['client', 'events', 'router', 'utils'].forEach(function(file){
+        javascript += fs.readFileSync('./client/js/lib/' + file + '.js') + "\n\n";
+    });
 
     fs.writeFile('./client/js/beseda.js', javascript);
 
     console.log('beseda.js created.');
-});
-
-
-desc('Glue and compress javascript client');
-task('compressJs', [], function(params) {
-    var mjs = require('./vendor/minifyjs');
-
-    var javascript = readJsFiles();
-
+    console.log('');
     console.log('Start compress beseda.js.');
 
-    var ast = mjs.minify(javascript, function(error, code) {
+    mjs.minify(javascript, function(error, code) {
         if (error) {
             console.log(error);
         } else {

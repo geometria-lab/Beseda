@@ -11,8 +11,6 @@ Session = module.exports = function(server, clientId, client) {
 
     this.client.session = this;
 
-    this.isConnected = false;
-
     if (sessions[this.id]) {
         throw 'Session ' + this.id + ' already exists.';
     } else {
@@ -30,10 +28,6 @@ Session.getAll = function() {
 
 Session.remove = function(id) {
     delete sessions[id];
-}
-
-Session.prototype.connect = function() {
-    this.isConnected = true;
 }
 
 Session.prototype.subscribe = function(channels) {

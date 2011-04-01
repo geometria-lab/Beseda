@@ -30,9 +30,16 @@ var Beseda = function(options) {
         this.socketIO = this.options.socketIO;
     }
 
-    this.socketIO.on('message', this.router.dispatch.bind(this.router));
-    this.socketIO.on('reconnect', this._onReconnect.bind(this));
-    this.socketIO.on('disconnect', this._onDisconnect.bind(this));
+    var self = this;
+    this.socketIO.on('message', function(message) {
+        self.router.dispatch(message);
+    });
+    this.socketIO.on('reconnect', function(){
+        self._onReconnect();
+    });
+    this.socketIO.on('disconnect', function(){
+        self._onDisconnect();
+    });
 }
 
 Beseda.prototype.isConnected = function() {
