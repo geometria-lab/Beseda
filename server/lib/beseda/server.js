@@ -113,8 +113,9 @@ Server = module.exports = function(options) {
     /**
      *  Setup PubSub
      **/
-    if (this.options.pubSub instanceof String) {
-        this.pubSub = new require('./pubsub/' + this.options.pubSub);
+    if (typeof this.options.pubSub == 'string') {
+        var PubSub = require('./pubsub/' + this.options.pubSub);
+        this.pubSub = new PubSub();
     } else if (this.options.pubSub.constructor == Object) {
         var pubSubOptions = Object.clone(this.options.pubSub);
         var type = pubSubOptions.type;

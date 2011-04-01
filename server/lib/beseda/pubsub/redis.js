@@ -1,10 +1,17 @@
 var redis = require('redis-node');
 
-RedisPubSub = module.exports = function(options) {
-    this.options = options;
+require('./../utils.js');
 
-    this.clientPublish   = redis.createClient(options.port, options.host, options.options);
-    this.clientSubscribe = redis.createClient(options.port, options.host, options.options);
+RedisPubSub = module.exports = function(options) {
+    this.options = Object.merge({
+        host    : '127.0.0.1',
+        port    : 6379,
+        options : {}
+    }, options);
+
+    this.clientPublish   = redis.createClient(this.options.port, this.options.host, this.options.options);
+    this.clientSubscribe = redis.createClient(this.options.port, this.options.host, this.options.options);
+    
     this.clientPublish.on('connection error', this._oneConnectionError.bind(this));
     this.clientSubscribe.on('connection error', this._oneConnectionError.bind(this));
 }
