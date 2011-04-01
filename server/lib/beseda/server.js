@@ -22,11 +22,7 @@ Server = module.exports = function(options) {
 
         socketIO : {},
 
-        pubSub : {
-            type : 'redis',
-            host : '127.0.0.1',
-            port : 6379
-        },
+        pubSub : 'memory',
 
         log : function(message) {
             util.log(message)

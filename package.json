@@ -1,20 +1,25 @@
 {
-    "name": "Beseda"
-  , "description": "PubSub server based on Socket.IO"
-  , "version": "0.0.1"
-  , "author": "Ivan Shumkov <ivan@shumkov.ru>"
-  , "contributors": [
-        { "name": "Sergey Kononenko", "email": "kononencheg@gmail.com" },
-        { "name": "Mikhail Shamin", "email": "munki13@gmail.com" }
-    ]
-  , "licenses": [{
-        "type": "MIT"
-      , "url": "http://github.com/learnboost/Socket.IO-node/raw/master/README.md"
+    "name": "beseda",
+    "version": "0.0.1",
+    "description": "Beseda is fast and well designed Pub/Sub server with server-side and crossbrowser client-side API for realtime messaging.",
+    "keywords" : ["pub/sub", "socket.io", "bayeux"],
+    "homepage": "http://geometria-lab.net",
+    "author": "Geometria Lab",
+    "contributors": [
+        { "name": "Ivan Shumkov", "email": "ivan@shumkov.ru" },
+        { "name": "Sergey Kononenko", "email": "kononencheg@gmail.com" }
+    ],
+    "main": "./index.js",
+    "repository": {
+        "type": "git",
+        "url": "git://github.com/geometria-lab/Beseda.git"
+    },
+    "dependencies" : {
+        "redis-node" : ">=0.4.0"
+    },
+    "engines": [ "node >=0.4" ],
+    "licenses" : [{
+        "type" : "BSD"
+      , "url"  : "http://www.opensource.org/licenses/bsd-license.php"
     }]
-  , "repository": {
-        "type": "git"
-      , "url": "https://github.com/geometria-lab/Beseda"
-    }
-  , "engine": [ "node >=0.1.102" ]
-  , "main": "./index.js"
 }
