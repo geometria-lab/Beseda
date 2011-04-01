@@ -59,7 +59,7 @@ Get started!
      `git clone http://github.com/geometria-lab/Beseda.git`
 
 	 `cd Beseda`
-	
+
 	 `npm install`
 
 3. **Use Beseda**
@@ -132,6 +132,10 @@ Contributors
 * [Ivan Shumkov](mailto:ivan@shumkov.ru)
 * [Sergey Kononenko](mailto:kononencheg@gmail.com)
 
+Inspired
+---
+* [Push-it](https://github.com/aaronblohowiak/Push-It)
+* [Juggernaut](https://github.com/maccman/juggernaut)
 
 License
 ---
