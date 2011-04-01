@@ -64,7 +64,7 @@ Beseda.prototype.subscribe = function(channel, callback, additionalMessage) {
 
     message = this._sendMessage('/meta/subscribe', message);
 
-    this.log('Send subscribe request', message);
+    this.log('Beseda send subscribe request', message);
 
     if (callback) {
         this.on('subscribe:' + message.id, callback);
@@ -83,7 +83,7 @@ Beseda.prototype.unsubscribe = function(channel, callback, additionalMessage) {
 
     message = this._sendMessage('/meta/unsubscribe', message);
 
-    this.log('Send unsubscribe request', message);
+    this.log('Beseda send unsubscribe request', message);
 
     if (callback) {
         this.on('unsubscribe:' + message.id, callback);
@@ -99,7 +99,7 @@ Beseda.prototype.publish = function(channel, message, callback) {
 
     message = this._sendMessage(channel, { data : message });
 
-    this.log('Send publish request', message);
+    this.log('Beseda send publish request', message);
 
     if (callback) {
         this.on('message:' + channel + ':' + message.id, callback);
@@ -121,7 +121,7 @@ Beseda.prototype.connect = function(callback, additionalMessage) {
 
     this.socketIO.send(message);
 
-    this.log('Send connection request', message);
+    this.log('Beseda send connection request', message);
 
     return this;
 }
