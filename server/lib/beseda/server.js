@@ -28,7 +28,7 @@ Server = module.exports = function(options) {
             util.log(message)
         },
 
-        connectionTimeout     : 10000,
+        connectionTimeout     : 2000,
         subscriptionTimeout   : 100,
         publicationTimeout    : 100,
         unsubscriptionTimeout : 100
