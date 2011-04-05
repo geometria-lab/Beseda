@@ -1,279 +1,110 @@
-var Session  = require('./session.js'),
-    Channel  = require('./channel.js');
+var fs  = require('fs'),
+    url = require('url');
 
-var ConnectionRequest     = require('./requests/connection.js'),
-    SubscriptionRequest   = require('./requests/subscription.js'),
-    PublicationRequest    = require('./requests/publication.js'),
-    UnsubscriptionRequest = require('./requests/unsubscription.js');
-
-require('./utils.js');
+var Channel = require('./channel.js'),
+    Session = require('./session.js');
 
 Router = module.exports = function(server) {
     this.server = server;
 }
 
-Router.prototype.dispatch = function(client, message) {
-    if (message.channel == undefined || message.clientId == undefined || message.id == undefined) {
-        return client.send({
-            channel : '/meta/error',
-            data    : 'channel, clientId or id not present'
-        });
-    }
+// TOOD: HTTP Authentication
 
-    if (message.channel.indexOf('/meta/') == 0) {
-        var metaChannel = message.channel.substr(6);
+Router._routes = {
+    'beseda.js' : function(dispatcher) {
+        var file = __dirname + '/../../../client/js/beseda.js';
+        dispatcher.sendFile(file, 'text/javascript');
+    },
+    'beseda.min.js' : function(dispatcher) {
+        var file = __dirname + '/../../../client/js/beseda.min.js';
+        dispatcher.sendFile(file, 'text/javascript');
+    },
+    'monitor' : function(dispatcher) {
+        var file = __dirname + '/../../monitor/index.html';
+        dispatcher.sendFile(file, 'text/html');
+    },
+    'monitor/style.css' : function(dispatcher) {
+        var file = __dirname + '/../../monitor/style.css';
+        dispatcher.sendFile(file, 'text/css');
+    },
+    'monitor/monitor.js' : function(dispatcher) {
+        var file = __dirname + '/../../monitor/monitor.js';
+        dispatcher.sendFile(file, 'text/javascript');
+    },
+    'monitor/channels' : function() {
+        var channels = Channel.getAll();
 
-        if (!metaChannel in ['connect', 'subscribe', 'unsubscribe']) {
-            return client.send({
-                id       : message.id,
-                channel  : '/meta/error',
-                clientId : message.clientId,
-                data     : 'Meta channel ' + message.channel + ' not supported'
-            });
-        }
-
-        this['_' + metaChannel].call(this, client, message);
-    } else if (message.channel.indexOf('/service/') == 0) {
-        return client.send({
-            id       : message.id,
-            channel  : '/meta/error',
-            clientId : message.clientId,
-            data     : 'Service channels not supported'
-        });
-    } else if (message.channel.indexOf('/') == 0) {
-        return this._publish(client, message);
-    } else {
-        return client.send({
-            id       : message.id,
-            channel  : '/meta/error',
-            clientId : message.clientId,
-            data     : 'Channel name must be start with /'
-        });
+        dispatcher.sendJSON();
+    },
+    'monitor/sessions' : function() {
+        dispatcher.sendJSON();
     }
 }
 
-// TODO: Disconnect after timeout if no one events or connection declined
-Router.prototype._connect = function(client, message) {
-    var session = new Session(this.server, message.clientId, client);
+Router.prototype.dispatch = function(request, response) {
+    var requestPath = url.parse(request.url).pathname.substr(1);
 
-    var request = new ConnectionRequest(session, message);
+    Router._routes.forEach(function(callback, path) {
+        if (requestPath == path) {
+            var dispatcher = new Router.Dispatcher(request, response);
 
-    var listeners = this.server.listeners('connect');
-    if (listeners.length) {
-        this.server.emit('connect', request, message);
-    } else {
-        request.approve();
-    }
+            callback(dispatcher);
+
+            return true;
+        }
+    });
+
+    return false;
 }
 
-Router.prototype._subscribe = function(client, message) {
-    if (message.subscription == undefined) {
-        return client.send({
-            id           : message.id,
-            channel      : '/meta/subscribe',
-            clientId     : message.clientId,
-            successful   : false,
-            subscription : '',
-            error        : 'You must have a subscription in your subscribe message'
-        });
-    }
-
-    var session = client.session;
-    if (!session) {
-        return client.send({
-            id           : message.id,
-            channel      : '/meta/subscribe',
-            clientId     : message.clientId,
-            successful   : false,
-            subscription : message.subscription,
-            error        : 'You must send connection message before'
-        });
-    }
-
-    if (session.id != message.clientId) {
-        throw 'Client.session not equal message.clientId';
-    }
-
-    var channels = [];
-    var subscriptions = Array.ensure(message.subscription);
-    for (var i = 0; i < subscriptions.length; i++) {
-        if (subscriptions[i].indexOf('/') != 0) {
-            return client.send({
-                id           : message.id,
-                channel      : '/meta/subscribe',
-                clientId     : message.clientId,
-                successful   : false,
-                subscription : message.subscription,
-                error        : 'Channel name must be start with /'
-            });
-        }
-
-        if (subscriptions[i].indexOf('/meta/') == 0) {
-            return client.send({
-                id           : message.id,
-                channel      : '/meta/subscribe',
-                clientId     : message.clientId,
-                successful   : false,
-                subscription : message.subscription,
-                error        : 'You can\'t subscribe to meta channel ' + subscriptions[i]
-            });
-        }
-
-        if (subscriptions[i].indexOf('*') != -1) {
-            return client.send({
-                id           : message.id,
-                channel      : '/meta/subscribe',
-                clientId     : message.clientId,
-                successful   : false,
-                subscription : message.subscription,
-                error        : 'Wildcards not supported yet'
-            });
-        }
-
-        var channel = Channel.get(subscriptions[i]);
-        if (!channel) {
-            channel = new Channel(this.server, subscriptions[i]);
-        }
-
-        if (channel.isSubscribed(session)) {
-            return client.send({
-                id           : message.id,
-                channel      : '/meta/subscribe',
-                successful   : false,
-                subscription : message.subscription,
-                error        : 'You already subscribed to ' + subscriptions[i]
-            });
-        }
-
-        channels.push(channel);
-    }
-
-    var request = new SubscriptionRequest(session, message, channels);
-
-    var listeners = this.server.listeners('subscribe');
-    if (listeners.length) {
-        this.server.emit('subscribe', request, message);
-    } else {
-        request.approve();
-    }
+Router.Dispatcher = function(request, response) {
+    this.request = request;
+    this.response = response;
 }
 
-Router.prototype._unsubscribe = function(client, message) {
-    if (message.subscription == undefined) {
-        return client.send({
-            id           : message.id,
-            channel      : '/meta/unsubscribe',
-            clientId     : message.clientId,
-            successful   : false,
-            subscription : '',
-            error        : 'You must have a subscription in your unsubscribe message'
-        });
-    }
+Router.Dispatcher.prototype.sendStatic = function(file, type) {
+    fs.stat(file, function (error, stat) {
+        if (error) {
+            this.log('Can\'t dispatch static file "' + this.request.uri + ' (' + file +')": ' + error);
 
-    var session = client.session;
-    if (!session) {
-        return client.send({
-            id           : message.id,
-            channel      : '/meta/unsubscribe',
-            clientId     : message.clientId,
-            successful   : false,
-            subscription : message.subscription,
-            error        : 'You must send connection message before'
-        });
-    }
+            response.writeHead(404);
+            response.end();
+        } else {
+            var mtime   = Date.parse(stat.mtime),
+                headers = {
+                    'Etag'          : JSON.stringify([stat.ino, stat.size, mtime].join('-')),
+                    'Date'          : new(Date)().toUTCString(),
+                    'Last-Modified' : new(Date)(stat.mtime).toUTCString(),
+                    'Server'         : 'Beseda',
+                    'Cache-Control'  : 'max-age=3600' };
 
-    if (session.id != message.clientId) {
-        throw 'Client.session not equal message.clientId';
-    }
+            if (request.headers['if-none-match'] === headers['Etag'] &&
+                Date.parse(request.headers['if-modified-since']) >= mtime) {
 
-    var channels = [];
-    var subscriptions = Array.ensure(message.subscription);
-    for (var i = 0; i < subscriptions.length; i++) {
-        if (subscriptions[i].indexOf('/') != 0) {
-            return client.send({
-                id           : message.id,
-                channel      : '/meta/unsubscribe',
-                clientId     : message.clientId,
-                successful   : false,
-                subscription : message.subscription,
-                error        : 'Channel name must be start with /'
-            });
+                response.writeHead(304, headers);
+                response.end();
+            } else if (request.method === 'HEAD') {
+                response.writeHead(200, headers);
+                response.end();
+            } else {
+                headers['Content-Length'] = stat.size;
+                headers['Content-Type']   = type;
+
+                // TODO: Impement stream and buffer for caching
+                try {
+                    var content = fs.readFileSync(file, 'utf8');
+                } catch (e) {
+                    this.log('Can\'t dispatch static file "' + this.request.uri + ' (' + file +')": ' + error);
+
+                    response.writeHead(404);
+                    response.end();
+
+                    return;
+                }
+
+                response.writeHead(200, headers);
+                response.end(content, 'utf8');
+            }
         }
-
-        if (subscriptions[i].indexOf('*') != -1) {
-            return client.send({
-                id           : message.id,
-                channel      : '/meta/unsubscribe',
-                clientId     : message.clientId,
-                successful   : false,
-                subscription : message.subscription,
-                error        : 'Wildcards not supported yet'
-            });
-        }
-
-        var channel = Channel.get(subscriptions[i]);
-
-        if (!channel || !channel.isSubscribed(session)) {
-            return client.send({
-                id           : message.id,
-                channel      : '/meta/unsubscribe',
-                clientId     : message.clientId,
-                successful   : false,
-                subscription : message.subscription,
-                error        : 'You not subscribed to ' + subscriptions[i]
-            });
-        }
-
-        channels.push(channel);
-    }
-
-    var request = new UnsubscriptionRequest(session, message, channels);
-
-    var listeners = this.server.listeners('unsubscribe');
-    if (listeners.length) {
-        this.server.emit('unsubscribe', request, message);
-    } else {
-        request.approve();
-    }
-}
-
-Router.prototype._publish = function(client, message) {
-    var session = client.session;
-    if (!session) {
-        return client.send({
-            id           : message.id,
-            channel      : message.channel,
-            clientId     : message.clientId,
-            successful   : false,
-            error        : 'You must send connection message before'
-        });
-    }
-
-    if (session.id != message.clientId) {
-        throw 'Client.session not equal message.clientId';
-    }
-
-    if (message.channel.indexOf('*') != -1) {
-        return client.send({
-            id           : message.id,
-            channel      : message.channel,
-            clientId     : message.clientId,
-            successful   : false,
-            error        : 'Wildcards not supported yet'
-        });
-    }
-
-    var channel = Channel.get(message.channel);
-    if (!channel) {
-        channel = new Channel(this.server, message.channel);
-    }
-
-    var request = new PublicationRequest(session, message, channel);
-
-    var listeners = this.server.listeners('publish');
-    if (listeners.length) {
-        this.server.emit('publish', request, message);
-    } else {
-        request.approve();
-    }
+    }.bind(this));
 }

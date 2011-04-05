@@ -1,12 +1,12 @@
 var fs          = require('fs'),
     path        = require('path'),
-    url         = require('url'),
     util        = require(process.binding('natives').util ? 'util' : 'sys'),
     http        = require('http'),
     https       = require('https'),
     io          = require('./../../vendor/socket.io');
 
-var Router = require('./router.js');
+var Router        = require('./router.js'),
+    MessageRouter = require('./message_router.js');
 
 require('./utils.js');
 
@@ -65,6 +65,12 @@ Server = module.exports = function(options) {
     }
 
     /**
+     *  Setup Routers
+     **/
+    this.router = new Router(this);
+    this.messageRouter = new MessageRouter(this);
+
+    /**
      *  Setup Socket.IO
      **/
     if (this.options.socketIO.constructor == Object) {
@@ -98,17 +104,12 @@ Server = module.exports = function(options) {
     var listeners = this.httpServer.listeners('request');
     this.httpServer.removeAllListeners('request');
     this.httpServer.addListener('request', function(request, response) {
-        if (!self._serveStatic(request, response)) {
+        if (!self.router.dispatch(request, response)) {
             for (var i = 0; i < listeners.length; i++) {
                 listeners[i].call(this, request, response);
             }
         }
     });
-
-    /**
-     *  Setup Router
-     **/
-    this.router = new Router(this);
 
     /**
      *  Setup PubSub
@@ -153,7 +154,7 @@ Server.prototype.setOptions = function(options, extend) {
 }
 
 Server.prototype._onMessage = function(client, message) {
-    this.router.dispatch(client, message);
+    this.messageRouter.dispatch(client, message);
 }
 
 Server.prototype._onDisconnect = function(client) {
@@ -165,61 +166,4 @@ Server.prototype._onDisconnect = function(client) {
     }
 
     this.emit('disconnect', client.session);
-}
-
-Server.prototype._serveStatic = function(request, response) {
-    var path = url.parse(request.url).pathname;
-
-    if (['/beseda.js', '/beseda.min.js'].indexOf(path) != -1) {
-        var file = __dirname + '/../../../client/js' + path;
-
-        fs.stat(file, function (error, stat) {
-            if (error) {
-                this.log('Can\'t serve static "' + path + '": ' + error);
-
-                response.writeHead(404);
-                response.end();
-            } else {
-                var mtime   = Date.parse(stat.mtime),
-                    headers = {
-                        'Etag'          : JSON.stringify([stat.ino, stat.size, mtime].join('-')),
-                        'Date'          : new(Date)().toUTCString(),
-                        'Last-Modified' : new(Date)(stat.mtime).toUTCString(),
-                        'Server'         : 'Beseda',
-                        'Cache-Control'  : 'max-age=3600' };
-
-                if (request.headers['if-none-match'] === headers['Etag'] &&
-                    Date.parse(request.headers['if-modified-since']) >= mtime) {
-
-                    response.writeHead(304, headers);
-                    response.end();
-                } else if (request.method === 'HEAD') {
-                    response.writeHead(200, headers);
-                    response.end();
-                } else {
-                    headers['Content-Length'] = stat.size;
-                    headers['Content-Type']   = 'text/javascript';
-
-                    // TODO: Impement stream and buffer for caching
-                    try {
-                        var content = fs.readFileSync(file, 'utf8');
-                    } catch (e) {
-                        this.log('Can\'t serve static "' + path + '": ' + error);
-
-                        response.writeHead(404);
-                        response.end();
-
-                        return;
-                    }
-
-                    response.writeHead(200, headers);
-                    response.end(content, 'utf8');
-                }
-            }
-        }.bind(this));
-
-        return true;
-    } else {
-        return false;
-    }
 }
