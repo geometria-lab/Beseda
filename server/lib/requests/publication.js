@@ -27,7 +27,7 @@ PublicationRequest.prototype.decline = function(error) {
     clearTimeout(this._timeout);
 
     if (this.isApproved) {
-        throw 'Session ' + this.session.id + ' publication request to channel "' + this.channel.name + '" already approved';
+        throw new Error('Session ' + this.session.id + ' publication request to channel "' + this.channel.name + '" already approved');
     }
 
     this._sendResponse(false, error || 'Publication declined');

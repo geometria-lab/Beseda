@@ -24,7 +24,7 @@ ConnectionRequest.prototype.decline = function(error) {
     clearTimeout(this._timeout);
 
     if (this.isApproved) {
-        throw 'Session ' + this.session.id + ' connection request already approved';
+        throw new Error('Session ' + this.session.id + ' connection request already approved');
     }
 
     this._sendResponse(false, error || 'Connection declined');

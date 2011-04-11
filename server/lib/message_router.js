@@ -91,7 +91,7 @@ MessageRouter.prototype._subscribe = function(client, message) {
     }
 
     if (session.id != message.clientId) {
-        throw 'Client.session not equal message.clientId';
+        throw new Error('Client.session not equal message.clientId');
     }
 
     var channels = [];
@@ -183,7 +183,7 @@ MessageRouter.prototype._unsubscribe = function(client, message) {
     }
 
     if (session.id != message.clientId) {
-        throw 'Client.session not equal message.clientId';
+        throw new Error('Client.session not equal message.clientId');
     }
 
     var channels = [];
@@ -250,7 +250,7 @@ MessageRouter.prototype._publish = function(client, message) {
     }
 
     if (session.id != message.clientId) {
-        throw 'Client.session not equal message.clientId';
+        throw new Error('Client.session not equal message.clientId');
     }
 
     if (message.channel.indexOf('*') != -1) {

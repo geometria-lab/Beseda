@@ -9,7 +9,7 @@ Channel = module.exports = function(server, name) {
     this._isConnectedToPubSub = false;
 
     if (channels[name]) {
-        throw 'Channel ' + name + 'already exists';
+        throw new Error('Channel ' + name + 'already exists');
     } else {
         channels[name] = this;
     }
@@ -29,7 +29,7 @@ Channel.prototype.publish = function(message) {
 
 Channel.prototype.subscribe = function(session) {
     if (this.isSubscribed[session]) {
-        throw 'Session ' + session.id + ' already subscribed to channel ' + this.name;
+        throw new Error('Session ' + session.id + ' already subscribed to channel ' + this.name);
     }
 
     this.subscriptions[session.id] = session;
@@ -46,7 +46,7 @@ Channel.prototype.isSubscribed = function(session){
 
 Channel.prototype.unsubscribe = function(session) {
     if (!this.isSubscribed(session)) {
-        throw 'Session ' + session.id + ' not subscribed to channel ' + this.name;
+        throw new Error('Session ' + session.id + ' not subscribed to channel ' + this.name);
     }
 
     delete this.subscriptions[session.id];

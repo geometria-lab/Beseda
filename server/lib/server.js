@@ -3,7 +3,7 @@ var fs          = require('fs'),
     util        = require(process.binding('natives').util ? 'util' : 'sys'),
     http        = require('http'),
     https       = require('https'),
-    io          = require('./../../vendor/socket.io');
+    io          = require('./../vendor/socket.io');
 
 var Router         = require('./router.js'),
     MessageRouter  = require('./message_router.js'),
@@ -164,7 +164,11 @@ Server.prototype.listen = function(port, host) {
     host = host || this.options.host;
     port = port || this.options.port;
 
-    this.httpServer.listen(port, host);
+    try {
+        this.httpServer.listen(port, host);
+    } catch (e) {
+        throw new Error('Cant start beseda on ' + host + ':' + port + ': ' + e);
+    }
 
     this.log('Beseda started on ' + host + ':' + port + '!');
 }

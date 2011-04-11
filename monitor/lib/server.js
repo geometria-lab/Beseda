@@ -1,9 +1,10 @@
 var http  = require('http'),
-    https = require('https');
+    https = require('https'),
+    util  = require(process.binding('natives').util ? 'util' : 'sys');
 
-var Router = require('./../server/lib/router.js');
+var Router = require('./../../server/lib/router.js');
 
-require('./../server/lib/utils.js');
+require('./../../server/lib/utils.js');
 
 Server = module.exports = function(options) {
     this.setOptions({
@@ -66,14 +67,10 @@ Server = module.exports = function(options) {
             dispatcher.send(404);
         }
     }.bind(this));
-
-    if (this._isHTTPServerOpened()) {
-        this.log('Beseda monitor started!');
-    }
 }
 
 Server.prototype.log = function(message) {
-    console.log(message);
+    return util.log(message);
 }
 
 Server.prototype.setOptions = function(options, extend) {
@@ -84,7 +81,11 @@ Server.prototype.listen = function(port, host) {
     host = host || this.options.host;
     port = port || this.options.port;
 
-    this.httpServer.listen(port, host);
+    try {
+        this.httpServer.listen(port, host);
+    } catch (e) {
+        throw new Error('Cant start beseda monitor on ' + host + ':' + port + ': ' + e);
+    }
 
     this.log('Beseda monitor started on ' + host + ':' + port);
 }
