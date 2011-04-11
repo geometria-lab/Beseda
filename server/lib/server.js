@@ -5,8 +5,9 @@ var fs          = require('fs'),
     https       = require('https'),
     io          = require('./../../vendor/socket.io');
 
-var Router        = require('./router.js'),
-    MessageRouter = require('./message_router.js');
+var Router         = require('./router.js'),
+    MessageRouter  = require('./message_router.js'),
+    MonitorUpdater = require('./monitor_updater.js');
 
 require('./utils.js');
 
@@ -15,7 +16,7 @@ Server = module.exports = function(options) {
 
     this.setOptions({
         host : '127.0.0.1',
-        port : 80,
+        port : 3000,
         ssl  : false,
 
         server : null,
@@ -23,6 +24,8 @@ Server = module.exports = function(options) {
         socketIO : {},
 
         pubSub : 'memory',
+
+        monitor : false,
 
         log : function(message) {
             util.log(message)
@@ -35,7 +38,7 @@ Server = module.exports = function(options) {
     }, options);
 
     /**
-     *  Setup server
+     *  Setup HTTP server
      **/
     if (!this.options.server) {
         // Create own http server from options
@@ -68,6 +71,13 @@ Server = module.exports = function(options) {
      *  Setup Routers
      **/
     this.router = new Router(this);
+    this.router.get('beseda.js', function(dispatcher) {
+        var file = __dirname + '/../../../client/js/beseda.js';
+        dispatcher.sendFile(file, 'text/javascript');
+    }).get('beseda.min.js', function(dispatcher) {
+        var file = __dirname + '/../../../client/js/beseda.min.js';
+        dispatcher.sendFile(file, 'text/javascript');
+    });
     this.messageRouter = new MessageRouter(this);
 
     /**
@@ -104,7 +114,9 @@ Server = module.exports = function(options) {
     var listeners = this.httpServer.listeners('request');
     this.httpServer.removeAllListeners('request');
     this.httpServer.addListener('request', function(request, response) {
-        if (!self.router.dispatch(request, response)) {
+        var dispatcher = self.router.dispatch(request, response);
+
+        if (!dispatcher.isDispatched) {
             for (var i = 0; i < listeners.length; i++) {
                 listeners[i].call(this, request, response);
             }
@@ -128,13 +140,25 @@ Server = module.exports = function(options) {
         // Use PubSub from options
         this.pubSub = this.options.pubSub;
     }
+
+    /**
+     *  Setup Monitor
+     **/
+    if (this.options.monitor) {
+        this.monitorUpdater = new MonitorUpdater(this, this.options.monitor);
+        this.monitorUpdater.start();
+    }
+
+    if (this._isHTTPServerOpened()) {
+        this.log('Beseda started!');
+    }
 }
 
 util.inherits(Server, process.EventEmitter);
 
 Server.prototype.listen = function(port, host) {
-    if (this.options.server) {
-        throw 'You must call you server listen method';
+    if (this._isHTTPServerOpened()) {
+        throw new Error('HTTP server already listen');
     }
 
     host = host || this.options.host;
@@ -142,7 +166,7 @@ Server.prototype.listen = function(port, host) {
 
     this.httpServer.listen(port, host);
 
-    this.log('Beseda started on ' + host + ':' + port);
+    this.log('Beseda started on ' + host + ':' + port + '!');
 }
 
 Server.prototype.log = function(message) {
@@ -166,4 +190,8 @@ Server.prototype._onDisconnect = function(client) {
     }
 
     this.emit('disconnect', client.session);
+}
+
+Server.prototype._isHTTPServerOpened = function() {
+    return typeof this.httpServer.fd === 'number';
 }
