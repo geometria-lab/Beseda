@@ -14,7 +14,7 @@ require('./utils.js');
 Server = module.exports = function(options) {
     process.EventEmitter.call(this);
 
-    this.setOptions({
+    this.options = Object.merge({
         host : '127.0.0.1',
         port : 3000,
         ssl  : false,
@@ -71,10 +71,10 @@ Server = module.exports = function(options) {
      *  Setup Routers
      **/
     this.router = new Router(this);
-    this.router.get('beseda.js', function(dispatcher) {
+    this.router.get('/beseda.js', function(dispatcher) {
         var file = __dirname + '/../../../client/js/beseda.js';
         dispatcher.sendFile(file, 'text/javascript');
-    }).get('beseda.min.js', function(dispatcher) {
+    }).get('/beseda.min.js', function(dispatcher) {
         var file = __dirname + '/../../../client/js/beseda.min.js';
         dispatcher.sendFile(file, 'text/javascript');
     });
@@ -145,12 +145,12 @@ Server = module.exports = function(options) {
      *  Setup Monitor
      **/
     if (this.options.monitor) {
-        this.monitorUpdater = new MonitorUpdater(this, this.options.monitor);
-        this.monitorUpdater.start();
+        this.monitor = new MonitorUpdater(this, this.options.monitor);
+        this.monitor.start();
     }
 
     if (this._isHTTPServerOpened()) {
-        this.log('Beseda started!');
+        this._logBesedaStarted();
     }
 }
 
@@ -170,15 +170,11 @@ Server.prototype.listen = function(port, host) {
         throw new Error('Cant start beseda on ' + host + ':' + port + ': ' + e);
     }
 
-    this.log('Beseda started on ' + host + ':' + port + '!');
+    this._logBesedaStarted();
 }
 
 Server.prototype.log = function(message) {
     return this.options.log(message);
-}
-
-Server.prototype.setOptions = function(options, extend) {
-    this.options = Object.merge(options, extend);
 }
 
 Server.prototype._onMessage = function(client, message) {
@@ -198,4 +194,10 @@ Server.prototype._onDisconnect = function(client) {
 
 Server.prototype._isHTTPServerOpened = function() {
     return typeof this.httpServer.fd === 'number';
+}
+
+Server.prototype._logBesedaStarted = function() {
+    var serverAddress = this.httpServer.address();
+
+    this.log('Beseda started on ' + serverAddress.address + ':' + serverAddress.port);
 }

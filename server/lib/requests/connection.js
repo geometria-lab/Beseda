@@ -18,6 +18,8 @@ ConnectionRequest.prototype.approve = function() {
     this._sendResponse(true);
 
     this.session.server.log('Session ' + this.session.id + ' connection request APPROVED');
+
+    this.session.server.monitor.increment('connection');
 }
 
 ConnectionRequest.prototype.decline = function(error) {
@@ -30,6 +32,8 @@ ConnectionRequest.prototype.decline = function(error) {
     this._sendResponse(false, error || 'Connection declined');
 
     this.session.server.log('Session ' + this.session.id + ' connection request DECLINED' + (error ? ': ' + error : ''));
+
+    this.session.server.monitor.increment('declinedConnection');
 
     this.session.destroy();
 }

@@ -11,6 +11,8 @@ Session = module.exports = function(server, clientId, client) {
 
     this.client.session = this;
 
+    this.createdTimestamp = Date.now();
+
     if (sessions[this.id]) {
         throw new Error('Session ' + this.id + ' already exists.');
     } else {

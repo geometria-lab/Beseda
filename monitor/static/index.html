@@ -1,0 +1,64 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+	<title>Beseda Monitor</title>
+    <link href="/monitor.css" rel="stylesheet" type="text/css"/>
+	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.5.2/jquery.min.js" type="text/javascript" charset="utf-8"></script>
+    <script src="http://ajax.microsoft.com/ajax/jquery.templates/beta1/jquery.tmpl.min.js" type="text/javascript" charset="utf-8"></script>
+	<script src="/monitor.js" type="text/javascript" charset="utf-8"></script>
+</head>
+<body>
+    <h1>Beseda Monitor</h1>
+    <ul id="servers"></ul>
+    <script id="serversTemplate" type="text/x-jquery-tmpl">
+        {{each(name) servers}}
+            <li>${server = servers[name] && ''}
+                <a href="/stats/${name}"{{if server.isDown}} class="isDown"{{/if}}>${name}</a>
+                <span class="lastUpdate">${Monitor.timeAgo(server.lastUpdate)}</span>
+                <h2>Stats</h2>
+                <table class="stats">
+                    <thead>
+                        <tr>
+                            <th></th>
+                            <th>Accepted</th>
+                            <th>Accepted at</th>
+                            <th>Declined</th>
+                            <th>Declined at</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Connections</td>
+                            <td>${server.connectionCount}</td>
+                            <td>${server.connectionTimestamp}</td>
+                            <td>${server.declinedConnectionCount}</td>
+                            <td>${server.declinedConnectionTimestamp}</td>
+                        </tr>
+                        <tr>
+                            <td>Subscriptions</td>
+                            <td>${server.subscriptionCount}</td>
+                            <td>${server.subscriptionTimestamp}</td>
+                            <td>${server.declinedSubscriptionCount}</td>
+                            <td>${server.declinedSubscriptionTimestamp}</td>
+                        </tr>
+                        <tr>
+                            <td>Publications</td>
+                            <td>${server.publicationCount}</td>
+                            <td>${server.publicationTimestamp}</td>
+                            <td>${server.declinedPublicationCount}</td>
+                            <td>${server.declinedPublicationTimestamp}</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <h2>Channels</h2>
+                <ul class="channels">
+                    {{each(i, channel) server.channels}}
+                        <li><a href="/stats/${name}">${channel.name}</a><span class="subscriptions">${channel.subscriptions.length}</span></li>
+                    {{/each}}
+                </ul>
+            </li>
+        {{/each}}
+    </script>
+</body>
+</html>

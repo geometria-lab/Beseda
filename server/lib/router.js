@@ -43,9 +43,9 @@ Router.Route = function(method, path, callback) {
 }
 
 Router.Route.prototype.isValid = function(request) {
-    var requestPath = url.parse(request.url).pathname.substr(1);
+    var requestPath = url.parse(request.url).pathname;
 
-    return requestPath == this.path &&
+    return (requestPath == this.path || requestPath == ('/' + this.path)) &&
            (this.method == request.method || (this.method == 'GET' && request.method == 'HEAD'));
 }
 
@@ -63,10 +63,10 @@ Router.Dispatcher.prototype.dispatch = function(route) {
     route.callback(this);
 }
 
-Router.Dispatcher.prototype.sendStatic = function(file, type) {
+Router.Dispatcher.prototype.sendFile = function(file, type) {
     fs.stat(file, function (error, stat) {
         if (error) {
-            this.server.log('Can\'t dispatch static file "' + this.request.uri + ' (' + file +')": ' + error);
+            this.server.log('Can\'t send file "' + this.request.uri + ' (' + file +')": ' + error);
 
             this.send(404);
         } else {
@@ -78,14 +78,12 @@ Router.Dispatcher.prototype.sendStatic = function(file, type) {
                     'Server'         : 'Beseda',
                     'Cache-Control'  : 'max-age=3600' };
 
-            if (request.headers['if-none-match'] === headers['Etag'] &&
+            if (this.request.headers['if-none-match'] === headers['Etag'] &&
                 Date.parse(this.request.headers['if-modified-since']) >= mtime) {
 
-                response.writeHead(304, headers);
-                response.end();
-            } else if (request.method === 'HEAD') {
-                response.writeHead(200, headers);
-                response.end();
+                this.send(304, headers);
+            } else if (this.request.method === 'HEAD') {
+                this.send(200, headers);
             } else {
                 headers['Content-Length'] = stat.size;
                 headers['Content-Type']   = type;
@@ -94,7 +92,7 @@ Router.Dispatcher.prototype.sendStatic = function(file, type) {
                 try {
                     var content = fs.readFileSync(file, 'utf8');
                 } catch (e) {
-                    this.server.log('Can\'t dispatch static file "' + this.request.uri + ' (' + file +')": ' + error);
+                    this.server.log('Can\'t send file "' + this.request.uri + ' (' + file +')": ' + error);
 
                     this.send(404);
 
@@ -119,7 +117,7 @@ Router.Dispatcher.prototype.sendJSON = function(data) {
     this.response.end(json, 'utf8');
 }
 
-Router.Dispatcher.prototype.send = function(code) {
-    this.response.writeHead(code);
+Router.Dispatcher.prototype.send = function(code, headers) {
+    this.response.writeHead(code, headers);
     this.response.end();
 }
