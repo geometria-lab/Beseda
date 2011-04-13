@@ -18,7 +18,7 @@ Features
     * Publishing
     * Subscribing
 * Horizontal scaling (depends on Pub/Sub engine)
-* Monitor (coming soon)
+* Monitor
 * Server-side clients:
 	* PHP (coming soon)
 	* Ruby (coming soon)
@@ -52,15 +52,13 @@ Get started!
 
      2.1. **Install from npm**
 
-     `sudo npm install beseda`
+     `npm install beseda`
 
      2.2. **Get last unstable version from git**
 
      `git clone http://github.com/geometria-lab/Beseda.git`
 
-	 `cd Beseda`
-
-	 `npm install`
+	 `npm install Beseda`
 
 3. **Use Beseda**
 

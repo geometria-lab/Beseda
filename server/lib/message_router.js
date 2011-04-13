@@ -8,11 +8,11 @@ var ConnectionRequest     = require('./requests/connection.js'),
 
 require('./utils.js');
 
-Router = module.exports = function(server) {
+MessageRouter = module.exports = function(server) {
     this.server = server;
 }
 
-Router.prototype.dispatch = function(client, message) {
+MessageRouter.prototype.dispatch = function(client, message) {
     if (message.channel == undefined || message.clientId == undefined || message.id == undefined) {
         return client.send({
             channel : '/meta/error',
@@ -53,7 +53,7 @@ Router.prototype.dispatch = function(client, message) {
 }
 
 // TODO: Disconnect after timeout if no one events or connection declined
-Router.prototype._connect = function(client, message) {
+MessageRouter.prototype._connect = function(client, message) {
     var session = new Session(this.server, message.clientId, client);
 
     var request = new ConnectionRequest(session, message);
@@ -66,7 +66,7 @@ Router.prototype._connect = function(client, message) {
     }
 }
 
-Router.prototype._subscribe = function(client, message) {
+MessageRouter.prototype._subscribe = function(client, message) {
     if (message.subscription == undefined) {
         return client.send({
             id           : message.id,
@@ -91,7 +91,7 @@ Router.prototype._subscribe = function(client, message) {
     }
 
     if (session.id != message.clientId) {
-        throw 'Client.session not equal message.clientId';
+        throw new Error('Client.session not equal message.clientId');
     }
 
     var channels = [];
@@ -158,7 +158,7 @@ Router.prototype._subscribe = function(client, message) {
     }
 }
 
-Router.prototype._unsubscribe = function(client, message) {
+MessageRouter.prototype._unsubscribe = function(client, message) {
     if (message.subscription == undefined) {
         return client.send({
             id           : message.id,
@@ -183,7 +183,7 @@ Router.prototype._unsubscribe = function(client, message) {
     }
 
     if (session.id != message.clientId) {
-        throw 'Client.session not equal message.clientId';
+        throw new Error('Client.session not equal message.clientId');
     }
 
     var channels = [];
@@ -237,7 +237,7 @@ Router.prototype._unsubscribe = function(client, message) {
     }
 }
 
-Router.prototype._publish = function(client, message) {
+MessageRouter.prototype._publish = function(client, message) {
     var session = client.session;
     if (!session) {
         return client.send({
@@ -250,7 +250,7 @@ Router.prototype._publish = function(client, message) {
     }
 
     if (session.id != message.clientId) {
-        throw 'Client.session not equal message.clientId';
+        throw new Error('Client.session not equal message.clientId');
     }
 
     if (message.channel.indexOf('*') != -1) {

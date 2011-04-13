@@ -1,0 +1,17 @@
+#servers li {
+	list-style: none;
+}
+h2 span {
+	background-color: #ddd;
+	font-size: 60%;
+	padding: 2px;
+	font-weight: normal;
+	margin-left: 10px;
+}
+h2 span.isDown {
+    background-color: red;
+}
+#servers li ul {
+	padding: 0;
+	margin: 0;
+}
