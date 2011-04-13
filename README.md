@@ -50,21 +50,21 @@ Get started!
 
    You can install Beseda from npm or get from git repository.
 
-     2.1. **Install from npm**
+   2.1. **Install from npm**
 
-     `npm install beseda`
+   `npm install beseda`
 
-     2.2. **Get last unstable version from git**
+   2.2. **Get last unstable version from git**
 
-     `git clone http://github.com/geometria-lab/Beseda.git`
+   `git clone http://github.com/geometria-lab/Beseda.git`
 
-	 `npm install Beseda`
+    `npm install Beseda`
 
 3. **Use Beseda**
 
    _NOTE: You can find test application in `example` folder._
 
-   3.1. Create you server.js
+   3.1. Create you server.js
 
          var Beseda = require('beseda'),
              beseda = new Beseda();
