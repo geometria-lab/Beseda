@@ -2,13 +2,17 @@ var http  = require('http'),
     https = require('https'),
     util  = require(process.binding('natives').util ? 'util' : 'sys');
 
+var io = require('./../../server/vendor/socket.io');
+
 var Router = require('./../../server/lib/router.js');
 
 require('./../../server/lib/utils.js');
 
+// TODO: Change router to connect framework
+
 Server = module.exports = function(options) {
     this.options = Object.merge({
-        host : '127.0.0.1',
+        host : '0.0.0.0',
         port : 80,
         ssl  : false,
 
@@ -16,7 +20,48 @@ Server = module.exports = function(options) {
         password : 'admin'
     }, options);
 
-    this._stats = {};
+    this._servers = {};
+	this._channels = {};
+
+	/**
+     *  Setup Router
+     **/
+    this.router = new Router(this);
+    this.router.get('/', function(dispatcher) {
+        var file = __dirname + '/../static/index.html';
+        dispatcher.sendFile(file, 'text/html');
+    }).get('/monitor.js', function(dispatcher) {
+        var file = __dirname + '/../static/monitor.js';
+        dispatcher.sendFile(file, 'text/javascript');
+    }).get('/monitor.css', function(dispatcher) {
+        var file = __dirname + '/../static/monitor.css';
+        dispatcher.sendFile(file, 'text/css');
+    }).post('/stats', function(dispatcher) {
+        var body = '';
+
+        dispatcher.request.on('data', function(data) {
+            body += data;
+        });
+
+        dispatcher.request.on('end', function() {
+            var server = JSON.parse(body);
+
+			// Create channel diff and broadcast
+			this._channels[server.name] = server.channels;
+			delete server.channels
+
+			server.lastUpdate = Date.now();
+            server.isDown = false;
+
+            this._servers[stats.server] = server;
+
+			this.socketIO.broadcast({ type : 'servers', servers : [ server ] });
+
+            this.log('Received stats update from ' + stats.server);
+        }.bind(this));
+
+        dispatcher.send(200);
+    }.bind(this));
 
     /**
      *  Setup HTTP server
@@ -42,53 +87,29 @@ Server = module.exports = function(options) {
         this.httpServer = http.createServer();
     }
 
-    /**
-     *  Setup Router
-     **/
-    this.router = new Router(this);
-    this.router.get('/', function(dispatcher) {
-        var file = __dirname + '/../static/index.html';
-        dispatcher.sendFile(file, 'text/html');
-    }).get('/monitor.js', function(dispatcher) {
-        var file = __dirname + '/../static/monitor.js';
-        dispatcher.sendFile(file, 'text/javascript');
-    }).get('/monitor.css', function(dispatcher) {
-        var file = __dirname + '/../static/monitor.css';
-        dispatcher.sendFile(file, 'text/css');
-    }).get('/stats', function(dispatcher) {
-        dispatcher.sendJSON(this._stats);
-    }.bind(this)).post('/stats', function(dispatcher) {
-        var body = '';
+	/**
+	 * Setup Socket.IO
+	 **/
+	this.socketIO = io.listen(this.httpServer);
+    this.socketIO.on('connection', this._onConnection.bind(this));
 
-        dispatcher.request.on('data', function(data) {
-            body += data;
-        });
-
-        dispatcher.request.on('end', function() {
-            var stats = JSON.parse(body);
-
-            stats.lastUpdate = Date.now();
-            stats.isDown = false;
-
-            this._stats[stats.server] = stats;
-
-            this.log('Received stats update from ' + stats.server);
-        }.bind(this));
-
-        dispatcher.send(200);
-    }.bind(this));
-
+	// Add request listener with static before others
+    var self = this;
+    var listeners = this.httpServer.listeners('request');
+    this.httpServer.removeAllListeners('request');
     this.httpServer.addListener('request', function(request, response) {
-        if (this._authorize(request, response)) {
-            var dispatcher = this.router.dispatch(request, response);
+        if (self._authorize(request, response)) {
+            var dispatcher = self.router.dispatch(request, response);
 
             if (!dispatcher.isDispatched) {
-                dispatcher.send(404);
-            }
+	            for (var i = 0; i < listeners.length; i++) {
+	                listeners[i].call(this, request, response);
+	            }
+	        }
         }
-    }.bind(this));
+    });
 
-    this._cleanupInterval = setInterval(this._cleanup.bind(this), 1000);
+    this._markAsDownInterval = setInterval(this._markAsDown.bind(this), 1000);
 }
 
 Server.prototype.log = function(message) {
@@ -126,7 +147,7 @@ Server.prototype._authorize = function(request, response) {
     return false;
 }
 
-Server.prototype._cleanup = function() {
+Server.prototype._markAsDown = function() {
     var now = Date.now();
 
     for (var name in this._servers) {
@@ -136,4 +157,14 @@ Server.prototype._cleanup = function() {
             this._servers[name].isDown = true;
         }
     }
+}
+
+Server.prototype._onConnection = function(client) {
+	client.on('message', this._onMessage.bind(this, null, client));
+	client.send({ type : 'servers', servers : this._servers });
+}
+
+Server.prototype._onMessage = function(message, client) {
+	console.log(message);
+	console.log(client);
 }

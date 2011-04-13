@@ -127,20 +127,21 @@ MonitorUpdater.prototype.update = function() {
     }
 
     // Sessions
-    var strippedSessions = [],
-        sessions         = Session.getAll();
+    var sessionsCount = 0,
+        sessions      = Session.getAll();
     for (var sessionId in sessions) {
         if (sessions.hasOwnProperty(sessionId)) {
-            strippedSessions.push(sessionId);
+            sessionsCount++;
         }
     }
 
     // All data
     var data = {
-        server   : serverName,
-        channels : strippedChannels,
-        sessions : strippedSessions,
-        interval : this.options.interval
+        name          : serverName,
+		channelsCount : strippedChannels.length
+        sessionsCount : sessionsCount,
+		channels      : strippedChannels,
+        interval      : this.options.interval
     }
 
     for (var i = 0; i < MonitorUpdater._statFields.length; i++) {

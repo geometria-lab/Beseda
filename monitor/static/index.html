@@ -6,16 +6,17 @@
     <link href="/monitor.css" rel="stylesheet" type="text/css"/>
 	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.5.2/jquery.min.js" type="text/javascript" charset="utf-8"></script>
     <script src="http://ajax.microsoft.com/ajax/jquery.templates/beta1/jquery.tmpl.min.js" type="text/javascript" charset="utf-8"></script>
+	<script src="/socket.io/socket.io.js" type="text/javascript" charset="utf-8"></script>
 	<script src="/monitor.js" type="text/javascript" charset="utf-8"></script>
 </head>
 <body>
     <h1>Beseda Monitor</h1>
     <ul id="servers"></ul>
-    <script id="serversTemplate" type="text/x-jquery-tmpl">
-        {{each(name) servers}}
-            <li>${server = servers[name] && ''}
-                <a href="/stats/${name}"{{if server.isDown}} class="isDown"{{/if}}>${name}</a>
-                <span class="lastUpdate">${Monitor.timeAgo(server.lastUpdate)}</span>
+    <script id="serverTemplate" type="text/x-jquery-tmpl">
+            <li class="server-${server}">
+                <a href="/stats/${server}"{{if isDown}} class="isDown"{{/if}}>${server}</a>
+                <span class="lastUpdate">${Monitor.timeAgo(lastUpdate)}</span>
+				<p>Channels: ${channelsCount}. Sessions: ${sessionsCount}</p>
                 <h2>Stats</h2>
                 <table class="stats">
                     <thead>
@@ -51,14 +52,7 @@
                         </tr>
                     </tbody>
                 </table>
-                <h2>Channels</h2>
-                <ul class="channels">
-                    {{each(i, channel) server.channels}}
-                        <li><a href="/stats/${name}">${channel.name}</a><span class="subscriptions">${channel.subscriptions.length}</span></li>
-                    {{/each}}
-                </ul>
             </li>
-        {{/each}}
     </script>
 </body>
 </html>

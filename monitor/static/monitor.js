@@ -11,44 +11,46 @@ var Monitor = {
             Monitor.selectServer(serverName);
         });
 
-        this._servers = $('#servers');
-        this._serversTemplate = $('#serversTemplate');
+        this._server = $('#server');
+        this._serverTemplate = $('#serverTemplate');
 
-        this.startUpdate();
+		this.socketIO = new io.Socket();
+		this.socketIO.on('message', Monitor._onMessage); function(message) {
+			Monitor['_' + message.type + 'MessageHandler'](message);
+		});
+		this.socketIO.connect();
     },
 
-    startUpdate : function() {
-        if (!this._interval) {
-            this.update();
-            this._interval = setInterval(Monitor.update, 10000);
-        }
-    },
+	_serversMessageHandler : function(message) {
+		Monitor.log('Received servers message', message.servers);
 
-    stopUpdate : function() {
-        clearInterval(this._interval);
-        this._interval = null;
-    },
+        var start = new Date();
 
-    update : function() {
-        $.getJSON('/stats', function(stats) {
-            Monitor.log('Received stats', stats);
+		for (var i = 0; i < message.servers.length; i++) {
+			var serverNode = $('.server-' + message.servers[i].name, Monitor._servers);
+			
+			var serverRendered = Monitor._serverTemplate.tmpl(message.servers[i]);
+			
+			if (serverNode.get(0)) {
+				serverNode.
+			} else {
+				
+			}
+		}
 
-            var start = new Date();
+        Monitor._servers.html(
+            
+        );
 
-            Monitor._servers.html(
-                Monitor._serversTemplate.tmpl({ servers : stats })
-            );
+        var end = new Date(),
+            elapsed = end.getTime() - start.getTime();
 
-            var end = new Date(),
-                elapsed = end.getTime() - start.getTime();
-
-            Monitor.log('Stats rendered in', elapsed);
-        });
-    },
-
-    selectServer : function(name) {
-        this.log('Name')
-    },
+        Monitor.log('Stats rendered in', elapsed);
+	},
+	
+	_channelsMessageHandler : function(message) {
+		
+	},
 
     log : function() {
         if ('console' in window && 'log' in console) {

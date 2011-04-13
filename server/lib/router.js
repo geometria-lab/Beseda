@@ -60,7 +60,9 @@ Router.Dispatcher = function(server, request, response) {
 Router.Dispatcher.prototype.dispatch = function(route) {
     this.isDispatched = true;
 
-    route.callback(this);
+	var params = url.parse(this.request.url, true).query;
+
+    route.callback(this, params);
 }
 
 Router.Dispatcher.prototype.sendFile = function(file, type) {
