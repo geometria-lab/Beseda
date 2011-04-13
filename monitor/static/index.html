@@ -13,11 +13,12 @@
     <h1>Beseda Monitor</h1>
     <ul id="servers"></ul>
     <script id="serverTemplate" type="text/x-jquery-tmpl">
-            <li class="server-${server}">
-                <a href="/stats/${server}"{{if isDown}} class="isDown"{{/if}}>${server}</a>
-                <span class="lastUpdate">${Monitor.timeAgo(lastUpdate)}</span>
-				<p>Channels: ${channelsCount}. Sessions: ${sessionsCount}</p>
-                <h2>Stats</h2>
+            <li id="server-${_encodedName}">
+				<h2>${name}<span class="_lastUpdate">${_lastUpdate}</span></h2>
+				<ul>
+					<li>Channels: <span class="channelsCount">${channelsCount}</span></li>
+					<li>Sessions: <span class="sessionsCount">${sessionsCount}</span></li>
+				</ul>
                 <table class="stats">
                     <thead>
                         <tr>
@@ -31,24 +32,24 @@
                     <tbody>
                         <tr>
                             <td>Connections</td>
-                            <td>${server.connectionCount}</td>
-                            <td>${server.connectionTimestamp}</td>
-                            <td>${server.declinedConnectionCount}</td>
-                            <td>${server.declinedConnectionTimestamp}</td>
+                            <td class="connectionCount">${connectionCount}</td>
+                            <td class="_connectionTimestamp">${_connectionTimestamp}</td>
+                            <td class="declinedConnectionCount">${declinedConnectionCount}</td>
+                            <td class="_declinedConnectionTimestamp">${_declinedConnectionTimestamp}</td>
                         </tr>
                         <tr>
                             <td>Subscriptions</td>
-                            <td>${server.subscriptionCount}</td>
-                            <td>${server.subscriptionTimestamp}</td>
-                            <td>${server.declinedSubscriptionCount}</td>
-                            <td>${server.declinedSubscriptionTimestamp}</td>
+                            <td class="subscriptionCount">${subscriptionCount}</td>
+                            <td class="_subscriptionTimestamp">${_subscriptionTimestamp}</td>
+                            <td class="declinedSubscriptionCount">${declinedSubscriptionCount}</td>
+                            <td class="_declinedSubscriptionTimestamp">${_declinedSubscriptionTimestamp}</td>
                         </tr>
                         <tr>
                             <td>Publications</td>
-                            <td>${server.publicationCount}</td>
-                            <td>${server.publicationTimestamp}</td>
-                            <td>${server.declinedPublicationCount}</td>
-                            <td>${server.declinedPublicationTimestamp}</td>
+                            <td class="publicationCount">${publicationCount}</td>
+                            <td class="_publicationTimestamp">${_publicationTimestamp}</td>
+                            <td class="declinedPublicationCount">${declinedPublicationCount}</td>
+                            <td class="_declinedPublicationTimestamp">${_declinedPublicationTimestamp}</td>
                         </tr>
                     </tbody>
                 </table>

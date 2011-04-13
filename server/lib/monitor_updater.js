@@ -68,10 +68,6 @@ MonitorUpdater._statFields = ['connection', 'declinedConnection', 'subscription'
 MonitorUpdater.prototype.start = function() {
     if (!this._interval) {
         this._interval = setInterval(this.update.bind(this), this.options.interval * 1000);
-
-        setTimeout(function(){
-            this.stop();
-        }.bind(this), 30000);
     }
 }
 
@@ -104,7 +100,7 @@ MonitorUpdater.prototype.update = function() {
 
     // Channels
     var strippedChannels = [],
-        channels         = Channel.getAll();
+        channels = Channel.getAll();
     for (var name in channels) {
         if (channels.hasOwnProperty(name)) {
             var subscriptions = [];
@@ -138,7 +134,7 @@ MonitorUpdater.prototype.update = function() {
     // All data
     var data = {
         name          : serverName,
-		channelsCount : strippedChannels.length
+		channelsCount : strippedChannels.length,
         sessionsCount : sessionsCount,
 		channels      : strippedChannels,
         interval      : this.options.interval
@@ -171,15 +167,19 @@ MonitorUpdater.prototype.update = function() {
     }
 
     var request = (this.options.ssl ? https : http).request(options, function(response) {
-        if (response.statusCode == 401) {
-            throw new Error('Invalid monitor login (' + this.options.login + ') and password (' + this.options.password + ')');
+		if (response.headers.server == undefined || response.headers.server != 'Beseda') {
+			throw new Error('Invalid Monitor server ' + this.options.host + ':' + this.options.port);
+		} else if (response.statusCode == 401) {
+            throw new Error('Invalid Monitor login (' + this.options.login + ') and password (' + this.options.password + ')');
         } else if (response.statusCode != 200) {
-            this.server.log('Cant update monitor data: ' + response.statusCode);
+            this.server.log('Cant update Monitor stats: ' + response.statusCode);
         }
     }.bind(this));
+
     request.on('error', function(error) {
         this.server.log('Cant update monitor data: ' + error);
     }.bind(this));
+
     request.write(json);
     request.end();
 }

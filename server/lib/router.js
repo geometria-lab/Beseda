@@ -120,6 +120,9 @@ Router.Dispatcher.prototype.sendJSON = function(data) {
 }
 
 Router.Dispatcher.prototype.send = function(code, headers) {
+	headers = headers || {};
+	headers['Server'] = 'Beseda';
+
     this.response.writeHead(code, headers);
     this.response.end();
 }

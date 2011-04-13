@@ -74,10 +74,10 @@ Server = module.exports = function(options) {
      **/
     this.router = new Router(this);
     this.router.get('/beseda.js', function(dispatcher) {
-        var file = __dirname + '/../../../client/js/beseda.js';
+        var file = __dirname + '/../../client/js/beseda.js';
         dispatcher.sendFile(file, 'text/javascript');
     }).get('/beseda.min.js', function(dispatcher) {
-        var file = __dirname + '/../../../client/js/beseda.min.js';
+        var file = __dirname + '/../../client/js/beseda.min.js';
         dispatcher.sendFile(file, 'text/javascript');
     });
     this.messageRouter = new MessageRouter(this);

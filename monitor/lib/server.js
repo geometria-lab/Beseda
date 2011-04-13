@@ -53,11 +53,11 @@ Server = module.exports = function(options) {
 			server.lastUpdate = Date.now();
             server.isDown = false;
 
-            this._servers[stats.server] = server;
+            this._servers[server.name] = server;
 
 			this.socketIO.broadcast({ type : 'servers', servers : [ server ] });
 
-            this.log('Received stats update from ' + stats.server);
+            this.log('Received stats update from ' + server.name);
         }.bind(this));
 
         dispatcher.send(200);
@@ -140,6 +140,7 @@ Server.prototype._authorize = function(request, response) {
     }
 
     response.writeHead(401, {
+		'Server'           : 'Beseda',
         'WWW-Authenticate' : 'Basic realm="Beseda Monitor"'
     });
     response.end();
@@ -151,17 +152,23 @@ Server.prototype._markAsDown = function() {
     var now = Date.now();
 
     for (var name in this._servers) {
-        if (!this._servers[name].isDown && now > this._servers[name].lastUpdate + (this._servers[name].interval + 3) * 1000) {
+		var server = this._servers[name];
+        if (!server.isDown && now > server.lastUpdate + (server.interval + 3) * 1000) {
             this.log(name + ' not updated stats and marked as down');
 
-            this._servers[name].isDown = true;
+            server.isDown = true;
         }
     }
 }
 
 Server.prototype._onConnection = function(client) {
 	client.on('message', this._onMessage.bind(this, null, client));
-	client.send({ type : 'servers', servers : this._servers });
+	var servers = [];
+	for (var name in this._servers) {
+		servers.push(this._servers[name]);
+	}
+
+	client.send({ type : 'servers', servers : servers });
 }
 
 Server.prototype._onMessage = function(message, client) {
