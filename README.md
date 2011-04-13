@@ -20,7 +20,7 @@ Features
 * Horizontal scaling (depends on Pub/Sub engine)
 * Monitor
 * Server-side clients:
-	* PHP (coming soon)
+	* PHP
 	* Ruby (coming soon)
 	* Node.js (coming soon)
 	* Python (coming soon)
