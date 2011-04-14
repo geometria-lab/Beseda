@@ -1,4 +1,4 @@
-// TODO: Needs channels clenup!
+// TODO: Needs empty channels cleanup by timestamp?
 var channels = {};
 
 Channel = module.exports = function(server, name) {
@@ -6,10 +6,16 @@ Channel = module.exports = function(server, name) {
     this.name   = name;
     this.subscriptions = {};
 
+    this.createdTimestamp = Date.now();
+    this.receivedTimestamp = null;
+    this.receivedCount = 0;
+    this.publishedTimestamp = null;
+    this.publishedCount = 0;
+
     this._isConnectedToPubSub = false;
 
     if (channels[name]) {
-        throw 'Channel ' + name + 'already exists';
+        throw new Error('Channel ' + name + 'already exists');
     } else {
         channels[name] = this;
     }
@@ -25,11 +31,14 @@ Channel.getAll = function() {
 
 Channel.prototype.publish = function(message) {
     this.server.pubSub.publish(this.name, message);
+
+    this.publishedTimestamp = Date.now();
+    this.publishedCount++;
 }
 
 Channel.prototype.subscribe = function(session) {
     if (this.isSubscribed[session]) {
-        throw 'Session ' + session.id + ' already subscribed to channel ' + this.name;
+        throw new Error('Session ' + session.id + ' already subscribed to channel ' + this.name);
     }
 
     this.subscriptions[session.id] = session;
@@ -46,7 +55,7 @@ Channel.prototype.isSubscribed = function(session){
 
 Channel.prototype.unsubscribe = function(session) {
     if (!this.isSubscribed(session)) {
-        throw 'Session ' + session.id + ' not subscribed to channel ' + this.name;
+        throw new Error('Session ' + session.id + ' not subscribed to channel ' + this.name);
     }
 
     delete this.subscriptions[session.id];
@@ -65,6 +74,9 @@ Channel.prototype._deliverMessage = function(message) {
             this.subscriptions[sessionId].send(message);
         }
     }
+
+    this.receivedTimestamp = Date.now();
+    this.receivedCount++;
 
     this.server.log('Receive new message to "' + this.name + '" and deliver to ' + count + ' subscribers');
 }

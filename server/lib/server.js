@@ -1,21 +1,24 @@
 var fs          = require('fs'),
     path        = require('path'),
-    url         = require('url'),
     util        = require(process.binding('natives').util ? 'util' : 'sys'),
     http        = require('http'),
     https       = require('https'),
-    io          = require('./../../vendor/socket.io');
+    io          = require('./../vendor/socket.io');
 
-var Router = require('./router.js');
+var Router         = require('./router.js'),
+    MessageRouter  = require('./message_router.js'),
+    MonitorUpdater = require('./monitor_updater.js');
 
 require('./utils.js');
+
+// TODO: Change router to connect framework
 
 Server = module.exports = function(options) {
     process.EventEmitter.call(this);
 
-    this.setOptions({
-        host : '127.0.0.1',
-        port : 80,
+    this.options = Object.merge({
+        host : '0.0.0.0',
+        port : 3000,
         ssl  : false,
 
         server : null,
@@ -24,18 +27,20 @@ Server = module.exports = function(options) {
 
         pubSub : 'memory',
 
+        monitor : false,
+
         log : function(message) {
             util.log(message)
         },
 
-        connectionTimeout     : 10000,
+        connectionTimeout     : 2000,
         subscriptionTimeout   : 100,
         publicationTimeout    : 100,
         unsubscriptionTimeout : 100
     }, options);
 
     /**
-     *  Setup server
+     *  Setup HTTP server
      **/
     if (!this.options.server) {
         // Create own http server from options
@@ -63,6 +68,19 @@ Server = module.exports = function(options) {
         // Use server from options
         this.httpServer = this.options.server;
     }
+
+    /**
+     *  Setup Routers
+     **/
+    this.router = new Router(this);
+    this.router.get('/beseda.js', function(dispatcher) {
+        var file = __dirname + '/../../client/js/beseda.js';
+        dispatcher.sendFile(file, 'text/javascript');
+    }).get('/beseda.min.js', function(dispatcher) {
+        var file = __dirname + '/../../client/js/beseda.min.js';
+        dispatcher.sendFile(file, 'text/javascript');
+    });
+    this.messageRouter = new MessageRouter(this);
 
     /**
      *  Setup Socket.IO
@@ -98,17 +116,14 @@ Server = module.exports = function(options) {
     var listeners = this.httpServer.listeners('request');
     this.httpServer.removeAllListeners('request');
     this.httpServer.addListener('request', function(request, response) {
-        if (!self._serveStatic(request, response)) {
+        var dispatcher = self.router.dispatch(request, response);
+
+        if (!dispatcher.isDispatched) {
             for (var i = 0; i < listeners.length; i++) {
                 listeners[i].call(this, request, response);
             }
         }
     });
-
-    /**
-     *  Setup Router
-     **/
-    this.router = new Router(this);
 
     /**
      *  Setup PubSub
@@ -127,38 +142,50 @@ Server = module.exports = function(options) {
         // Use PubSub from options
         this.pubSub = this.options.pubSub;
     }
+
+    /**
+     *  Setup Monitor
+     **/
+    if (this.options.monitor) {
+        this.monitor = new MonitorUpdater(this, this.options.monitor);
+        this.monitor.start();
+    }
+
+    if (this._isHTTPServerOpened()) {
+        this._logBesedaStarted();
+    }
 }
 
 util.inherits(Server, process.EventEmitter);
 
 Server.prototype.listen = function(port, host) {
-    if (this.options.server) {
-        throw 'You must call you server listen method';
+    if (this._isHTTPServerOpened()) {
+        throw new Error('HTTP server already listen');
     }
 
     host = host || this.options.host;
     port = port || this.options.port;
 
-    this.httpServer.listen(port, host);
+    try {
+        this.httpServer.listen(port, host);
+    } catch (e) {
+        throw new Error('Cant start beseda on ' + host + ':' + port + ': ' + e);
+    }
 
-    this.log('Beseda started on ' + host + ':' + port);
+    this._logBesedaStarted();
 }
 
 Server.prototype.log = function(message) {
     return this.options.log(message);
 }
 
-Server.prototype.setOptions = function(options, extend) {
-    this.options = Object.merge(options, extend);
-}
-
 Server.prototype._onMessage = function(client, message) {
-    this.router.dispatch(client, message);
+    this.messageRouter.dispatch(client, message);
 }
 
 Server.prototype._onDisconnect = function(client) {
     if (client.session) {
-		this.log('Session ' + client.session.id + ' is disconnected');
+        this.log('Session ' + client.session.id + ' is disconnected');
         client.session.destroy();
     } else {
         this.log('Client without session is disconnected')
@@ -167,59 +194,12 @@ Server.prototype._onDisconnect = function(client) {
     this.emit('disconnect', client.session);
 }
 
-Server.prototype._serveStatic = function(request, response) {
-    var path = url.parse(request.url).pathname;
+Server.prototype._isHTTPServerOpened = function() {
+    return typeof this.httpServer.fd === 'number';
+}
 
-    if (['/beseda.js', '/beseda.min.js'].indexOf(path) != -1) {
-        var file = __dirname + '/../../../client/js' + path;
+Server.prototype._logBesedaStarted = function() {
+    var serverAddress = this.httpServer.address();
 
-        fs.stat(file, function (error, stat) {
-            if (error) {
-                this.log('Can\'t serve static "' + path + '": ' + error);
-
-                response.writeHead(404);
-                response.end();
-            } else {
-                var mtime   = Date.parse(stat.mtime),
-                    headers = {
-                        'Etag'          : JSON.stringify([stat.ino, stat.size, mtime].join('-')),
-                        'Date'          : new(Date)().toUTCString(),
-                        'Last-Modified' : new(Date)(stat.mtime).toUTCString(),
-                        'Server'         : 'Beseda',
-                        'Cache-Control'  : 'max-age=3600' };
-
-                if (request.headers['if-none-match'] === headers['Etag'] &&
-                    Date.parse(request.headers['if-modified-since']) >= mtime) {
-
-                    response.writeHead(304, headers);
-                    response.end();
-                } else if (request.method === 'HEAD') {
-                    response.writeHead(200, headers);
-                    response.end();
-                } else {
-                    headers['Content-Length'] = stat.size;
-                    headers['Content-Type']   = 'text/javascript';
-
-                    // TODO: Impement stream and buffer for caching
-                    try {
-                        var content = fs.readFileSync(file, 'utf8');
-                    } catch (e) {
-                        this.log('Can\'t serve static "' + path + '": ' + error);
-
-                        response.writeHead(404);
-                        response.end();
-
-                        return;
-                    }
-
-                    response.writeHead(200, headers);
-                    response.end(content, 'utf8');
-                }
-            }
-        }.bind(this));
-
-        return true;
-    } else {
-        return false;
-    }
+    this.log('Beseda started on ' + serverAddress.address + ':' + serverAddress.port);
 }

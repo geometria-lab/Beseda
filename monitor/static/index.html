@@ -1,0 +1,59 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>Beseda Monitor</title>
+    <link href="/monitor.css" rel="stylesheet" type="text/css"/>
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.5.2/jquery.min.js" type="text/javascript" charset="utf-8"></script>
+    <script src="http://ajax.microsoft.com/ajax/jquery.templates/beta1/jquery.tmpl.min.js" type="text/javascript" charset="utf-8"></script>
+    <script src="/socket.io/socket.io.js" type="text/javascript" charset="utf-8"></script>
+    <script src="/monitor.js" type="text/javascript" charset="utf-8"></script>
+</head>
+<body>
+    <h1>Beseda Monitor</h1>
+    <ul id="servers"></ul>
+    <script id="serverTemplate" type="text/x-jquery-tmpl">
+        <li id="server-${_encodedName}">
+            <h2>${name}<span class="_lastUpdate">${_lastUpdate}</span></h2>
+            <ul>
+                <li>Channels: <span class="channelsCount">${channelsCount}</span></li>
+                <li>Sessions: <span class="sessionsCount">${sessionsCount}</span></li>
+            </ul>
+            <table class="stats">
+                <thead>
+                    <tr>
+                        <th></th>
+                        <th>Accepted</th>
+                        <th>Accepted at</th>
+                        <th>Declined</th>
+                        <th>Declined at</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Connections</td>
+                        <td class="connectionCount">${connectionCount}</td>
+                        <td class="_connectionTimestamp">${_connectionTimestamp}</td>
+                        <td class="declinedConnectionCount">${declinedConnectionCount}</td>
+                        <td class="_declinedConnectionTimestamp">${_declinedConnectionTimestamp}</td>
+                    </tr>
+                    <tr>
+                        <td>Subscriptions</td>
+                        <td class="subscriptionCount">${subscriptionCount}</td>
+                        <td class="_subscriptionTimestamp">${_subscriptionTimestamp}</td>
+                        <td class="declinedSubscriptionCount">${declinedSubscriptionCount}</td>
+                        <td class="_declinedSubscriptionTimestamp">${_declinedSubscriptionTimestamp}</td>
+                    </tr>
+                    <tr>
+                        <td>Publications</td>
+                        <td class="publicationCount">${publicationCount}</td>
+                        <td class="_publicationTimestamp">${_publicationTimestamp}</td>
+                        <td class="declinedPublicationCount">${declinedPublicationCount}</td>
+                        <td class="_declinedPublicationTimestamp">${_declinedPublicationTimestamp}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </li>
+    </script>
+</body>
+</html>

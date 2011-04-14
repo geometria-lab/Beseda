@@ -1,6 +1,6 @@
 {
     "name": "beseda",
-    "version": "0.0.1",
+    "version": "0.0.2",
     "description": "Beseda is fast and well designed Pub/Sub server with server-side and crossbrowser client-side API for realtime messaging.",
     "keywords" : ["pub/sub", "socket.io", "bayeux"],
     "homepage": "http://geometria-lab.net",

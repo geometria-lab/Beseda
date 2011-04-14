@@ -21,18 +21,22 @@ SubscriptionRequest.prototype.approve = function() {
     this._sendResponse(true);
 
     this.session.server.log('Session ' + this.session.id + ' subscription request to channel "' + this._getChannelNames() + '" APPROVED');
+
+    this.session.server.monitor.increment('subscription');
 }
 
 SubscriptionRequest.prototype.decline = function(error) {
     clearTimeout(this._timeout);
 
     if (this.isApproved) {
-        throw 'Session ' + this.session.id + ' subscription request to channel "' + this._getChannelNames() + '" already approved';
+        throw new Error('Session ' + this.session.id + ' subscription request to channel "' + this._getChannelNames() + '" already approved');
     }
 
     this._sendResponse(false, error || 'Subscription declined');
 
     this.session.server.log('Session ' + this.session.id + ' subscription request to channel "' + this._getChannelNames() + '" DECLINED' + (error ? ': ' + error : ''));
+
+    this.session.server.monitor.increment('declinedSubscription');
 }
 
 SubscriptionRequest.prototype._sendResponse = function(successful, error) {
@@ -47,7 +51,7 @@ SubscriptionRequest.prototype._sendResponse = function(successful, error) {
 }
 
 SubscriptionRequest.prototype._getChannelNames = function() {
-	return this.channels.map(function(channel){
-		return channel.name;
-	}).join(', ');
+    return this.channels.map(function(channel){
+        return channel.name;
+    }).join(', ');
 }
