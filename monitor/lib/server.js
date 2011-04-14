@@ -21,9 +21,9 @@ Server = module.exports = function(options) {
     }, options);
 
     this._servers = {};
-	this._channels = {};
+    this._channels = {};
 
-	/**
+    /**
      *  Setup Router
      **/
     this.router = new Router(this);
@@ -46,16 +46,16 @@ Server = module.exports = function(options) {
         dispatcher.request.on('end', function() {
             var server = JSON.parse(body);
 
-			// Create channel diff and broadcast
-			this._channels[server.name] = server.channels;
-			delete server.channels
+            // Create channel diff and broadcast
+            this._channels[server.name] = server.channels;
+            delete server.channels
 
-			server.lastUpdate = Date.now();
+            server.lastUpdate = Date.now();
             server.isDown = false;
 
             this._servers[server.name] = server;
 
-			this.socketIO.broadcast({ type : 'servers', servers : [ server ] });
+            this.socketIO.broadcast({ type : 'servers', servers : [ server ] });
 
             this.log('Received stats update from ' + server.name);
         }.bind(this));
@@ -87,13 +87,13 @@ Server = module.exports = function(options) {
         this.httpServer = http.createServer();
     }
 
-	/**
-	 * Setup Socket.IO
-	 **/
-	this.socketIO = io.listen(this.httpServer);
+    /**
+     * Setup Socket.IO
+     **/
+    this.socketIO = io.listen(this.httpServer);
     this.socketIO.on('connection', this._onConnection.bind(this));
 
-	// Add request listener with static before others
+    // Add request listener with static before others
     var self = this;
     var listeners = this.httpServer.listeners('request');
     this.httpServer.removeAllListeners('request');
@@ -102,10 +102,10 @@ Server = module.exports = function(options) {
             var dispatcher = self.router.dispatch(request, response);
 
             if (!dispatcher.isDispatched) {
-	            for (var i = 0; i < listeners.length; i++) {
-	                listeners[i].call(this, request, response);
-	            }
-	        }
+                for (var i = 0; i < listeners.length; i++) {
+                    listeners[i].call(this, request, response);
+                }
+            }
         }
     });
 
@@ -140,7 +140,7 @@ Server.prototype._authorize = function(request, response) {
     }
 
     response.writeHead(401, {
-		'Server'           : 'Beseda',
+        'Server'           : 'Beseda',
         'WWW-Authenticate' : 'Basic realm="Beseda Monitor"'
     });
     response.end();
@@ -152,7 +152,7 @@ Server.prototype._markAsDown = function() {
     var now = Date.now();
 
     for (var name in this._servers) {
-		var server = this._servers[name];
+        var server = this._servers[name];
         if (!server.isDown && now > server.lastUpdate + (server.interval + 3) * 1000) {
             this.log(name + ' not updated stats and marked as down');
 
@@ -162,16 +162,16 @@ Server.prototype._markAsDown = function() {
 }
 
 Server.prototype._onConnection = function(client) {
-	client.on('message', this._onMessage.bind(this, null, client));
-	var servers = [];
-	for (var name in this._servers) {
-		servers.push(this._servers[name]);
-	}
+    client.on('message', this._onMessage.bind(this, null, client));
+    var servers = [];
+    for (var name in this._servers) {
+        servers.push(this._servers[name]);
+    }
 
-	client.send({ type : 'servers', servers : servers });
+    client.send({ type : 'servers', servers : servers });
 }
 
 Server.prototype._onMessage = function(message, client) {
-	console.log(message);
-	console.log(client);
+    console.log(message);
+    console.log(client);
 }
