@@ -47,7 +47,7 @@ UnsubscriptionRequest.prototype._sendResponse = function(successful, error) {
 }
 
 UnsubscriptionRequest.prototype._getChannelNames = function() {
-	return this.channels.map(function(channel){
-		return channel.name;
-	}).join(', ');
+    return this.channels.map(function(channel){
+        return channel.name;
+    }).join(', ');
 }

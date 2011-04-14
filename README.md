@@ -20,10 +20,10 @@ Features
 * Horizontal scaling (depends on Pub/Sub engine)
 * Monitor
 * Server-side clients:
-	* PHP
-	* Ruby (coming soon)
-	* Node.js (coming soon)
-	* Python (coming soon)
+    * PHP
+    * Ruby (coming soon)
+    * Node.js (coming soon)
+    * Python (coming soon)
 * Browsers client. Works well:
     * Safari 4
     * Safari 5
@@ -77,35 +77,35 @@ Get started!
 
    3.3. Create you test.html
 
-		<script src="http://localhost:3000/socket.io/socket.io.js" type="text/javascript"></script>
-		<script src="http://localhost:3000/beseda.min.js" type="text/javascript"></script>
-		<script src="http://localhost:3000/beseda.min.js" type="text/javascript"></script>
-		<script type="text/javascript">
+        <script src="http://localhost:3000/socket.io/socket.io.js" type="text/javascript"></script>
+        <script src="http://localhost:3000/beseda.min.js" type="text/javascript"></script>
+        <script src="http://localhost:3000/beseda.min.js" type="text/javascript"></script>
+        <script type="text/javascript">
 
         function say(what) {
-		    if ('console' in window && 'log' in console) {
-			    console.log(what);
-			} else {
-			    alert(what);
-			}
-		}
+            if ('console' in window && 'log' in console) {
+                console.log(what);
+            } else {
+                alert(what);
+            }
+        }
 
-		var beseda = new Beseda({ host : 'localhost', port : 3000 });
+        var beseda = new Beseda({ host : 'localhost', port : 3000 });
 
-		beseda.subscribe('/myFavoriteChannel', function(error) {
-			say('You are subscribed to "/myFavoriteChannel".');
-		});
+        beseda.subscribe('/myFavoriteChannel', function(error) {
+            say('You are subscribed to "/myFavoriteChannel".');
+        });
 
-		beseda.on('message', function(channel, message) {
-			say(channel + ': "' + message + '"');
-		});
+        beseda.on('message', function(channel, message) {
+            say(channel + ': "' + message + '"');
+        });
 
-		</script>
-		<input type="button" value="Send me a nice message dude..." onclick="beseda.publish('/myFavoriteChannel', 'Nice!');return false"/>
+        </script>
+        <input type="button" value="Send me a nice message dude..." onclick="beseda.publish('/myFavoriteChannel', 'Nice!');return false"/>
 
-	3.4 Test it
+    3.4 Test it
 
-	Open test.html in you favorite browser and open console (firebug, javascript console...)
+    Open test.html in you favorite browser and open console (firebug, javascript console...)
 
 Documentation
 ---

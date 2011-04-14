@@ -60,7 +60,7 @@ Router.Dispatcher = function(server, request, response) {
 Router.Dispatcher.prototype.dispatch = function(route) {
     this.isDispatched = true;
 
-	var params = url.parse(this.request.url, true).query;
+    var params = url.parse(this.request.url, true).query;
 
     route.callback(this, params);
 }
@@ -120,8 +120,8 @@ Router.Dispatcher.prototype.sendJSON = function(data) {
 }
 
 Router.Dispatcher.prototype.send = function(code, headers) {
-	headers = headers || {};
-	headers['Server'] = 'Beseda';
+    headers = headers || {};
+    headers['Server'] = 'Beseda';
 
     this.response.writeHead(code, headers);
     this.response.end();

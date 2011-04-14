@@ -5,7 +5,7 @@ try {
 }
 
 var Beseda = require('./../index.js'),
-	Monitor = require('./../monitor');
+    Monitor = require('./../monitor');
 
 var server = connect.createServer(connect.static(__dirname));
 server.listen(3000);

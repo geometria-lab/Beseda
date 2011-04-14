@@ -134,9 +134,9 @@ MonitorUpdater.prototype.update = function() {
     // All data
     var data = {
         name          : serverName,
-		channelsCount : strippedChannels.length,
+        channelsCount : strippedChannels.length,
         sessionsCount : sessionsCount,
-		channels      : strippedChannels,
+        channels      : strippedChannels,
         interval      : this.options.interval
     }
 
@@ -167,9 +167,9 @@ MonitorUpdater.prototype.update = function() {
     }
 
     var request = (this.options.ssl ? https : http).request(options, function(response) {
-		if (response.headers.server == undefined || response.headers.server != 'Beseda') {
-			throw new Error('Invalid Monitor server ' + this.options.host + ':' + this.options.port);
-		} else if (response.statusCode == 401) {
+        if (response.headers.server == undefined || response.headers.server != 'Beseda') {
+            throw new Error('Invalid Monitor server ' + this.options.host + ':' + this.options.port);
+        } else if (response.statusCode == 401) {
             throw new Error('Invalid Monitor login (' + this.options.login + ') and password (' + this.options.password + ')');
         } else if (response.statusCode != 200) {
             this.server.log('Cant update Monitor stats: ' + response.statusCode);
