@@ -69,7 +69,7 @@ Get started!
          var Beseda = require('beseda'),
              beseda = new Beseda();
 
-         beseda.listen(3000);
+         beseda.listen();
 
     3.2. Run by Node.js
 
@@ -77,9 +77,9 @@ Get started!
 
     3.3. Create you test.html
 
-        <script src="http://localhost:3000/socket.io/socket.io.js" type="text/javascript"></script>
-        <script src="http://localhost:3000/beseda.min.js" type="text/javascript"></script>
-        <script src="http://localhost:3000/beseda.min.js" type="text/javascript"></script>
+        <script src="http://localhost:4000/socket.io/socket.io.js" type="text/javascript"></script>
+        <script src="http://localhost:4000/beseda.min.js" type="text/javascript"></script>
+        <script src="http://localhost:4000/beseda.min.js" type="text/javascript"></script>
         <script type="text/javascript">
 
         function say(what) {
@@ -90,7 +90,7 @@ Get started!
             }
         }
 
-        var beseda = new Beseda({ host : 'localhost', port : 3000 });
+        var beseda = new Beseda({ host : 'localhost', port : 4000 });
 
         beseda.subscribe('/myFavoriteChannel', function(error) {
             say('You are subscribed to "/myFavoriteChannel".');

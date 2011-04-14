@@ -18,7 +18,7 @@ Server = module.exports = function(options) {
 
     this.options = Object.merge({
         host : '0.0.0.0',
-        port : 3000,
+        port : 4000,
         ssl  : false,
 
         server : null,

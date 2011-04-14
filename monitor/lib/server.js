@@ -13,7 +13,7 @@ require('./../../server/lib/utils.js');
 Server = module.exports = function(options) {
     this.options = Object.merge({
         host : '0.0.0.0',
-        port : 80,
+        port : 4001,
         ssl  : false,
 
         login    : 'admin',

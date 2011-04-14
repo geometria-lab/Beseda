@@ -15,7 +15,7 @@ MonitorUpdater = module.exports = function(server, options) {
         name : null,
 
         host : '127.0.0.1',
-        port : options.ssl ? 443 : 80,
+        port : options.ssl ? 443 : 4001,
         ssl  : false,
 
         login    : 'admin',
