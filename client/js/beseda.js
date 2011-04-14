@@ -1,3 +1,5 @@
+// TODO: Reconnect? and update subscribes on server when it down and up
+
 var Beseda = function(options) {
     this.setOptions({
         socketIO : {
