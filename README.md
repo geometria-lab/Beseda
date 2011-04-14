@@ -18,7 +18,7 @@ Features
     * Publishing
     * Subscribing
 * Horizontal scaling (depends on Pub/Sub engine)
-* Monitor (coming soon)
+* Monitor
 * Server-side clients:
     * PHP
     * Ruby (coming soon)

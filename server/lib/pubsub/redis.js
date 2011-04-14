@@ -31,5 +31,5 @@ RedisPubSub.prototype.publish = function(channel, message) {
 }
 
 RedisPubSub.prototype._oneConnectionError = function(error) {
-    throw 'Can\'t connect to redis ' + this.options.host + ':' + this.options.port + ' ' + error;
+    throw new Error('Can\'t connect to redis ' + this.options.host + ':' + this.options.port + ' ' + error);
 }

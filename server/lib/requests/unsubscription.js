@@ -27,7 +27,7 @@ UnsubscriptionRequest.prototype.decline = function(error) {
     clearTimeout(this._timeout);
 
     if (this.isApproved) {
-        throw 'Session ' + this.session.id + ' unsubscription request to channel "' + this._getChannelNames() + '" already approved';
+        throw new Error('Session ' + this.session.id + ' unsubscription request to channel "' + this._getChannelNames() + '" already approved');
     }
 
     this._sendResponse(false, error || 'Unsubscription declined');
@@ -47,7 +47,7 @@ UnsubscriptionRequest.prototype._sendResponse = function(successful, error) {
 }
 
 UnsubscriptionRequest.prototype._getChannelNames = function() {
-	return this.channels.map(function(channel){
-		return channel.name;
-	}).join(', ');
+    return this.channels.map(function(channel){
+        return channel.name;
+    }).join(', ');
 }

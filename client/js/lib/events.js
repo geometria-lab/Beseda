@@ -24,7 +24,7 @@ Beseda.prototype.removeAllListeners = function(event) {
 }
 
 Beseda.prototype.emit = function() {
-	var args = Array.prototype.slice.call(arguments);
+    var args = Array.prototype.slice.call(arguments);
     var event = args.shift();
 
     if (event in this._events) {
