@@ -4,7 +4,7 @@ var Beseda = function(options) {
     this.setOptions({
         socketIO : {
             host : document.location.hostname,
-            port : document.location.port || 80
+            port : document.location.port || 4000
         },
         log : function() {
             if ('console' in window && 'log' in console) {
