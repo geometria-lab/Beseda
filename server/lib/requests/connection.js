@@ -8,7 +8,7 @@ ConnectionRequest = module.exports = function(session, requestMessage) {
                                this.session.server.options.connectionTimeout);
 
     this.session.server.log('Session ' + this.session.id + ' connection request started');
-}
+};
 
 ConnectionRequest.prototype.approve = function() {
     clearTimeout(this._timeout);
@@ -19,8 +19,8 @@ ConnectionRequest.prototype.approve = function() {
 
     this.session.server.log('Session ' + this.session.id + ' connection request APPROVED');
 
-    this.session.server.monitor.increment('connection');
-}
+    //this.session.server.monitor.increment('connection');
+};
 
 ConnectionRequest.prototype.decline = function(error) {
     clearTimeout(this._timeout);
@@ -33,10 +33,10 @@ ConnectionRequest.prototype.decline = function(error) {
 
     this.session.server.log('Session ' + this.session.id + ' connection request DECLINED' + (error ? ': ' + error : ''));
 
-    this.session.server.monitor.increment('declinedConnection');
+    //this.session.server.monitor.increment('declinedConnection');
 
     this.session.destroy();
-}
+};
 
 ConnectionRequest.prototype._sendResponse = function(successful, error) {
     return this.session.send({
@@ -46,4 +46,4 @@ ConnectionRequest.prototype._sendResponse = function(successful, error) {
         successful : successful,
         error      : error
     });
-}
+};

@@ -5,13 +5,13 @@ var http  = require('http'),
 var Channel = require('./channel.js'),
     Session = require('./session.js');
 
-require('./utils.js');
+var utils = require('./utils.js');
 
 MonitorUpdater = module.exports = function(server, options) {
     this.server    = server;
     this._interval = null;
 
-    this.options = Object.merge({
+    this.options = utils.merge({
         name : null,
 
         host : '127.0.0.1',
@@ -60,7 +60,7 @@ MonitorUpdater = module.exports = function(server, options) {
         this._stats[field + 'Timestamp'] = null;
         this._stats[field + 'Count'] = 0;
     }
-}
+};
 
 MonitorUpdater._statFields = ['connection', 'declinedConnection', 'subscription',
                               'declinedSubscription', 'publication', 'declinedPublication'];
@@ -69,12 +69,12 @@ MonitorUpdater.prototype.start = function() {
     if (!this._interval) {
         this._interval = setInterval(this.update.bind(this), this.options.interval * 1000);
     }
-}
+};
 
 MonitorUpdater.prototype.stop = function() {
     clearInterval(this._interval);
     this._interval = null;
-}
+};
 
 MonitorUpdater.prototype.increment = function(field) {
     if (!field in MonitorUpdater._statFields) {
@@ -83,7 +83,7 @@ MonitorUpdater.prototype.increment = function(field) {
 
     this._stats[field + 'Timestamp'] = Date.now();
     this._stats[field + 'Count']++;
-}
+};
 
 MonitorUpdater.prototype.update = function() {
     // Get server name
@@ -138,7 +138,7 @@ MonitorUpdater.prototype.update = function() {
         sessionsCount : sessionsCount,
         channels      : strippedChannels,
         interval      : this.options.interval
-    }
+    };
 
     for (var i = 0; i < MonitorUpdater._statFields.length; i++) {
         var field = MonitorUpdater._statFields[i];
@@ -163,7 +163,7 @@ MonitorUpdater.prototype.update = function() {
     };
 
     if (this._credentials) {
-        options = Object.merge(options, this._credentials);
+        options = utils.merge(options, this._credentials);
     }
 
     var request = (this.options.ssl ? https : http).request(options, function(response) {
@@ -182,4 +182,4 @@ MonitorUpdater.prototype.update = function() {
 
     request.write(json);
     request.end();
-}
+};

@@ -1,17 +1,17 @@
 var http  = require('http'),
     https = require('https'),
-    util  = require(process.binding('natives').util ? 'util' : 'sys');
+    util  = require('util');
 
 var io = require('./../../server/vendor/socket.io');
 
 var Router = require('./../../server/lib/router.js');
 
-require('./../../server/lib/utils.js');
+var utils = require('./../../server/lib/utils.js');
 
 // TODO: Change router to connect framework
 
 Server = module.exports = function(options) {
-    this.options = Object.merge({
+    this.options = utils.merge({
         host : '0.0.0.0',
         port : 4001,
         ssl  : false,
@@ -48,7 +48,7 @@ Server = module.exports = function(options) {
 
             // Create channel diff and broadcast
             this._channels[server.name] = server.channels;
-            delete server.channels
+            delete server.channels;
 
             server.lastUpdate = Date.now();
             server.isDown = false;

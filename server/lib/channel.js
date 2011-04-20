@@ -19,22 +19,22 @@ Channel = module.exports = function(server, name) {
     } else {
         channels[name] = this;
     }
-}
+};
 
 Channel.get = function(name) {
     return channels[name]
-}
+};
 
 Channel.getAll = function() {
     return channels;
-}
+};
 
 Channel.prototype.publish = function(message) {
     this.server.pubSub.publish(this.name, message);
 
     this.publishedTimestamp = Date.now();
     this.publishedCount++;
-}
+};
 
 Channel.prototype.subscribe = function(session) {
     if (this.isSubscribed[session]) {
@@ -47,11 +47,11 @@ Channel.prototype.subscribe = function(session) {
         this.server.pubSub.subscribe(this.name, this._deliverMessage.bind(this));
         this._isConnectedToPubSub = true;
     }
-}
+};
 
 Channel.prototype.isSubscribed = function(session){
-    return !!this.subscriptions[session.id]
-}
+    return !!this.subscriptions[session.id];
+};
 
 Channel.prototype.unsubscribe = function(session) {
     if (!this.isSubscribed(session)) {
@@ -64,7 +64,7 @@ Channel.prototype.unsubscribe = function(session) {
         this.server.pubSub.unsubscribe(this.name);
         this._isConnectedToPubSub = false;
     }
-}
+};
 
 Channel.prototype._deliverMessage = function(message) {
     var count = 0;
@@ -79,4 +79,4 @@ Channel.prototype._deliverMessage = function(message) {
     this.receivedCount++;
 
     this.server.log('Receive new message to "' + this.name + '" and deliver to ' + count + ' subscribers');
-}
+};

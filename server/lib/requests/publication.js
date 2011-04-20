@@ -9,7 +9,7 @@ PublicationRequest = module.exports = function(session, requestMessage, channel)
                                this.session.server.options.publicationTimeout);
 
     this.session.server.log('Session ' + this.session.id + ' publication request to channel "' + this.channel.name + '" started');
-}
+};
 
 PublicationRequest.prototype.approve = function() {
     clearTimeout(this._timeout);
@@ -22,8 +22,8 @@ PublicationRequest.prototype.approve = function() {
 
     this.session.server.log('Session ' + this.session.id + ' publication request to channel "' + this.channel.name + '" APPROVED');
 
-    this.session.server.monitor.increment('publication');
-}
+   // this.session.server.monitor.increment('publication');
+};
 
 PublicationRequest.prototype.decline = function(error) {
     clearTimeout(this._timeout);
@@ -36,8 +36,8 @@ PublicationRequest.prototype.decline = function(error) {
 
     this.session.server.log('Session ' + this.session.id + ' publication request to channel "' + this.channel.name + '" DECLINED' + (error ? ': ' + error : ''));
 
-    this.session.server.monitor.increment('declinedPublication');
-}
+    //this.session.server.monitor.increment('declinedPublication');
+};
 
 PublicationRequest.prototype._sendResponse = function(successful, error) {
     return this.session.send({
@@ -47,5 +47,5 @@ PublicationRequest.prototype._sendResponse = function(successful, error) {
         successful   : successful,
         error        : error
     });
-}
+};
 
