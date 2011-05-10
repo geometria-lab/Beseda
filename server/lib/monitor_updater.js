@@ -14,7 +14,7 @@ MonitorUpdater = module.exports = function(server, options) {
     this.options = utils.merge({
         name : null,
 
-        host : '127.0.0.1',
+        host : '0.0.0.0',
         port : options.ssl ? 443 : 4001,
         ssl  : false,
 

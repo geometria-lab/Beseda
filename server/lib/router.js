@@ -1,8 +1,8 @@
-var fs  = require('fs'),
-    url = require('url');
+var fs   = require('fs'),
+    url  = require('url'),
+    util = require('util');
 
-Router = module.exports = function(server) {
-    this.server  = server;
+Router = module.exports = function() {
     this._routes = [];
 };
 
@@ -23,54 +23,82 @@ Router.prototype.post = function(path, callback) {
 };
 
 Router.prototype.dispatch = function(request, response) {
-    var dispatcher = new Router.Dispatcher(this.server, request, response);
+    for (var i = 0, l = this._routes.length; i < l; i++) {
+    		var route = this._routes[i];
 
-    this._routes.forEach(function(route) {
-        if (route.isValid(request)) {
-            dispatcher.dispatch(route);
+    		if (route.isValid(request)) {
+    			route.dispatch(request, response);
 
-            return dispatcher;
+            return true;
         }
-    });
+    }
 
-    return dispatcher;
+    return false;
 };
 
 Router.Route = function(method, path, callback) {
-    this.method   = method;
-    this.path     = path;
-    this.callback = callback;
+    this.__method   = method;
+    this.__callback = callback;
+
+    this.__pathHash = path.split('/');
 };
 
 Router.Route.prototype.isValid = function(request) {
-    var requestPath = url.parse(request.url).pathname;
 
-    return (requestPath == this.path || requestPath == ('/' + this.path)) &&
-           (this.method == request.method || (this.method == 'GET' && request.method == 'HEAD'));
+	var result = this.__method === request.method || 
+				(this.__method === 'GET' && request.method === 'HEAD');
+
+	if (result) {
+		var requestPath = url.parse(request.url).pathname;
+
+		var requestPathHash = requestPath.split('/');
+		var i = 0, 
+			l = this.__pathHash.length;
+
+		while (i < l) {
+			if (this.__pathHash[i] !== requestPathHash[i] &&
+				this.__pathHash[i].indexOf(':') !== 0 ) {
+				result = false;
+
+				break;
+			}
+
+			++i;
+		}
+    	}
+
+    return result;
 };
 
-Router.Dispatcher = function(server, request, response) {
-    this.server   = server;
-    this.request  = request;
-    this.response = response;
+Router.Route.prototype.dispatch = function(request, response) {
+	var parsedUrl = url.parse(request.url, true);
+	var parsedPath = parsedUrl.pathname.split('/');
 
-    this.isDispatched = false;
-};
+	var params = parsedUrl.query || {};
 
-Router.Dispatcher.prototype.dispatch = function(route) {
-    this.isDispatched = true;
+	var i = 0,
+		l = this.__pathHash.length;
 
-    var params = url.parse(this.request.url, true).query;
+	while (i < l) {
+		if (this.__pathHash[i].indexOf(':') === 0) {
+			 params[this.__pathHash[i].substring(1)] = parsedPath[i];
+		}
 
-    route.callback(this, params);
-};
+		++i;
+	}
 
-Router.Dispatcher.prototype.sendFile = function(file, type) {
+
+	this.__callback(request, response, params);
+}
+
+Router.Utils = {};
+Router.Utils.sendFile = function(request, response, file, type) {
+	util.log(file);
     fs.stat(file, function (error, stat) {
         if (error) {
-            this.server.log('Can\'t send file "' + this.request.uri + ' (' + file +')": ' + error);
+            util.log('Can\'t send file "' + request.url + ' (' + file +')": ' + error);
 
-            this.send(404);
+            Router.Utils.send(response, 404);
         } else {
             var mtime   = Date.parse(stat.mtime),
                 headers = {
@@ -80,11 +108,11 @@ Router.Dispatcher.prototype.sendFile = function(file, type) {
                     'Server'         : 'Beseda',
                     'Cache-Control'  : 'max-age=3600' };
 
-            if (this.request.headers['if-none-match'] === headers['Etag'] &&
-                Date.parse(this.request.headers['if-modified-since']) >= mtime) {
+            if (request.headers['if-none-match'] === headers['Etag'] &&
+                Date.parse(request.headers['if-modified-since']) >= mtime) {
 
-                this.send(304, headers);
-            } else if (this.request.method === 'HEAD') {
+                Router.Utils.send(response, 304, headers);
+            } else if (request.method === 'HEAD') {
                 this.send(200, headers);
             } else {
                 headers['Content-Length'] = stat.size;
@@ -94,35 +122,35 @@ Router.Dispatcher.prototype.sendFile = function(file, type) {
                 try {
                     var content = fs.readFileSync(file, 'utf8');
                 } catch (e) {
-                    this.server.log('Can\'t send file "' + this.request.uri + ' (' + file +')": ' + error);
+                    sys.puts('Can\'t send file "' + request.url + ' (' + file +')": ' + error);
 
-                    this.send(404);
+                    Router.Utils.send(response, 404);
 
                     return;
                 }
 
-                this.response.writeHead(200, headers);
-                this.response.end(content, 'utf8');
+                response.writeHead(200, headers);
+                response.end(content, 'utf8');
             }
         }
-    }.bind(this));
+    });
 };
 
-Router.Dispatcher.prototype.sendJSON = function(data) {
+Router.Utils.sendJSON = function(response, data) {
     var json = JSON.stringify(data),
         headers = {
             'Server'         : 'Beseda',
             'Content-Type'   : 'text/json',
             'Content-Length' : json.length };
 
-    this.response.writeHead(200, headers);
-    this.response.end(json, 'utf8');
+	response.writeHead(200, headers);
+    response.end(json, 'utf8');
 };
 
-Router.Dispatcher.prototype.send = function(code, headers) {
+Router.Utils.send = function(response, code, headers) {
     headers = headers || {};
     headers['Server'] = 'Beseda';
 
-    this.response.writeHead(code, headers);
-    this.response.end();
+    response.writeHead(code, headers);
+    response.end();
 };

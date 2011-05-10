@@ -1,15 +1,83 @@
 // TODO: Reconnect? and update subscribes on server when it down and up
 
+
+var IO = function(host, port) {
+	this.__url = "http://" + host + ":" + port;
+	
+	this.emitter = null;
+	this.__connectionID = null;
+
+	this.__sendQueue = [];
+};
+
+IO.prototype.setEmitter = function(emitter) {
+	this.emitter  = emitter;
+};
+
+IO.prototype.connect = function() {
+	var self = this;
+
+	$.get(this.__url + "/beseda/io/connect/jsonp-polling?callback=?", function(data) {
+		self.__connectionID = data;
+
+		if (self.__connectionID.length > 0) {
+
+			while(self.__sendQueue.length) {
+				self.send(self.__sendQueue.shift());
+			}
+			
+			self.__poll();
+		}
+	}, 'jsonp');
+};
+
+IO.prototype.send = function(data) {
+	debugger;
+
+	if (this.__connectionID) {
+		$.post(this.__url + "/beseda/io/" + this.__connectionID, data);
+	} else {
+		this.__sendQueue.push(data);
+	}
+};
+
+IO.prototype.disconnect = function() {
+
+};
+
+IO.prototype.__poll = function () {
+	var self = this;
+
+	$.get(this.__url + "/beseda/io/" + this.__connectionID + "?callback=?", function(data) {
+		data = data.split('|');
+		
+		while(data.length) {
+			self.emitter.emit('message', data.shift());
+		}
+		
+		self.__poll();
+	}, 'jsonp');
+}
+
+
+
+
+
+
+
+
+
+
 var Beseda = function(options) {
     this.setOptions({
-        socketIO : {
+        io : {
             host : document.location.hostname,
             port : document.location.port || 4000
         },
         log : function() {
-            if ('console' in window && 'log' in console) {
-                console.log.apply(console, arguments);
-            }
+           // if ('console' in window && 'log' in console) {
+            //    //console.log.apply(console, arguments);
+           // }
         }
     }, options);
 
@@ -21,27 +89,24 @@ var Beseda = function(options) {
     this.clientId = Beseda.utils.uid();
 
     // Setup Socket.io
-    if (this.options.socketIO.constructor == Object) {
-        var socketOptions = Beseda.utils.cloneObject(this.options.socketIO);
-
-        var host = socketOptions.host;
-        delete socketOptions.host;
-
-        this.socketIO = new io.Socket(host, socketOptions);
+    if (this.options.io.constructor == Object) {
+        this.__io = new IO(this.options.io.host, this.options.io.port);
+        this.__io.setEmitter(this);
     } else {
-        this.socketIO = this.options.socketIO;
+    		debugger;
+        //this.socketIO = this.options.socketIO;
     }
 
     var self = this;
-    this.socketIO.on('message', function(message) {
+    this.__io.emitter.on('message', function(message) {
         self.router.dispatch(JSON.parse(message));
     });
-    this.socketIO.on('reconnect', function(){
-        self._onReconnect();
-    });
-    this.socketIO.on('disconnect', function(){
+    //this.socketIO.on('reconnect', function(){
+    //    self._onReconnect();
+    // });
+    //this.socketIO.on('disconnect', function(){
         self._onDisconnect();
-    });
+    //});
 };
 
 Beseda.prototype.isConnected = function() {
@@ -49,7 +114,7 @@ Beseda.prototype.isConnected = function() {
 };
 
 Beseda.prototype.isDisconnected = function() {
-    return this._status == Beseda._statuses.DISCONNECTED;
+    return //this._status == Beseda._statuses.DISCONNECTED;
 };
 
 Beseda.prototype.isConnecting = function() {
@@ -117,11 +182,11 @@ Beseda.prototype.connect = function(callback, additionalMessage) {
 
     this._status = Beseda._statuses.CONNECTING;
 
-    this.socketIO.connect();
+    this.__io.connect();
 
     var message = this._createMessage('/meta/connect', additionalMessage);
 
-    this.socketIO.send(message);
+    this.__io.send(message);
 
     this.log('Beseda send connection request', message);
 
@@ -129,7 +194,7 @@ Beseda.prototype.connect = function(callback, additionalMessage) {
 };
 
 Beseda.prototype.disconnect = function() {
-    this.socketIO.disconnect();
+    this.__io.disconnect();
 };
 
 Beseda.prototype.setOptions = function(options, extend) {
@@ -141,17 +206,17 @@ Beseda.prototype.log = function() {
 };
 
 Beseda.prototype._sendMessage = function(channel, message) {
-    if (this.isDisconnected()) {
-        throw 'You must connect before send message';
-    }
+    //if (this.isDisconnected()) {
+    //    throw 'You must connect before send message';
+    //}
 
     message = this._createMessage(channel, message);
 
-    if (this.isConnecting()) {
-        this._messageQueue.push(message);
-    } else {
-        this.socketIO.send(message);
-    }
+   // if (this.isConnecting()) {
+    //    this._messageQueue.push(message);
+    //} else {
+        this.__io.send(message);
+    //}
 
     return message;
 };
@@ -230,6 +295,8 @@ Beseda.Router = function(client) {
 };
 
 Beseda.Router.prototype.dispatch = function(message) {
+	debugger;
+
     if (message.channel == undefined || message.clientId == undefined || message.id == undefined) {
         this.client.log('Beseda receive incorrect message', message);
         this.client.emit('error', message);
@@ -251,7 +318,7 @@ Beseda.Router.prototype.dispatch = function(message) {
 Beseda.Router.prototype._connect = function(message) {
     if (message.successful) {
         this.client._status = Beseda._statuses.CONNECTED;
-        this.client.socketIO.send(this.client._messageQueue);
+        //this.client.socketIO.send(this.client._messageQueue);
 
         this.client.log('Beseda connected');
     } else {

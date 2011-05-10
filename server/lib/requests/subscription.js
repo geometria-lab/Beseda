@@ -54,4 +54,4 @@ SubscriptionRequest.prototype._getChannelNames = function() {
     return this.channels.map(function(channel){
         return channel.name;
     }).join(', ');
-}
+};

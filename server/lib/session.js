@@ -1,21 +1,23 @@
-var Channel = require('./channel.js');
-var utils = require('./utils.js');
+var Channel = require('./channel');
+var utils = require('./utils');
+var io = require('./io');
 
 var sessions = {};
 
-Session = module.exports = function(server, clientId, client) {
-    this.server = server;
-    this.id     = clientId;
-    this.client = client;
+Session = module.exports = function(clientId, sessionID) {
+    //this.server = server;
+    this.clientID     = clientId;
+    this.__sessionID = sessionID;
 
-    this.client.session = this;
+    this.isConnected = false;
 
+	this.connectedTimestamp = 0;
     this.createdTimestamp = Date.now();
 
-    if (sessions[this.id]) {
-        throw new Error('Session ' + this.id + ' already exists.');
+    if (sessions[this.clientID]) {
+        throw new Error('Session with client ' + this.clientID + ' already exists.');
     } else {
-        sessions[this.id] = this;
+        sessions[this.clientID] = this;
     }
 };
 
@@ -31,9 +33,16 @@ Session.remove = function(id) {
     delete sessions[id];
 };
 
+Session.prototype.connect = function() {
+	this.isConnected = true;
+	this.connectedTimestamp = Date.now();
+}
+
 Session.prototype.subscribe = function(channels) {
     channels = utils.ensure(channels);
+
     for (var i = 0; i < channels.length; i++) {
+		//this.server.monitor.increment("subscription");
         channels[i].subscribe(this);
     }
 };
@@ -46,13 +55,13 @@ Session.prototype.unsubscribe = function(channels) {
 };
 
 Session.prototype.send = function(message) {
-    this.client.send(JSON.stringify(message));
+	process.nextTick(function() {
+		io.write(this.__sessionID, JSON.stringify(message));
+	}.bind(this));
 };
 
 Session.prototype.destroy = function() {
-    delete this.client.session;
-
-    Session.remove(this.id);
+    Session.remove(this.clientID);
 
     var channels = Channel.getAll();
     for (var i = 0; i < channels.length; i++) {

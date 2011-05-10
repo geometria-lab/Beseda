@@ -7,54 +7,74 @@ var ConnectionRequest     = require('./requests/connection.js'),
     UnsubscriptionRequest = require('./requests/unsubscription.js');
 
 var utils = require('./utils.js');
+var io = require('./io');
 
 MessageRouter = module.exports = function(server) {
     this.server = server;
 };
 
-MessageRouter.prototype.dispatch = function(client, message) {
+// TODO: Global error emitter.
+
+MessageRouter.prototype.dispatch = function(sessionID, message) {
     if (message.channel == undefined || message.clientId == undefined || message.id == undefined) {
-        return client.send({
+       /* io.write(sessionID, JSON.stringify({
             channel : '/meta/error',
             data    : 'channel, clientId or id not present'
-        });
+        }));*/
     }
 
-    if (message.channel.indexOf('/meta/') == 0) {
+    if (message.channel.indexOf('/meta/') === 0) {
         var metaChannel = message.channel.substr(6);
 
-        if (!metaChannel in ['connect', 'subscribe', 'unsubscribe']) {
-            return client.send({
+        /*if (!metaChannel in ['connect', 'subscribe', 'unsubscribe']) {
+            io.write(sessionID, JSON.stringify({
                 id       : message.id,
                 channel  : '/meta/error',
                 clientId : message.clientId,
                 data     : 'Meta channel ' + message.channel + ' not supported'
-            });
-        }
+            }));
+        }*/
 
-        this['_' + metaChannel].call(this, client, message);
+		// TODO: change meta channel signature
+        this['_' + metaChannel].call(this, sessionID, message);
     } else if (message.channel.indexOf('/service/') == 0) {
-        return client.send({
+        /*io.write(sessionID, JSON.stringify({
             id       : message.id,
             channel  : '/meta/error',
             clientId : message.clientId,
             data     : 'Service channels not supported'
-        });
+        }));*/
     } else if (message.channel.indexOf('/') == 0) {
-        return this._publish(client, message);
+
+    
+        return this._publish(sessionID, message);
+        
     } else {
-        return client.send({
+        /*io.write(sessionID, JSON.stringify({
             id       : message.id,
             channel  : '/meta/error',
             clientId : message.clientId,
             data     : 'Channel name must be start with /'
-        });
+        }));*/
     }
 };
 
 // TODO: Disconnect after timeout if no one events or connection declined
-MessageRouter.prototype._connect = function(client, message) {
-    var session = new Session(this.server, message.clientId, client);
+MessageRouter.prototype._connect = function(sessionID, message) {
+    var session = new Session(message.clientId, sessionID);
+
+    //var session = Session.get(message.clientId);
+    if (!session) {
+    		/*return client.send({
+		    id         : message.id,
+		    channel    : '/meta/connect',
+		    clientId   : message.clientId,
+		    successful : false,
+		    error      : 'Session ' + message.clientId + ' not present'
+		});*/
+    }
+
+    session.connect();
 
     var request = new ConnectionRequest(session, message);
 
@@ -237,9 +257,9 @@ MessageRouter.prototype._unsubscribe = function(client, message) {
     }
 };
 
-MessageRouter.prototype._publish = function(client, message) {
+MessageRouter.prototype._publish = function(sessionID, message) {
     var session = client.session;
-    if (!session) {
+    /*if (!session) {
         return client.send({
             id           : message.id,
             channel      : message.channel,
@@ -247,13 +267,13 @@ MessageRouter.prototype._publish = function(client, message) {
             successful   : false,
             error        : 'You must send connection message before'
         });
-    }
+    }*/
 
     if (session.id != message.clientId) {
         throw new Error('Client.session not equal message.clientId');
     }
 
-    if (message.channel.indexOf('*') != -1) {
+    /*if (message.channel.indexOf('*') != -1) {
         return client.send({
             id           : message.id,
             channel      : message.channel,
@@ -261,7 +281,7 @@ MessageRouter.prototype._publish = function(client, message) {
             successful   : false,
             error        : 'Wildcards not supported yet'
         });
-    }
+    }*/
 
     var channel = Channel.get(message.channel);
     if (!channel) {

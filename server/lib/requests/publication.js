@@ -1,4 +1,4 @@
-PublicationRequest = module.exports = function(session, requestMessage, channel) {
+var PublicationRequest = module.exports = function(session, requestMessage, channel) {
     this.session        = session;
     this.channel        = channel;
     this.requestMessage = requestMessage;

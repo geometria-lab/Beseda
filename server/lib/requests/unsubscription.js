@@ -9,7 +9,7 @@ UnsubscriptionRequest = module.exports = function(session, requestMessage, chann
                                this.session.server.options.unsubscriptionTimeout);
 
     this.session.server.log('Session ' + this.session.id + ' unsubscription request to channel "' + this._getChannelNames() + '" started');
-}
+};
 
 UnsubscriptionRequest.prototype.approve = function() {
     clearTimeout(this._timeout);
@@ -21,7 +21,7 @@ UnsubscriptionRequest.prototype.approve = function() {
     this._sendResponse(true);
 
     this.session.server.log('Session ' + this.session.id + ' unsubscription request to channel "' + this._getChannelNames() + '" APPROVED');
-}
+};
 
 UnsubscriptionRequest.prototype.decline = function(error) {
     clearTimeout(this._timeout);
@@ -33,7 +33,7 @@ UnsubscriptionRequest.prototype.decline = function(error) {
     this._sendResponse(false, error || 'Unsubscription declined');
 
     this.session.server.log('Session ' + this.session.id + ' unsubscription request to channel "' + this._getChannelNames() + '" DECLINED' + (error ? ': ' + error : ''));
-}
+};
 
 UnsubscriptionRequest.prototype._sendResponse = function(successful, error) {
     return this.session.send({
@@ -44,10 +44,10 @@ UnsubscriptionRequest.prototype._sendResponse = function(successful, error) {
         error        : error,
         subscription : this.requestMessage.subscription
     });
-}
+};
 
 UnsubscriptionRequest.prototype._getChannelNames = function() {
     return this.channels.map(function(channel){
         return channel.name;
     }).join(', ');
-}
+};

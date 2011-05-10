@@ -22,7 +22,7 @@ Channel = module.exports = function(server, name) {
 };
 
 Channel.get = function(name) {
-    return channels[name]
+    return channels[name];
 };
 
 Channel.getAll = function() {
@@ -30,6 +30,8 @@ Channel.getAll = function() {
 };
 
 Channel.prototype.publish = function(message) {
+	this.server.monitor.increment("publication");
+	
     this.server.pubSub.publish(this.name, message);
 
     this.publishedTimestamp = Date.now();
