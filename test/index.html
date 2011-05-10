@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+	<head>
+	    <meta charset="utf-8" />
+	    
+	    <title>Test</title>
+	    
+	    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.6.0/jquery.min.js"></script>
+	    <script>
+			var conectionID;
+	    
+			function connect() {
+				$.get("http://127.0.0.1:8000/io/connect/jsonp-polling?callback=?", function(data) {
+					conectionID = data;
+
+					if (conectionID.length > 0) {
+						poll();
+					}
+				}, 'jsonp');
+			}
+
+			function poll() {
+				$.get("http://127.0.0.1:8000/io/" + conectionID + "?callback=?", function(data) {
+					data = data.split('|');
+
+					while(data.length) {
+						$('#response').append(data.shift() + ', ');
+					}
+					
+					poll();
+				}, 'jsonp');
+			}
+
+			function send() {
+				$.post("http://127.0.0.1:8000/io/" + conectionID, $('#text').val(), function(data) {
+					
+				});
+			}
+
+			connect();
+	   	</script>
+	</head>
+	<body>
+		<textarea id="text"></textarea>
+		<br />
+		<a href="javascript: send();">Send!</a>
+
+		<div id="response"></div>
+		
+	</body>
+</html>
