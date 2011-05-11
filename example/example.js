@@ -1,5 +1,5 @@
 var beseda = new Beseda();
-beseda.connect();
+//beseda.connect();
 
 $(document).delegate('#post', 'submit', function(event) {
     event.preventDefault();

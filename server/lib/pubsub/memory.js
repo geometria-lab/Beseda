@@ -11,12 +11,9 @@ MemoryPubSub.prototype.unsubscribe = function(channel) {
 };
 
 MemoryPubSub.prototype.publish = function(channel, message) {
-    var self = this;
-
     var subscription = this.subscriptions[channel];
+    
     if (subscription) {
-        process.nextTick(function() {
-            subscription(message);
-        });
+        subscription(message);
     }
 };

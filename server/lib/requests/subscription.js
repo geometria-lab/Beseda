@@ -1,3 +1,5 @@
+var util = require('util');
+
 SubscriptionRequest = module.exports = function(session, requestMessage, channels) {
     this.session  = session;
     this.channels = channels;
@@ -5,10 +7,10 @@ SubscriptionRequest = module.exports = function(session, requestMessage, channel
 
     this.isApproved = false;
 
-    this._timeout = setTimeout(this.decline.bind(this),
-                               this.session.server.options.subscriptionTimeout);
+    this._timeout = setTimeout(this.decline.bind(this), 1000);
+                               //this.session.server.options.subscriptionTimeout);
 
-    this.session.server.log('Session ' + this.session.id + ' subscription request to channel "' + this._getChannelNames() + '" started');
+    util.log('Session ' + this.session.connectionID + ' subscription request to channel "' + this._getChannelNames() + '" started');
 };
 
 SubscriptionRequest.prototype.approve = function() {
@@ -16,11 +18,13 @@ SubscriptionRequest.prototype.approve = function() {
 
     this.isApproved = true;
 
-    this.session.subscribe(this.channels);
+    for (var i = 0; i < this.channels.length; i++) {
+        this.channels[i].subscribe(this.session);
+    }
 
     this._sendResponse(true);
 
-    this.session.server.log('Session ' + this.session.id + ' subscription request to channel "' + this._getChannelNames() + '" APPROVED');
+    util.log('Session ' + this.session.connectionID + ' subscription request to channel "' + this._getChannelNames() + '" APPROVED');
 
     //this.session.server.monitor.increment('subscription');
 };
@@ -29,12 +33,12 @@ SubscriptionRequest.prototype.decline = function(error) {
     clearTimeout(this._timeout);
 
     if (this.isApproved) {
-        throw new Error('Session ' + this.session.id + ' subscription request to channel "' + this._getChannelNames() + '" already approved');
+        throw new Error('Session ' + this.session.connectionID + ' subscription request to channel "' + this._getChannelNames() + '" already approved');
     }
 
     this._sendResponse(false, error || 'Subscription declined');
 
-    this.session.server.log('Session ' + this.session.id + ' subscription request to channel "' + this._getChannelNames() + '" DECLINED' + (error ? ': ' + error : ''));
+    util.log('Session ' + this.session.connectionID + ' subscription request to channel "' + this._getChannelNames() + '" DECLINED' + (error ? ': ' + error : ''));
 
     //this.session.server.monitor.increment('declinedSubscription');
 };
@@ -43,7 +47,7 @@ SubscriptionRequest.prototype._sendResponse = function(successful, error) {
     return this.session.send({
         id           : this.requestMessage.id,
         channel      : '/meta/subscribe',
-        clientId     : this.session.id,
+        clientId     : this.session.connectionID,
         successful   : successful,
         error        : error,
         subscription : this.requestMessage.subscription

@@ -4,20 +4,20 @@ var io = require('./io');
 
 var sessions = {};
 
-Session = module.exports = function(clientId, sessionID) {
+Session = module.exports = function(connectionID) {
     //this.server = server;
-    this.clientID     = clientId;
-    this.__sessionID = sessionID;
+    //this.clientID     = clientId;
+    this.connectionID = connectionID;
 
     this.isConnected = false;
 
 	this.connectedTimestamp = 0;
     this.createdTimestamp = Date.now();
 
-    if (sessions[this.clientID]) {
-        throw new Error('Session with client ' + this.clientID + ' already exists.');
+    if (sessions[this.connectionID]) {
+        throw new Error('Session with connection ' + this.connectionID + ' already exists.');
     } else {
-        sessions[this.clientID] = this;
+        sessions[this.connectionID] = this;
     }
 };
 
@@ -38,30 +38,12 @@ Session.prototype.connect = function() {
 	this.connectedTimestamp = Date.now();
 }
 
-Session.prototype.subscribe = function(channels) {
-    channels = utils.ensure(channels);
-
-    for (var i = 0; i < channels.length; i++) {
-		//this.server.monitor.increment("subscription");
-        channels[i].subscribe(this);
-    }
-};
-
-Session.prototype.unsubscribe = function(channels) {
-    channels = utils.ensure(channels);
-    for (var i = 0; i < channels.length; i++) {
-        channels[i].unsubscribe(this);
-    }
-};
-
 Session.prototype.send = function(message) {
-	process.nextTick(function() {
-		io.write(this.__sessionID, JSON.stringify(message));
-	}.bind(this));
+	io.write(this.connectionID, JSON.stringify(message));
 };
 
 Session.prototype.destroy = function() {
-    Session.remove(this.clientID);
+    Session.remove(this.connectionID);
 
     var channels = Channel.getAll();
     for (var i = 0; i < channels.length; i++) {

@@ -1,3 +1,5 @@
+var util = require('util');
+
 UnsubscriptionRequest = module.exports = function(session, requestMessage, channels) {
     this.session  = session;
     this.channels = channels;
@@ -5,10 +7,10 @@ UnsubscriptionRequest = module.exports = function(session, requestMessage, chann
 
     this.isApproved = false;
 
-    this._timeout = setTimeout(this.decline.bind(this),
-                               this.session.server.options.unsubscriptionTimeout);
+    this._timeout = setTimeout(this.decline.bind(this), 1000);
+                               //this.session.server.options.unsubscriptionTimeout);
 
-    this.session.server.log('Session ' + this.session.id + ' unsubscription request to channel "' + this._getChannelNames() + '" started');
+    util.log('Session ' + this.session.connectionID + ' unsubscription request to channel "' + this._getChannelNames() + '" started');
 };
 
 UnsubscriptionRequest.prototype.approve = function() {
@@ -16,30 +18,32 @@ UnsubscriptionRequest.prototype.approve = function() {
 
     this.isApproved = true;
 
-    this.session.unsubscribe(this.channels);
+    for (var i = 0; i < this.channels.length; i++) {
+        this.channels[i].unsubscribe(this.session);
+    }
 
     this._sendResponse(true);
 
-    this.session.server.log('Session ' + this.session.id + ' unsubscription request to channel "' + this._getChannelNames() + '" APPROVED');
+    util.log('Session ' + this.session.connectionID + ' unsubscription request to channel "' + this._getChannelNames() + '" APPROVED');
 };
 
 UnsubscriptionRequest.prototype.decline = function(error) {
     clearTimeout(this._timeout);
 
     if (this.isApproved) {
-        throw new Error('Session ' + this.session.id + ' unsubscription request to channel "' + this._getChannelNames() + '" already approved');
+        throw new Error('Session ' + this.session.conectionID + ' unsubscription request to channel "' + this._getChannelNames() + '" already approved');
     }
 
     this._sendResponse(false, error || 'Unsubscription declined');
 
-    this.session.server.log('Session ' + this.session.id + ' unsubscription request to channel "' + this._getChannelNames() + '" DECLINED' + (error ? ': ' + error : ''));
+    util.log('Session ' + this.session.connectionID + ' unsubscription request to channel "' + this._getChannelNames() + '" DECLINED' + (error ? ': ' + error : ''));
 };
 
 UnsubscriptionRequest.prototype._sendResponse = function(successful, error) {
     return this.session.send({
         id           : this.requestMessage.id,
         channel      : '/meta/unsubscribe',
-        clientId     : this.session.id,
+        clientId     : this.requestMessage.clientId,
         successful   : successful,
         error        : error,
         subscription : this.requestMessage.subscription

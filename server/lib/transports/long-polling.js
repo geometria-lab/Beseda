@@ -46,7 +46,8 @@ function handleCheckIteration() {
 		pollingData = connectionMap[id];
 
 		if (pollingData.response) {
-			if (pollingData.dataQueue.length > 0 || 
+			if (pollingData.loopCount <= 0 ||
+				pollingData.dataQueue.length > 0 || 
 				pollingData.currentFlag !== pollingData.updateFlag) {
 				flush(pollingData);
 			} else {
@@ -109,7 +110,12 @@ var write = exports.write = function(id, data) {
 	var pollingData = connectionMap[id];
 	
 	if (pollingData) {
-		pollingData.dataQueue.push(new Buffer(JSON.stringify(data.toString())));
+		var stringData = data.toString();
+		if (pollingData.isJSONP) {
+			stringData = JSON.stringify(stringData);
+		}
+		
+		pollingData.dataQueue.push(new Buffer(stringData));
 		++pollingData.updateFlag;
 	}
 };

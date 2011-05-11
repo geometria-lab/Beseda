@@ -1,8 +1,10 @@
+var util = require('util');
+
 // TODO: Needs empty channels cleanup by timestamp?
 var channels = {};
 
-Channel = module.exports = function(server, name) {
-    this.server = server;
+Channel = module.exports = function(pubSub, name) {
+    this.__pubSub = pubSub;
     this.name   = name;
     this.subscriptions = {};
 
@@ -30,9 +32,9 @@ Channel.getAll = function() {
 };
 
 Channel.prototype.publish = function(message) {
-	this.server.monitor.increment("publication");
+	//this.server.monitor.increment("publication");
 	
-    this.server.pubSub.publish(this.name, message);
+    this.__pubSub.publish(this.name, message);
 
     this.publishedTimestamp = Date.now();
     this.publishedCount++;
@@ -40,30 +42,30 @@ Channel.prototype.publish = function(message) {
 
 Channel.prototype.subscribe = function(session) {
     if (this.isSubscribed[session]) {
-        throw new Error('Session ' + session.id + ' already subscribed to channel ' + this.name);
+        throw new Error('Session ' + session.connectionID + ' already subscribed to channel ' + this.name);
     }
 
-    this.subscriptions[session.id] = session;
+    this.subscriptions[session.connectionID] = session;
 
     if (!this._isConnectedToPubSub) {
-        this.server.pubSub.subscribe(this.name, this._deliverMessage.bind(this));
+        this.__pubSub.subscribe(this.name, this._deliverMessage.bind(this));
         this._isConnectedToPubSub = true;
     }
 };
 
 Channel.prototype.isSubscribed = function(session){
-    return !!this.subscriptions[session.id];
+    return !!this.subscriptions[session.connectionID];
 };
 
 Channel.prototype.unsubscribe = function(session) {
     if (!this.isSubscribed(session)) {
-        throw new Error('Session ' + session.id + ' not subscribed to channel ' + this.name);
+        throw new Error('Session ' + session.connectionID + ' not subscribed to channel ' + this.name);
     }
 
-    delete this.subscriptions[session.id];
+    delete this.subscriptions[session.connectionID];
 
     if (!this.subscriptions.length) {
-        this.server.pubSub.unsubscribe(this.name);
+        this.__pubSub.unsubscribe(this.name);
         this._isConnectedToPubSub = false;
     }
 };
@@ -80,5 +82,5 @@ Channel.prototype._deliverMessage = function(message) {
     this.receivedTimestamp = Date.now();
     this.receivedCount++;
 
-    this.server.log('Receive new message to "' + this.name + '" and deliver to ' + count + ' subscribers');
+    util.log('Receive new message to "' + this.name + '" and deliver to ' + count + ' subscribers');
 };
