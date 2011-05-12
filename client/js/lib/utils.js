@@ -28,5 +28,17 @@ Beseda.utils = {
         }
 
         return object;
-    }
+    },
+
+    inherits: function(Class, Parent)
+	{
+		var Link = function() {};
+		Link.prototype = Parent.prototype;
+
+		Class.prototype = new Link();
+		Class.prototype.constructor = Class;
+		Class._super = Class.prototype._super = Parent.prototype;
+
+		Link = null;
+	}
 }

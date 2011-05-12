@@ -1,3 +1,67 @@
+var Router = require('./router.js');
+
+var LongPollingTransport      = require('./transports/long_polling.js'),
+	JSONPLongPollingTransport = require('./transports/jsonp_long_polling.js'),
+	PostTransport	          = require('./transports/post.js');
+
+module.exports = IO = function(server) {
+	process.EventEmitter.call(this);
+
+	this.lastID = 0;
+
+	// Add routes
+	var connectRoute = new Router.Route('/beseda/io/connect/:transport',
+										this._handleConnect.bind(this),
+										'GET');
+	this.server.router.addRoute(connectRoute);
+
+	var requestRoute = new Router.Route('/beseda/io/:id',
+										this.__handleRequest.bind(this)
+										['POST', 'GET']);
+	this.server.router.addRoute(requestRoute);
+}
+
+util.inherits(Server, process.EventEmitter);
+
+IO.LONG_POLLING       = 0;
+IO.JSONP_LONG_POLLING = 1;
+IO.WEB_SOCKET         = 2;
+IO.FLASH_SOCKET       = 3;
+
+IO.TRANSPORS = { 
+	'longPolling'      : LONG_POLLING,
+	'JSONPLongPolling' : JSONP_LONG_POLLING,
+	'webSocket'        : WEB_SOCKET,
+	'flashSocket'      : FLASH_SOCKET
+};
+
+IO.prototype._handleConnect = function(request, response, params) {
+	var id = String(++this.lastID);
+
+	if (this.server.options.transport.indexOf(params.transport) !== -1)) {
+		// Server send resonse with present transports
+	} else {
+		switch (params.transport) {
+			case IO.LONG_POLLING:
+				return initLongPolling(id, request, response);
+			case IO.JSONP_LONG_POLLING:
+				return initJSONPLongPolling(id, request, response);
+			default:
+				throw new Error(params.transport + ' not implement yet');
+		}
+	}
+}
+
+IO.prototype._handleRequest = function(request, response, params) {
+	io.processRequest(params.id, request, response);
+}
+
+
+
+
+
+
+
 // TODO: Подробнее оповещать об ошибке!
 ///////////////////////////////////////////////////////////////////////////////
 //
@@ -5,7 +69,17 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-var events = require('events');
+
+
+
+
+
+    			   // TODO: стандатрный обработчик статики в роутере
+
+    			   
+
+
+
 var util = require('util');
 var qs = require('querystring');
 
@@ -19,15 +93,7 @@ var PostData = require('./transports/post-data');
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-var LONG_POLLING  = 0;
-var JSONP_POLLING = 1;
-var WEB_SOCKET    = 2;
 
-var TRANSPORS = { 
-	'long-polling':  LONG_POLLING,
-	'jsonp-polling': JSONP_POLLING,
-	'web-socket': 	 WEB_SOCKET
-};
 
 ///////////////////////////////////////////////////////////////////////////////
 //
@@ -43,16 +109,7 @@ var receiverTable = {};
 var emitter = new events.EventEmitter();
 
 function init(transport, request, response) {
-	var id = String(++lastID);
-
-	switch (TRANSPORS[transport]) {
-		case LONG_POLLING: 
-			return initLongPolling(id, request, response);
-
-		case JSONP_POLLING:
-			return initJSONPPolling(id, request, response);
-			
-	}
+	
 };
 
 function initLongPolling(id, request, response) {

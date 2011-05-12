@@ -1,6 +1,6 @@
 Beseda.Router = function(client) {
     this.client = client;
-}
+};
 
 Beseda.Router.prototype.dispatch = function(message) {
     if (message.channel == undefined || message.clientId == undefined || message.id == undefined) {
@@ -19,30 +19,30 @@ Beseda.Router.prototype.dispatch = function(message) {
             this._message(message);
         }
     }
-}
+};
 
 Beseda.Router.prototype._connect = function(message) {
     if (message.successful) {
         this.client._status = Beseda._statuses.CONNECTED;
-        this.client.socketIO.send(this.client._messageQueue);
+
+        this.client.flushMessageQueue();
 
         this.client.log('Beseda connected');
+        
+   		this.client.emit('connection', message);
     } else {
         this.client.disconnect();
 
         this.client.log('Beseda connection request declined', message);
+        
         this.client.emit('error', message);
     }
-
-    this.client._messageQueue = [];
-
-    this.client.emit('connection', message);
-}
+};
 
 Beseda.Router.prototype._error = function(message) {
     this.client.log('Beseda error: ' + message.data);
     this.client.emit('error', message);
-}
+};
 
 Beseda.Router.prototype._subscribe = function(message) {
     if (message.successful) {
@@ -54,7 +54,7 @@ Beseda.Router.prototype._subscribe = function(message) {
 
     this.client.emit('subscribe', message.error, message);
     this.client.emit('subscribe:' + message.id, message.error, message);
-}
+};
 
 Beseda.Router.prototype._unsubscribe = function(message) {
     if (message.successful) {
@@ -66,7 +66,7 @@ Beseda.Router.prototype._unsubscribe = function(message) {
 
     this.client.emit('unsubscribe', message.error, message);
     this.client.emit('unsubscribe:' + message.id, message.error, message);
-}
+};
 
 Beseda.Router.prototype._message = function(message) {
     if ('successful' in message) {
@@ -84,4 +84,4 @@ Beseda.Router.prototype._message = function(message) {
         this.client.emit('message:' + message.channel, message.data, message);
         this.client.emit('message', message.channel, message.data, message);
     }
-}
+};

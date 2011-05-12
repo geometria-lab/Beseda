@@ -1,13 +1,11 @@
-var fs          = require('fs'),
-    path        = require('path'),
-    util        = require('util'),
-    http        = require('http'),
-    https       = require('https');
+var fs    = require('fs'),
+    path  = require('path'),
+    util  = require('util'),
+    http  = require('http'),
+    https = require('https');
 
-var io = require('./io'),
-	enums = require('./transports/enums');
-
-var Router         = require('./router.js'),
+var IO             = require('./io.js'),
+	Router         = require('./router.js'),
     MessageRouter  = require('./message_router.js');
     //MonitorUpdater = require('./monitor_updater.js');
 
@@ -25,9 +23,9 @@ Server = module.exports = function(options) {
 		    ssl  : false
 		},
         pubSub  : 'memory',
-        monitor : true,
+        monitor : false,
 
-        transports : [ 'longPolling' ],
+        transports : [ 'longPolling', 'JSONPLongPolling', 'webSocket', 'flashSocket' ],
         transportOptions : { longPolling : { reconnectTimeout : 10 } },
 
         connectionTimeout     : 2000, //TODO: Change to seconds
@@ -68,25 +66,24 @@ Server = module.exports = function(options) {
         this.httpServer = this.options.server;
     }
 
-    io.emitter.addListener(enums.EVENT_MESSAGE, this._onMessage.bind(this));
-
     /**
      *  Setup Routers
      **/
     this.router = new Router();
-    this.router.get('/beseda/io/connect/:transport', this.__handleIOConnect.bind(this))
-    
-    			   .get('/beseda/io/:id', this.__handleIO.bind(this))
-    			   .post('/beseda/io/:id', this.__handleIO.bind(this))
+    this.router.get('/beseda/js/:filename', function(request, response, params) {
+	   	// TODO: таблица соответствий и контенттайпа
+		var file = __dirname + '/../../client/js/' + params.filename;
+		Router.Utils.sendFile(request, response, file, 'text/javascript');
+	});
 
-    			   // TODO: стандатрный обработчик статики в роутере
-    			   .get('/beseda/js/:filename', function(request, response, params) {
-    			   		// TODO: таблица соответствий и контенттайпа
-        				var file = __dirname + '/../../client/js/' + params.filename;
-        				Router.Utils.sendFile(request, response, file, 'text/javascript');
-				});
-    
     this.messageRouter = new MessageRouter(this);
+
+	/**
+     *  Setup IO
+     **/
+	this.io = new IO(this);
+    this.io.on('message', this._onMessage.bind(this));
+    this.io.on('disconnect', this._onDisconnect.bind(this));
 
     // Add request listener with static before others
     var self = this;
@@ -132,14 +129,6 @@ Server = module.exports = function(options) {
 };
 
 util.inherits(Server, process.EventEmitter);
-
-Server.prototype.__handleIOConnect = function(request, response, params) {
-	io.init(params.transport, request, response);
-};
-
-Server.prototype.__handleIO = function(request, response, params) {
-	io.processRequest(params.id, request, response);
-};
 
 Server.prototype.listen = function(port, host) {
     if (this._isHTTPServerOpened()) {

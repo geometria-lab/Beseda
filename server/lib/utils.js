@@ -18,12 +18,13 @@ exports.merge = function(object, extend) {
     return object;
 };
 
-exports.ensure = function(array) {
+exports.ensureArray = function(array) {
     return Array.isArray(array) ? array : [ array ];
 };
-
+/*
 exports.camelCasetoUnderscore = function(string) {
 	return string.replace(/([A-Z])/g, function($1) {
 		return '_' + $1.toLowerCase();
 	});
 };
+*/

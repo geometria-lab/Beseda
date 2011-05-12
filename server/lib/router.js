@@ -2,25 +2,34 @@ var fs   = require('fs'),
     url  = require('url'),
     util = require('util');
 
+var utils = require('./utils.js');
+
 Router = module.exports = function() {
     this._routes = [];
 };
 
 Router.prototype.get = function(path, callback) {
-    var route = new Router.Route('GET', path, callback);
+    var route = new Router.Route(path, callback, 'GET');
 
-    this._routes.push(route);
+    this.addRoute(route);
 
     return this;
 };
 
 Router.prototype.post = function(path, callback) {
-    var route = new Router.Route('POST', path, callback);
+    var route = new Router.Route(path, callback, 'POST');
 
-    this._routes.push(route);
+    this.addRoute(route);
 
     return this;
 };
+
+// TODO: Check duplicates?
+Router.prototype.addRoute = function(route) {
+	this._routes.push(route);
+
+	return this;
+}
 
 Router.prototype.dispatch = function(request, response) {
     for (var i = 0, l = this._routes.length; i < l; i++) {
@@ -36,8 +45,8 @@ Router.prototype.dispatch = function(request, response) {
     return false;
 };
 
-Router.Route = function(method, path, callback) {
-    this.__method   = method;
+Router.Route = function(path, callback, methods) {
+    this.__methods  = utils.ensureArray(methods);
     this.__callback = callback;
 
     this.__pathHash = path.split('/');

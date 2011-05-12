@@ -1,39 +1,55 @@
-Beseda.prototype.on = function(event, listener) {
-    if (!(event in this._events)) {
-        this._events[event] = [];
+var EventEmitter = function() {
+	this.__events = {};
+};
+
+EventEmitter.prototype.addListener = function(event, listener) {
+    if (!this.__events[event]) {
+        this.__events[event] = [];
     }
-    this._events[event].push(listener);
-}
+    
+    this.__events[event].push(listener);
+};
 
-Beseda.prototype.addListener = Beseda.prototype.on;
+EventEmitter.prototype.on = EventEmitter.prototype.addListener;
 
-Beseda.prototype.removeListener = function(event, listener) {
-    if (event in this._events) {
-        for (var i = 0; i < this._events[event].length; i++) {
-            if (this._events[event][i] == listener) {
-                this._events[event].splice(i, 1);
+EventEmitter.prototype.once = function(event, listener) {
+	var self = this;
+
+	var listenerClosure = function() {
+		listener.apply(self, arguments);
+		
+		self.removeListener(event, listenerClosure);
+	};
+	
+	this.on(event, listenerClosure);
+};
+
+EventEmitter.prototype.removeListener = function(event, listener) {
+    if (this.__events[event]) {
+        for (var i = 0; i < this.__events[event].length; i++) {
+            if (this.__events[event][i] === listener) {
+                this.__events[event].splice(i, 1);
             }
         }
     }
-}
+};
 
-Beseda.prototype.removeAllListeners = function(event) {
-    if (event in this._events) {
-        this._events[event] = [];
-    }
-}
+EventEmitter.prototype.removeAllListeners = function(event) {
+	this.__events[event] = [];
+};
 
-Beseda.prototype.emit = function() {
+EventEmitter.prototype.emit = function() {
     var args = Array.prototype.slice.call(arguments);
     var event = args.shift();
 
-    if (event in this._events) {
-        for (var i = 0; i < this._events[event].length; i++) {
-            this._events[event][i].apply(this, args);
+    if (this.__events[event]) {
+        for (var i = 0; i < this.__events[event].length; i++) {
+            this.__events[event][i].apply(this, args);
         }
     }
-}
+};
 
-Beseda.prototype.listeners = function(event) {
-    return event in this._events ? this._events[event] : [];
-}
+EventEmitter.prototype.listeners = function(event) {
+    return this.__events[event] || [];
+};
+
