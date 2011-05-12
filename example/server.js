@@ -10,7 +10,7 @@ var Beseda = require('./../server'),
 var server = connect.createServer(connect.static(__dirname));
 server.listen(4000);
 
-var beseda = new Beseda({ server : server, monitor : true });
+var beseda = new Beseda({ server : server, monitor : false });
 
 var monitor = new Monitor();
 monitor.listen();

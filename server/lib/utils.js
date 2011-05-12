@@ -1,12 +1,12 @@
-Object.clone = function(object) {
-    return Object.merge({}, object);
-}
+exports.clone = function(object) {
+    return exports.merge({}, object);
+};
 
-Object.merge = function(object, extend) {
+exports.merge = function(object, extend) {
     for (var p in extend) {
         try {
             if (extend[p].constructor == Object) {
-                object[p] = this._mergeObjects(object[p], extend[p]);
+                object[p] = exports.merge(object[p], extend[p]);
             } else {
                 object[p] = extend[p];
             }
@@ -16,8 +16,8 @@ Object.merge = function(object, extend) {
     }
 
     return object;
-}
+};
 
-Array.ensure = function(array) {
+exports.ensure = function(array) {
     return Array.isArray(array) ? array : [ array ];
-}
+};

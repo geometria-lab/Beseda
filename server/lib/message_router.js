@@ -6,11 +6,11 @@ var ConnectionRequest     = require('./requests/connection.js'),
     PublicationRequest    = require('./requests/publication.js'),
     UnsubscriptionRequest = require('./requests/unsubscription.js');
 
-require('./utils.js');
+var utils = require('./utils.js');
 
 MessageRouter = module.exports = function(server) {
     this.server = server;
-}
+};
 
 MessageRouter.prototype.dispatch = function(client, message) {
     if (message.channel == undefined || message.clientId == undefined || message.id == undefined) {
@@ -50,7 +50,7 @@ MessageRouter.prototype.dispatch = function(client, message) {
             data     : 'Channel name must be start with /'
         });
     }
-}
+};
 
 // TODO: Disconnect after timeout if no one events or connection declined
 MessageRouter.prototype._connect = function(client, message) {
@@ -64,7 +64,7 @@ MessageRouter.prototype._connect = function(client, message) {
     } else {
         request.approve();
     }
-}
+};
 
 MessageRouter.prototype._subscribe = function(client, message) {
     if (message.subscription == undefined) {
@@ -95,7 +95,7 @@ MessageRouter.prototype._subscribe = function(client, message) {
     }
 
     var channels = [];
-    var subscriptions = Array.ensure(message.subscription);
+    var subscriptions = utils.ensure(message.subscription);
     for (var i = 0; i < subscriptions.length; i++) {
         if (subscriptions[i].indexOf('/') != 0) {
             return client.send({
@@ -156,7 +156,7 @@ MessageRouter.prototype._subscribe = function(client, message) {
     } else {
         request.approve();
     }
-}
+};
 
 MessageRouter.prototype._unsubscribe = function(client, message) {
     if (message.subscription == undefined) {
@@ -187,7 +187,7 @@ MessageRouter.prototype._unsubscribe = function(client, message) {
     }
 
     var channels = [];
-    var subscriptions = Array.ensure(message.subscription);
+    var subscriptions = utils.ensure(message.subscription);
     for (var i = 0; i < subscriptions.length; i++) {
         if (subscriptions[i].indexOf('/') != 0) {
             return client.send({
@@ -235,7 +235,7 @@ MessageRouter.prototype._unsubscribe = function(client, message) {
     } else {
         request.approve();
     }
-}
+};
 
 MessageRouter.prototype._publish = function(client, message) {
     var session = client.session;
@@ -276,4 +276,4 @@ MessageRouter.prototype._publish = function(client, message) {
     } else {
         request.approve();
     }
-}
+};

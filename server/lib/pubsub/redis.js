@@ -3,7 +3,7 @@ var redis = require('redis-node');
 require('./../utils.js');
 
 RedisPubSub = module.exports = function(options) {
-    this.options = Object.merge({
+    this.options = utils.merge({
         host    : '127.0.0.1',
         port    : 6379,
         options : {}

@@ -4,7 +4,7 @@ var fs  = require('fs'),
 Router = module.exports = function(server) {
     this.server  = server;
     this._routes = [];
-}
+};
 
 Router.prototype.get = function(path, callback) {
     var route = new Router.Route('GET', path, callback);
@@ -12,7 +12,7 @@ Router.prototype.get = function(path, callback) {
     this._routes.push(route);
 
     return this;
-}
+};
 
 Router.prototype.post = function(path, callback) {
     var route = new Router.Route('POST', path, callback);
@@ -20,7 +20,7 @@ Router.prototype.post = function(path, callback) {
     this._routes.push(route);
 
     return this;
-}
+};
 
 Router.prototype.dispatch = function(request, response) {
     var dispatcher = new Router.Dispatcher(this.server, request, response);
@@ -34,20 +34,20 @@ Router.prototype.dispatch = function(request, response) {
     });
 
     return dispatcher;
-}
+};
 
 Router.Route = function(method, path, callback) {
     this.method   = method;
     this.path     = path;
     this.callback = callback;
-}
+};
 
 Router.Route.prototype.isValid = function(request) {
     var requestPath = url.parse(request.url).pathname;
 
     return (requestPath == this.path || requestPath == ('/' + this.path)) &&
            (this.method == request.method || (this.method == 'GET' && request.method == 'HEAD'));
-}
+};
 
 Router.Dispatcher = function(server, request, response) {
     this.server   = server;
@@ -55,7 +55,7 @@ Router.Dispatcher = function(server, request, response) {
     this.response = response;
 
     this.isDispatched = false;
-}
+};
 
 Router.Dispatcher.prototype.dispatch = function(route) {
     this.isDispatched = true;
@@ -63,7 +63,7 @@ Router.Dispatcher.prototype.dispatch = function(route) {
     var params = url.parse(this.request.url, true).query;
 
     route.callback(this, params);
-}
+};
 
 Router.Dispatcher.prototype.sendFile = function(file, type) {
     fs.stat(file, function (error, stat) {
@@ -106,7 +106,7 @@ Router.Dispatcher.prototype.sendFile = function(file, type) {
             }
         }
     }.bind(this));
-}
+};
 
 Router.Dispatcher.prototype.sendJSON = function(data) {
     var json = JSON.stringify(data),
@@ -117,7 +117,7 @@ Router.Dispatcher.prototype.sendJSON = function(data) {
 
     this.response.writeHead(200, headers);
     this.response.end(json, 'utf8');
-}
+};
 
 Router.Dispatcher.prototype.send = function(code, headers) {
     headers = headers || {};
@@ -125,4 +125,4 @@ Router.Dispatcher.prototype.send = function(code, headers) {
 
     this.response.writeHead(code, headers);
     this.response.end();
-}
+};

@@ -9,7 +9,7 @@ SubscriptionRequest = module.exports = function(session, requestMessage, channel
                                this.session.server.options.subscriptionTimeout);
 
     this.session.server.log('Session ' + this.session.id + ' subscription request to channel "' + this._getChannelNames() + '" started');
-}
+};
 
 SubscriptionRequest.prototype.approve = function() {
     clearTimeout(this._timeout);
@@ -22,8 +22,8 @@ SubscriptionRequest.prototype.approve = function() {
 
     this.session.server.log('Session ' + this.session.id + ' subscription request to channel "' + this._getChannelNames() + '" APPROVED');
 
-    this.session.server.monitor.increment('subscription');
-}
+    //this.session.server.monitor.increment('subscription');
+};
 
 SubscriptionRequest.prototype.decline = function(error) {
     clearTimeout(this._timeout);
@@ -36,8 +36,8 @@ SubscriptionRequest.prototype.decline = function(error) {
 
     this.session.server.log('Session ' + this.session.id + ' subscription request to channel "' + this._getChannelNames() + '" DECLINED' + (error ? ': ' + error : ''));
 
-    this.session.server.monitor.increment('declinedSubscription');
-}
+    //this.session.server.monitor.increment('declinedSubscription');
+};
 
 SubscriptionRequest.prototype._sendResponse = function(successful, error) {
     return this.session.send({
@@ -48,7 +48,7 @@ SubscriptionRequest.prototype._sendResponse = function(successful, error) {
         error        : error,
         subscription : this.requestMessage.subscription
     });
-}
+};
 
 SubscriptionRequest.prototype._getChannelNames = function() {
     return this.channels.map(function(channel){
