@@ -74,7 +74,7 @@ var Beseda = function(options) {
 
     if (this.options.io.constructor == Object) {
         this.__io = new Beseda.IO(this.options.io.host, this.options.io.port);
-        this.__io.setTransport(new Beseda.LongPolling());
+        this.__io.setTransport(new Beseda.JSONPLongPolling());
         this.__io.setEmitter(this);
     } else {
     		debugger;
@@ -490,59 +490,65 @@ Beseda.Transport.prototype._enqueue = function(data) {
 Beseda.LongPolling = function() {
 	Beseda.LongPolling._super.constructor.call(this);
 	
-	this._dataType = 'text';
 	this._typeSuffix = '/long-polling';
-	this._getParams = '';
+
+	this._connectionRequest = null;
+	this._pollRequest = null;
+	this._sendRequest = null;
+
+	this._initRequests();
+	
+	var self = this;
+		
+	this.__handleConnectionClosure = function(data) {
+		self._handleConnection(data);
+	};
+
+	this.__handleMessageClosure = function(data) {
+		self._handleMessage(data);
+	};
+
+	this._connectionRequest.addListener('ready', this.__handleConnectionClosure);
+	this._pollRequest.addListener('ready', this.__handleMessageClosure);
 };
 
 Beseda.utils.inherits(Beseda.LongPolling, Beseda.Transport);
 
+Beseda.LongPolling.prototype._initRequests = function() {
+	this._connectionRequest = new Beseda.Request();
+	this._pollRequest = new Beseda.Request();
+	this._sendRequest = new Beseda.Request();
+	this._sendRequest.method = 'POST';
+};
+
 Beseda.LongPolling.prototype.connect = function(host, port) {
 	if (!this._url) {
 		this._url = 'http://' + host + ':' + port + "/beseda/io";
+		
+		this._connectionRequest.url 
+			= this._url + "/connect" + this._typeSuffix;
 
 		this.__doConnect();
 	}
 };
 
 Beseda.LongPolling.prototype.__doConnect = function() {
-	if (!this.__handleConnectionClosure) {
-		var self = this;
-		
-		this.__handleConnectionClosure = function(data) {
-			self._handleConnection(data);
-		};
-	}
-
-	$.get(
-		this._url + "/connect" + this._typeSuffix + this._getParams, 
-		this.__handleConnectionClosure, 
-		this._dataType
-	);
+	this._connectionRequest.send();
 };
 
 Beseda.LongPolling.prototype._handleConnection = function(data) {
+	this._sendRequest.url = 
+	this._pollRequest.url =
+		this._url + "/" + data;
+		
 	Beseda.LongPolling._super._handleConnection.call(this, data);
-
+		
 	this.__poll();
 };
 
 Beseda.LongPolling.prototype.__poll = function() {
 	if (this._connectionID) {
-
-		if (!this.__handleMessageClosure) {
-			var self = this;
-
-			this.__handleMessageClosure = function(data) {
-				self._handleMessage(data);
-			};
-		}
-
-		$.get(
-			this._url + "/" + this._connectionID + this._getParams, 
-			this.__handleMessageClosure, 
-			this._dataType
-		);
+		this._pollRequest.send();
 	}
 };
 
@@ -555,7 +561,8 @@ Beseda.LongPolling.prototype._handleMessage = function(data) {
 
 Beseda.LongPolling.prototype.send = function(data) {
 	if (this._connectionID) {
-		$.post(this._url + "/" + this._connectionID + this._getParams, data);
+		this._sendRequest.data = data;
+		this._sendRequest.send();
 	} else {
 		this._enqueue(data);
 	}
@@ -567,9 +574,112 @@ Beseda.JSONPLongPolling = function() {
 	
 	this._dataType = 'jsonp';
 	this._typeSuffix = '/jsonp-polling';
-	this._getParams = '?callback=?';
 };
 
 Beseda.utils.inherits(Beseda.JSONPLongPolling, Beseda.LongPolling);
 
+Beseda.JSONPLongPolling.prototype._initRequests = function() {
+	this._connectionRequest = new Beseda.JSONPRequest();
+	this._pollRequest = new Beseda.JSONPRequest();
+	
+	this._sendRequest = new Beseda.Request();
+	this._sendRequest.method = 'POST';
+};
+
+Beseda.Request = function() {
+	Beseda.Request._super.constructor.call(this);
+	
+	this.url = null;
+	this.method = "GET";
+	this.data = null;
+};
+
+Beseda.utils.inherits(Beseda.Request, EventEmitter);
+
+Beseda.Request.prototype.__requestStateHandler = function(request) {
+	if (request.readyState === 4) {
+		this.emit('ready', request.responseText);
+		request.abort();
+	}
+};
+
+Beseda.Request.prototype.send = function(url) {
+	if (url) {
+		this.url = url;
+	}
+
+	var requestURL = this.url;
+
+	if (request != null)
+		request.abort();
+
+	var request = !!+'\v1' ? new XMLHttpRequest() :
+							 new ActiveXObject("Microsoft.XMLHTTP");
+
+	var self = this;
+	request.onreadystatechange = function() {
+		self.__requestStateHandler(request);
+	}
+
+	if (this.method === 'GET' && this.data) {
+		requestURL += 
+			(requestURL.indexOf('?') === -1 ? '?' : '&') + this.data;
+	}
+
+	request.open(this.method, encodeURI(requestURL), true);
+
+	var sendData = null;
+	if (this.method === 'POST') {
+		sendData = this.data;
+		request.setRequestHeader
+			('Content-Type', 'application/x-www-form-urlencoded');
+	}
+
+	request.send(sendData);
+};
+
+
+Beseda.JSONPRequest = function() {
+	Beseda.JSONPRequest._super.constructor.call(this);
+	
+	this.url = null;
+
+	this.__id = Beseda.JSONPRequest.__lastID++;
+	this.__script = null;
+
+	var self = this;
+	Beseda.JSONPRequest.__callbacks[this.__id] = function(data) {
+		self.__handleData(data);
+	};
+};
+
+Beseda.utils.inherits(Beseda.JSONPRequest, EventEmitter);
+
+Beseda.JSONPRequest.__callbacks = [];
+Beseda.JSONPRequest.__lastID = 0;
+
+Beseda.JSONPRequest.prototype.__handleData = function(data) {
+	document.body.removeChild(this.__script);
+	this.__script = null;
+	
+	this.emit('ready', data);
+};
+
+Beseda.JSONPRequest.prototype.send = function(url) {
+	if (url) {
+		this.url = url;
+	}
+
+	if (!this.__script) {
+		var requestURL = this.url;
+
+		requestURL += (requestURL.indexOf('?') === -1 ? '?' : '&') + 
+			'callback=Beseda.JSONPRequest.__callbacks[' + this.__id + ']&' + new Date().getTime();
+
+		this.__script = document.createElement('SCRIPT');
+		this.__script.src = requestURL;
+
+		document.body.appendChild(this.__script);
+	}
+};
 
