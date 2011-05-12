@@ -1,190 +1,63 @@
-// TODO: Reconnect? and update subscribes on server when it down and up
-
-function inherits(Class, Parent)
-{
-	var Link = function() {};
-	Link.prototype = Parent.prototype;
-
-	Class.prototype = new Link();
-	Class.prototype.constructor = Class;
-	Class._super = Class.prototype._super = Parent.prototype;
+var EventEmitter = function() {
+	this.__events = {};
 };
 
-var IO = function(host, port) {
-	this.__host = host;
-	this.__port = port;
-
-	this.__transport = new JSONPPolling();
+EventEmitter.prototype.addListener = function(event, listener) {
+    if (!this.__events[event]) {
+        this.__events[event] = [];
+    }
+    
+    this.__events[event].push(listener);
 };
 
-IO.prototype.setEmitter = function(emitter) {
-	this.__transport.setEmitter(emitter);
-};
+EventEmitter.prototype.on = EventEmitter.prototype.addListener;
 
-IO.prototype.connect = function() {
-	this.__transport.connect(this.__host, this.__port);
-};
+EventEmitter.prototype.once = function(event, listener) {
+	var self = this;
 
-IO.prototype.send = function(data) {
-	this.__transport.send(data);
-};
-
-IO.prototype.disconnect = function() {
-	this.__transport.disconnect();
-};
-
-///////////////////////////////////////////////////////////////////////////////
-
-var Transport = function() {
-	this._url = null;
-	this._typeSuffix = null;
-	this._connectionID = null;
-	this._emitter = null;
-	
-	this.__sendQueue = [];
-};
-
-Transport.EVENT_CONNECT 	   = 'io_connect';
-Transport.EVENT_MESSAGE 	   = 'io_message';
-Transport.EVENT_DISCONNECT = 'io_disconnect';
-Transport.EVENT_ERROR 	   = 'io_error';
-
-Transport.DATA_SEPARATOR	 = '|';
-
-Transport.prototype.connect = function(host, port) {
-	throw Error('Abstract method calling.');
-};
-
-Transport.prototype.send = function(data) {
-	throw Error('Abstract method calling.');
-};
-
-Transport.prototype.disconnect = function() {
-	throw Error('Abstract method calling.');
-};
-
-Transport.prototype.setEmitter = function(emitter) {
-	this._emitter = emitter;
-};
-
-Transport.prototype._handleConnection = function(data) {
-	this._connectionID = data;
-
-	if (this._emitter) {
-		this._emitter.emit(Transport.EVENT_CONNECT, this._connectionID);
-	}
-	
-	while(this.__sendQueue.length) {
-		this.send(this.__sendQueue.shift());
-	}
-};
-
-Transport.prototype._handleMessage = function(data) {
-	if (data && data.length > 0) {
-		var parsedData = data.split(Transport.DATA_SEPARATOR);
+	var listenerClosure = function() {
+		listener.apply(self, arguments);
 		
-		while(parsedData.length) {
-			this._emitter.emit(Transport.EVENT_MESSAGE, parsedData.shift());
-		}
-	}
-};
-
-Transport.prototype._enqueue = function(data) {
-	this.__sendQueue.push(data);
-};
-
-///////////////////////////////////////////////////////////////////////////////
-
-var LongPolling = function() {
-	LongPolling._super.constructor.call(this);
+		self.removeListener(event, listenerClosure);
+	};
 	
-	this._dataType = 'text';
-	this._typeSuffix = '/long-polling';
-	this._getParams = '';
+	this.on(event, listenerClosure);
 };
 
-inherits(LongPolling, Transport);
-
-LongPolling.prototype.connect = function(host, port) {
-	if (!this._url) {
-		this._url = 'http://' + host + ':' + port + "/beseda/io";
-
-		this.__doConnect();
-	}
+EventEmitter.prototype.removeListener = function(event, listener) {
+    if (this.__events[event]) {
+        for (var i = 0; i < this.__events[event].length; i++) {
+            if (this.__events[event][i] === listener) {
+                this.__events[event].splice(i, 1);
+            }
+        }
+    }
 };
 
-LongPolling.prototype.__doConnect = function() {
-	if (!this.__handleConnectionClosure) {
-		var self = this;
-		
-		this.__handleConnectionClosure = function(data) {
-			self._handleConnection(data);
-		};
-	}
-
-	$.get(
-		this._url + "/connect" + this._typeSuffix + this._getParams, 
-		this.__handleConnectionClosure, 
-		this._dataType
-	);
+EventEmitter.prototype.removeAllListeners = function(event) {
+	this.__events[event] = [];
 };
 
-LongPolling.prototype._handleConnection = function(data) {
-	LongPolling._super._handleConnection.call(this, data);
+EventEmitter.prototype.emit = function() {
+    var args = Array.prototype.slice.call(arguments);
+    var event = args.shift();
 
-	this.__poll();
+    if (this.__events[event]) {
+        for (var i = 0; i < this.__events[event].length; i++) {
+            this.__events[event][i].apply(this, args);
+        }
+    }
 };
 
-LongPolling.prototype.__poll = function() {
-	if (this._connectionID) {
-
-		if (!this.__handleMessageClosure) {
-			var self = this;
-
-			this.__handleMessageClosure = function(data) {
-				self._handleMessage(data);
-			};
-		}
-
-		$.get(
-			this._url + "/" + this._connectionID + this._getParams, 
-			this.__handleMessageClosure, 
-			this._dataType
-		);
-	}
+EventEmitter.prototype.listeners = function(event) {
+    return this.__events[event] || [];
 };
 
-
-LongPolling.prototype._handleMessage = function(data) {
-	LongPolling._super._handleMessage.call(this, data);
-
-	this.__poll();
-};
-
-LongPolling.prototype.send = function(data) {
-	if (this._connectionID) {
-		$.post(this._url + "/" + this._connectionID + this._getParams, data);
-	} else {
-		this._enqueue(data);
-	}
-};
-
-///////////////////////////////////////////////////////////////////////////////
-
-var JSONPPolling = function() {
-	JSONPPolling._super.constructor.call(this);
-	
-	this._dataType = 'jsonp';
-	this._typeSuffix = '/jsonp-polling';
-	this._getParams = '?callback=?';
-};
-
-inherits(JSONPPolling, LongPolling);
-
-///////////////////////////////////////////////////////////////////////////////
 
 
 var Beseda = function(options) {
+	Beseda._super.constructor.call(this);
+
     this.setOptions({
         io : {
             host : document.location.hostname,
@@ -200,7 +73,8 @@ var Beseda = function(options) {
     this.clientId = null;
 
     if (this.options.io.constructor == Object) {
-        this.__io = new IO(this.options.io.host, this.options.io.port);
+        this.__io = new Beseda.IO(this.options.io.host, this.options.io.port);
+        this.__io.setTransport(new Beseda.LongPolling());
         this.__io.setEmitter(this);
     } else {
     		debugger;
@@ -208,18 +82,12 @@ var Beseda = function(options) {
     }
 
     var self = this;
-    this.on(Transport.EVENT_MESSAGE, function(data) {
+    this.on(Beseda.IO.EVENT_MESSAGE, function(data) {
         self.router.dispatch(JSON.parse(data));
     });
-	
-    
-    //this.socketIO.on('reconnect', function(){
-    //    self._onReconnect();
-    // });
-    //this.socketIO.on('disconnect', function(){
-    //    self._onDisconnect();
-    //});
 };
+
+inherits(Beseda, EventEmitter);
 
 Beseda.prototype.isConnected = function() {
     return this._status == Beseda._statuses.CONNECTED;
@@ -373,47 +241,66 @@ Beseda._statuses = {
 
 Beseda.__lastMessageID = 0;
 
-Beseda.prototype.on = function(event, listener) {
-    if (!(event in this._events)) {
-        this._events[event] = [];
-    }
-    this._events[event].push(listener);
+
+
+function inherits(Class, Parent) {
+	var Link = function() {};
+	Link.prototype = Parent.prototype;
+
+	Class.prototype = new Link();
+	Class.prototype.constructor = Class;
+	Class._super = Class.prototype._super = Parent.prototype;
+
+	Link = null;
 };
 
-Beseda.prototype.addListener = Beseda.prototype.on;
+Beseda.utils = {
+    uid : function() {
+        var chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-_'.split('');
+        var uid = [];
 
-Beseda.prototype.removeListener = function(event, listener) {
-    if (event in this._events) {
-        for (var i = 0; i < this._events[event].length; i++) {
-            if (this._events[event][i] == listener) {
-                this._events[event].splice(i, 1);
+        for (var i = 0; i < 22; i++) {
+            uid[i] = chars[0 | Math.random() * 64];
+        }
+
+        return uid.join('');
+    },
+
+    cloneObject : function(object) {
+        return this.mergeObjects({}, object);
+    },
+
+    mergeObjects : function(object, extend) {
+        for (var p in extend) {
+            try {
+                if (extend[p].constructor == Object) {
+                    object[p] = this.mergeObjects(object[p], extend[p]);
+                } else {
+                    object[p] = extend[p];
+                }
+            } catch (e) {
+                object[p] = extend[p];
             }
         }
-    }
+
+        return object;
+    }, 
+
+    inherits : function(Class, Parent) {
+		var Link = function() {};
+		Link.prototype = Parent.prototype;
+
+		Class.prototype = new Link();
+		Class.prototype.constructor = Class;
+		Class._super = Class.prototype._super = Parent.prototype;
+
+		Link = null;
+	}
 };
 
-Beseda.prototype.removeAllListeners = function(event) {
-    if (event in this._events) {
-        this._events[event] = [];
-    }
-};
 
-Beseda.prototype.emit = function() {
-    var args = Array.prototype.slice.call(arguments);
-    var event = args.shift();
 
-    if (event in this._events) {
-        for (var i = 0; i < this._events[event].length; i++) {
-            this._events[event][i].apply(this, args);
-        }
-    }
-};
 
-Beseda.prototype.listeners = function(event) {
-    return event in this._events ? this._events[event] : [];
-};
-
-// TODO: Change router!
 Beseda.Router = function(client) {
     this.client = client;
 };
@@ -502,36 +389,187 @@ Beseda.Router.prototype._message = function(message) {
     }
 };
 
-Beseda.utils = {
-    uid : function() {
-        var chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-_'.split('');
-        var uid = [];
 
-        for (var i = 0; i < 22; i++) {
-            uid[i] = chars[0 | Math.random() * 64];
-        }
+Beseda.IO = function(host, port) {
+	this.__host = host;
+	this.__port = port;
 
-        return uid.join('');
-    },
-
-    cloneObject : function(object) {
-        return this.mergeObjects({}, object);
-    },
-
-    mergeObjects : function(object, extend) {
-        for (var p in extend) {
-            try {
-                if (extend[p].constructor == Object) {
-                    object[p] = this.mergeObjects(object[p], extend[p]);
-                } else {
-                    object[p] = extend[p];
-                }
-            } catch (e) {
-                object[p] = extend[p];
-            }
-        }
-
-        return object;
-    }
+	this.__transport = null;
+	this.__emitter = null;
 };
+
+Beseda.IO.EVENT_CONNECT 	= 'io_connect';
+Beseda.IO.EVENT_MESSAGE 	= 'io_message';
+Beseda.IO.EVENT_DISCONNECT = 'io_disconnect';
+Beseda.IO.EVENT_ERROR 	    = 'io_error';
+
+Beseda.IO.prototype.setTransport = function(transport) {
+	this.__transport = transport;
+
+	if (this.__emitter) {
+		this.__transport.setEmitter(this.__emitter);
+	}
+};
+
+Beseda.IO.prototype.setEmitter = function(emitter) {
+	if (this.__transport) {
+		this.__transport.setEmitter(emitter);
+	} else {
+		this.__emitter = emitter;
+	}
+};
+
+Beseda.IO.prototype.connect = function() {
+	this.__transport.connect(this.__host, this.__port);
+};
+
+Beseda.IO.prototype.send = function(data) {
+	this.__transport.send(data);
+};
+
+Beseda.IO.prototype.disconnect = function() {
+	this.__transport.disconnect();
+};
+
+
+Beseda.Transport = function() {
+	this._url = null;
+	this._typeSuffix = null;
+	this._connectionID = null;
+	this._emitter = null;
+	
+	this.__sendQueue = [];
+};
+
+Beseda.Transport.DATA_SEPARATOR	 = '|';
+
+Beseda.Transport.prototype.connect = function(host, port) {
+	throw Error('Abstract method calling.');
+};
+
+Beseda.Transport.prototype.send = function(data) {
+	throw Error('Abstract method calling.');
+};
+
+Beseda.Transport.prototype.disconnect = function() {
+	throw Error('Abstract method calling.');
+};
+
+Beseda.Transport.prototype.setEmitter = function(emitter) {
+	this._emitter = emitter;
+};
+
+Beseda.Transport.prototype._handleConnection = function(data) {
+	this._connectionID = data;
+
+	if (this._emitter) {
+		this._emitter.emit(Beseda.IO.EVENT_CONNECT, this._connectionID);
+	}
+	
+	while(this.__sendQueue.length) {
+		this.send(this.__sendQueue.shift());
+	}
+};
+
+Beseda.Transport.prototype._handleMessage = function(data) {
+	if (data && data.length > 0) {
+		var parsedData = data.split(Beseda.Transport.DATA_SEPARATOR);
+		
+		while(parsedData.length) {
+			this._emitter.emit(Beseda.IO.EVENT_MESSAGE, parsedData.shift());
+		}
+	}
+};
+
+Beseda.Transport.prototype._enqueue = function(data) {
+	this.__sendQueue.push(data);
+};
+
+
+
+Beseda.LongPolling = function() {
+	Beseda.LongPolling._super.constructor.call(this);
+	
+	this._dataType = 'text';
+	this._typeSuffix = '/long-polling';
+	this._getParams = '';
+};
+
+Beseda.utils.inherits(Beseda.LongPolling, Beseda.Transport);
+
+Beseda.LongPolling.prototype.connect = function(host, port) {
+	if (!this._url) {
+		this._url = 'http://' + host + ':' + port + "/beseda/io";
+
+		this.__doConnect();
+	}
+};
+
+Beseda.LongPolling.prototype.__doConnect = function() {
+	if (!this.__handleConnectionClosure) {
+		var self = this;
+		
+		this.__handleConnectionClosure = function(data) {
+			self._handleConnection(data);
+		};
+	}
+
+	$.get(
+		this._url + "/connect" + this._typeSuffix + this._getParams, 
+		this.__handleConnectionClosure, 
+		this._dataType
+	);
+};
+
+Beseda.LongPolling.prototype._handleConnection = function(data) {
+	Beseda.LongPolling._super._handleConnection.call(this, data);
+
+	this.__poll();
+};
+
+Beseda.LongPolling.prototype.__poll = function() {
+	if (this._connectionID) {
+
+		if (!this.__handleMessageClosure) {
+			var self = this;
+
+			this.__handleMessageClosure = function(data) {
+				self._handleMessage(data);
+			};
+		}
+
+		$.get(
+			this._url + "/" + this._connectionID + this._getParams, 
+			this.__handleMessageClosure, 
+			this._dataType
+		);
+	}
+};
+
+
+Beseda.LongPolling.prototype._handleMessage = function(data) {
+	Beseda.LongPolling._super._handleMessage.call(this, data);
+
+	this.__poll();
+};
+
+Beseda.LongPolling.prototype.send = function(data) {
+	if (this._connectionID) {
+		$.post(this._url + "/" + this._connectionID + this._getParams, data);
+	} else {
+		this._enqueue(data);
+	}
+};
+
+
+Beseda.JSONPLongPolling = function() {
+	Beseda.JSONPLongPolling._super.constructor.call(this);
+	
+	this._dataType = 'jsonp';
+	this._typeSuffix = '/jsonp-polling';
+	this._getParams = '?callback=?';
+};
+
+Beseda.utils.inherits(Beseda.JSONPLongPolling, Beseda.LongPolling);
+
 

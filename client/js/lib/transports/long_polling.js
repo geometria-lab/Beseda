@@ -1,14 +1,14 @@
-var LongPolling = function() {
-	LongPolling._super.constructor.call(this);
+Beseda.LongPolling = function() {
+	Beseda.LongPolling._super.constructor.call(this);
 	
 	this._dataType = 'text';
 	this._typeSuffix = '/long-polling';
 	this._getParams = '';
 };
 
-Beseda.inherits(LongPolling, Transport);
+Beseda.utils.inherits(Beseda.LongPolling, Beseda.Transport);
 
-LongPolling.prototype.connect = function(host, port) {
+Beseda.LongPolling.prototype.connect = function(host, port) {
 	if (!this._url) {
 		this._url = 'http://' + host + ':' + port + "/beseda/io";
 
@@ -16,7 +16,7 @@ LongPolling.prototype.connect = function(host, port) {
 	}
 };
 
-LongPolling.prototype.__doConnect = function() {
+Beseda.LongPolling.prototype.__doConnect = function() {
 	if (!this.__handleConnectionClosure) {
 		var self = this;
 		
@@ -32,13 +32,13 @@ LongPolling.prototype.__doConnect = function() {
 	);
 };
 
-LongPolling.prototype._handleConnection = function(data) {
-	LongPolling._super._handleConnection.call(this, data);
+Beseda.LongPolling.prototype._handleConnection = function(data) {
+	Beseda.LongPolling._super._handleConnection.call(this, data);
 
 	this.__poll();
 };
 
-LongPolling.prototype.__poll = function() {
+Beseda.LongPolling.prototype.__poll = function() {
 	if (this._connectionID) {
 
 		if (!this.__handleMessageClosure) {
@@ -58,13 +58,13 @@ LongPolling.prototype.__poll = function() {
 };
 
 
-LongPolling.prototype._handleMessage = function(data) {
-	LongPolling._super._handleMessage.call(this, data);
+Beseda.LongPolling.prototype._handleMessage = function(data) {
+	Beseda.LongPolling._super._handleMessage.call(this, data);
 
 	this.__poll();
 };
 
-LongPolling.prototype.send = function(data) {
+Beseda.LongPolling.prototype.send = function(data) {
 	if (this._connectionID) {
 		$.post(this._url + "/" + this._connectionID + this._getParams, data);
 	} else {

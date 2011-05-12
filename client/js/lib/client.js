@@ -1,4 +1,6 @@
 var Beseda = function(options) {
+	Beseda._super.constructor.call(this);
+
     this.setOptions({
         io : {
             host : document.location.hostname,
@@ -14,7 +16,8 @@ var Beseda = function(options) {
     this.clientId = null;
 
     if (this.options.io.constructor == Object) {
-        this.__io = new IO(this.options.io.host, this.options.io.port);
+        this.__io = new Beseda.IO(this.options.io.host, this.options.io.port);
+        this.__io.setTransport(new Beseda.LongPolling());
         this.__io.setEmitter(this);
     } else {
     		debugger;
@@ -22,18 +25,12 @@ var Beseda = function(options) {
     }
 
     var self = this;
-    this.on(Transport.EVENT_MESSAGE, function(data) {
+    this.on(Beseda.IO.EVENT_MESSAGE, function(data) {
         self.router.dispatch(JSON.parse(data));
     });
-	
-    
-    //this.socketIO.on('reconnect', function(){
-    //    self._onReconnect();
-    // });
-    //this.socketIO.on('disconnect', function(){
-    //    self._onDisconnect();
-    //});
 };
+
+inherits(Beseda, EventEmitter);
 
 Beseda.prototype.isConnected = function() {
     return this._status == Beseda._statuses.CONNECTED;

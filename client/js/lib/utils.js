@@ -1,3 +1,14 @@
+function inherits(Class, Parent) {
+	var Link = function() {};
+	Link.prototype = Parent.prototype;
+
+	Class.prototype = new Link();
+	Class.prototype.constructor = Class;
+	Class._super = Class.prototype._super = Parent.prototype;
+
+	Link = null;
+};
+
 Beseda.utils = {
     uid : function() {
         var chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-_'.split('');
@@ -28,10 +39,9 @@ Beseda.utils = {
         }
 
         return object;
-    },
+    }, 
 
-    inherits: function(Class, Parent)
-	{
+    inherits : function(Class, Parent) {
 		var Link = function() {};
 		Link.prototype = Parent.prototype;
 
@@ -41,4 +51,6 @@ Beseda.utils = {
 
 		Link = null;
 	}
-}
+};
+
+

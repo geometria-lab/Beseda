@@ -1,4 +1,4 @@
-var IO = function(host, port) {
+Beseda.IO = function(host, port) {
 	this.__host = host;
 	this.__port = port;
 
@@ -6,12 +6,12 @@ var IO = function(host, port) {
 	this.__emitter = null;
 };
 
-IO.EVENT_CONNECT 	= 'io_connect';
-IO.EVENT_MESSAGE 	= 'io_message';
-IO.EVENT_DISCONNECT = 'io_disconnect';
-IO.EVENT_ERROR 	    = 'io_error';
+Beseda.IO.EVENT_CONNECT 	= 'io_connect';
+Beseda.IO.EVENT_MESSAGE 	= 'io_message';
+Beseda.IO.EVENT_DISCONNECT = 'io_disconnect';
+Beseda.IO.EVENT_ERROR 	    = 'io_error';
 
-IO.prototype.setTransport = function(transport) {
+Beseda.IO.prototype.setTransport = function(transport) {
 	this.__transport = transport;
 
 	if (this.__emitter) {
@@ -19,7 +19,7 @@ IO.prototype.setTransport = function(transport) {
 	}
 };
 
-IO.prototype.setEmitter = function(emitter) {
+Beseda.IO.prototype.setEmitter = function(emitter) {
 	if (this.__transport) {
 		this.__transport.setEmitter(emitter);
 	} else {
@@ -27,14 +27,14 @@ IO.prototype.setEmitter = function(emitter) {
 	}
 };
 
-IO.prototype.connect = function() {
+Beseda.IO.prototype.connect = function() {
 	this.__transport.connect(this.__host, this.__port);
 };
 
-IO.prototype.send = function(data) {
+Beseda.IO.prototype.send = function(data) {
 	this.__transport.send(data);
 };
 
-IO.prototype.disconnect = function() {
+Beseda.IO.prototype.disconnect = function() {
 	this.__transport.disconnect();
 };
