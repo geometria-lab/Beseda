@@ -19,8 +19,10 @@ task('compressJs', [], function(params) {
     		'utils.js', 
     		'router.js', 
     		'io.js', 
+    		'request.js', 
+    		'jsonp_request.js', 
     		'transport.js', 
-    		'transports/long_polling.js',
+		'transports/long_polling.js',
     		'transports/jsonp_long_polling.js'
     	].forEach(function(file) {
         javascript += fs.readFileSync('./client/js/lib/' + file) + "\n\n";
