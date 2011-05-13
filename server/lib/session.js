@@ -1,16 +1,12 @@
 var Channel = require('./channel.js');
 var utils = require('./utils.js');
-var io = require('./io');
 
 var sessions = {};
 
-Session = module.exports = function(server, id) {
+Session = module.exports = function(server, connectionId) {
 	this.server = server;
-    this.id = id;
+    this.id = connectionId;
 
-    this.isConnected = false;
-
-	this.connectedTimestamp = 0;
     this.createdTimestamp = Date.now();
 
     if (sessions[this.id]) {
@@ -32,13 +28,8 @@ Session.remove = function(id) {
     delete sessions[id];
 };
 
-Session.prototype.connect = function() {
-	this.isConnected = true;
-	this.connectedTimestamp = Date.now();
-}
-
 Session.prototype.send = function(message) {
-	this.server.io.send(this.id, JSON.stringify(message));
+	this.server.io.send(this.id, message);
 };
 
 Session.prototype.destroy = function() {

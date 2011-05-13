@@ -25,7 +25,7 @@ Server = module.exports = function(options) {
         pubSub  : 'memory',
         monitor : false,
 
-        transports : [ 'longPolling', 'JSONPLongPolling', 'webSocket', 'flashSocket' ],
+        transports : [ 'longPolling', 'JSONPLongPolling' ],
         transportOptions : { longPolling : { reconnectTimeout : 10 } },
 
         connectionTimeout     : 2000, //TODO: Change to seconds
@@ -71,7 +71,6 @@ Server = module.exports = function(options) {
      **/
     this.router = new Router();
     this.router.get('/beseda/js/:filename', function(request, response, params) {
-	   	// TODO: таблица соответствий и контенттайпа
 		var file = __dirname + '/../../client/js/' + params.filename;
 		Router.Utils.sendFile(request, response, file, 'text/javascript');
 	});
@@ -82,7 +81,7 @@ Server = module.exports = function(options) {
      *  Setup IO
      **/
 	this.io = new IO(this);
-    this.io.on('message', this._onMessage.bind(this));
+    this.io.on('message', this.messageRouter.dispatch.bind(this));
     this.io.on('disconnect', this._onDisconnect.bind(this));
 
     // Add request listener with static before others
@@ -147,23 +146,16 @@ Server.prototype.listen = function(port, host) {
     this._logBesedaStarted();
 };
 
-Server.prototype._onMessage = function(sessionID, message) {
-	//try {
-		 this.messageRouter.dispatch(sessionID, JSON.parse(message));
-	//} catch (error) {
-	//	util.log('Unable to encode message: ' + message + '!');
-	//}
-};
+Server.prototype._onDisconnect = function(connectionId) {
+    var session = Session.get(connectionId);
 
-Server.prototype._onDisconnect = function(client) {
-    if (client.session) {
-        util.log('Session ' + client.session.id + ' is disconnected');
-        client.session.destroy();
+    if (session) {
+        util.log('Session ' + session.id + ' is disconnected');
+        this.emit('disconnect', session);
+        session.destroy();
     } else {
         util.log('Client without session is disconnected');
     }
-
-    this.emit('disconnect', client.session);
 };
 
 Server.prototype._isHTTPServerOpened = function() {

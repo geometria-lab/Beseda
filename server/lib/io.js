@@ -1,194 +1,65 @@
 var Router = require('./router.js');
 
 var LongPollingTransport      = require('./transports/long_polling.js'),
-	JSONPLongPollingTransport = require('./transports/jsonp_long_polling.js'),
-	PostTransport	          = require('./transports/post.js');
+	JSONPLongPollingTransport = require('./transports/jsonp_long_polling.js');
 
-module.exports = IO = function(server) {
+exports = IO = function(server) {
 	process.EventEmitter.call(this);
 
-	this.lastID = 0;
+    this.server = server;
 
-	// Add routes
-	var connectRoute = new Router.Route('/beseda/io/connect/:transport',
-										this._handleConnect.bind(this),
-										'GET');
-	this.server.router.addRoute(connectRoute);
+	this._lastConnectionId = 0;
 
-	var requestRoute = new Router.Route('/beseda/io/:id',
-										this.__handleRequest.bind(this)
-										['POST', 'GET']);
-	this.server.router.addRoute(requestRoute);
+    this._transports = {};
+    this._connections = {};
+
+	this.server.router.get('/beseda/io/:transport', this._handleConnect.bind(this));
 }
 
 util.inherits(Server, process.EventEmitter);
 
-IO.LONG_POLLING       = 0;
-IO.JSONP_LONG_POLLING = 1;
-IO.WEB_SOCKET         = 2;
-IO.FLASH_SOCKET       = 3;
-
-IO.TRANSPORS = { 
-	'longPolling'      : LONG_POLLING,
-	'JSONPLongPolling' : JSONP_LONG_POLLING,
-	'webSocket'        : WEB_SOCKET,
-	'flashSocket'      : FLASH_SOCKET
+IO.TRANSPORTS = {
+	longPolling      : LongPollingTransport,
+	JSONPLongPolling : JSONPLongPollingTransport
 };
+
+IO.prototype.send = function(connectionId, message) {
+	if (!this._connections[connectionId]) {
+        throw new Error('Can\'t send to unavailble connection ' + connectionId)
+    }
+
+    this._connections[connectionId].send(message);
+};
+
+IO.prototype.receive = function(connectionId, messages) {
+    for (var i = 0; i < messages.length; i++) {
+        this.emit('message', connectionId, messages[i]);
+    }
+}
+
+IO.prototype.disconnect = function(connectionId) {
+    this.emit('disconnect', connectionId);
+}
+
+IO.prototype._getTransport = function(name) {
+    if (!this._transports[name]) {
+        this._transports[name] = new IO.TRANSPORTS[name];
+    }
+
+    return this._transports[name];
+}
 
 IO.prototype._handleConnect = function(request, response, params) {
-	var id = String(++this.lastID);
+	if (this.server.options.transports.indexOf(params.transport) !== -1) {
+        var connectionId = ++this._lastConnectionId;
+        var transport = this._getTransport(params.transport);
 
-	if (this.server.options.transport.indexOf(params.transport) !== -1)) {
-		// Server send resonse with present transports
+        this._connections[connectionId] = transport.create(connectionId, request, response);
+
+        Router.Utils.sendJSON(response, { connectionId : connectionId });
 	} else {
-		switch (params.transport) {
-			case IO.LONG_POLLING:
-				return initLongPolling(id, request, response);
-			case IO.JSONP_LONG_POLLING:
-				return initJSONPLongPolling(id, request, response);
-			default:
-				throw new Error(params.transport + ' not implement yet');
-		}
-	}
+        Router.Utils.sendJSON(response, {
+            error               : 'Invalid transport',
+            availableTransports : this.server.options.transports });
+    }
 }
-
-IO.prototype._handleRequest = function(request, response, params) {
-	io.processRequest(params.id, request, response);
-}
-
-
-
-
-
-
-
-// TODO: Подробнее оповещать об ошибке!
-///////////////////////////////////////////////////////////////////////////////
-//
-//	Импорт зависимостей
-//
-///////////////////////////////////////////////////////////////////////////////
-
-
-
-
-
-
-    			   // TODO: стандатрный обработчик статики в роутере
-
-    			   
-
-
-
-var util = require('util');
-var qs = require('querystring');
-
-var enums = require('./transports/enums');
-var LongPolling = require('./transports/long-polling');
-var PostData = require('./transports/post-data');
-
-///////////////////////////////////////////////////////////////////////////////
-//
-//	Статичные переменный
-//
-///////////////////////////////////////////////////////////////////////////////
-
-
-
-///////////////////////////////////////////////////////////////////////////////
-//
-//	Реализация логики
-//
-///////////////////////////////////////////////////////////////////////////////
-
-var lastID = 0;
-
-var senderTable = {};
-var receiverTable = {};
-
-var emitter = new events.EventEmitter();
-
-function init(transport, request, response) {
-	
-};
-
-function initLongPolling(id, request, response) {
-	if (LongPolling.init(id) && 
-		PostData.init(id)) {
-		
-		senderTable[id] = LongPolling;
-		receiverTable[id] = PostData;
-
-		response.end(id);
-	} else {
-		response.end(enums.BUFFER_ERROR);
-	}
-}
-
-function initJSONPPolling(id, request, response) {
-	var query = request.url.split('?')[1];
-
-	if (query) {
-		
-		var callback = qs.parse(query)['callback'];
-	
-		if (LongPolling.init(id, true) && 
-			PostData.init(id)) {
-		
-			senderTable[id] = LongPolling;
-			receiverTable[id] = PostData;
-
-			response.end(callback + '("' + id + '");');
-		} else {
-			response.end(enums.BUFFER_ERROR);
-		} 
-		
-	} else {
-		response.end(enums.BUFFER_ERROR);
-	} 
-}
-
-function processRequest(id, request, response) {
-	if (senderTable[id] && receiverTable[id]) {
-		switch (request.method) {
-			case enums.METHOD_POST: {
-				receiverTable[id].handle(id, request, response);
-				return;
-			}
-		
-			case enums.METHOD_GET: {
-				senderTable[id].hold(id, request, response);
-				return;
-			}
-		}
-	}
-
-	response.end(enums.BUFFER_ERROR);
-};
-
-function write(id, data) {
-	if (senderTable[id]) {
-		senderTable[id].write(id, data);
-	}
-}
-
-
-///////////////////////////////////////////////////////////////////////////////
-//
-//	Експорт модуля
-//
-///////////////////////////////////////////////////////////////////////////////
-
-exports.emitter = emitter;
-exports.init = init;
-exports.processRequest = processRequest;
-exports.write = write;
-
-///////////////////////////////////////////////////////////////////////////////
-//
-//	Инициализация
-//
-///////////////////////////////////////////////////////////////////////////////
-
-PostData.setEmmiter(emitter);
-

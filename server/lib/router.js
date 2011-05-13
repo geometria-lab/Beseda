@@ -53,16 +53,15 @@ Router.Route = function(path, callback, methods) {
 };
 
 Router.Route.prototype.isValid = function(request) {
+    var method        = request.method == 'HEAD' ? 'GET' : request.method,
+        isValidMethod = this.__methods.length == 0 || this.__methods.indexOf(method) !== -1;
 
-	var result = this.__method === request.method || 
-				(this.__method === 'GET' && request.method === 'HEAD');
-
-	if (result) {
+	if (isValidMethod) {
 		var requestPath = url.parse(request.url).pathname;
 
 		var requestPathHash = requestPath.split('/');
 		var i = 0, 
-			l = this.__pathHash.length;
+			l = requestPathHash.length;
 
 		while (i < l) {
 			if (this.__pathHash[i] !== requestPathHash[i] &&
@@ -74,7 +73,7 @@ Router.Route.prototype.isValid = function(request) {
 
 			++i;
 		}
-    	}
+    }
 
     return result;
 };
@@ -86,7 +85,7 @@ Router.Route.prototype.dispatch = function(request, response) {
 	var params = parsedUrl.query || {};
 
 	var i = 0,
-		l = this.__pathHash.length;
+		l = parsedPath.length;
 
 	while (i < l) {
 		if (this.__pathHash[i].indexOf(':') === 0) {
@@ -101,6 +100,26 @@ Router.Route.prototype.dispatch = function(request, response) {
 }
 
 Router.Utils = {};
+
+Router.Utils.send = function(response, code, headers) {
+    headers = headers || {};
+    headers['Server'] = 'Beseda';
+
+    response.writeHead(code, headers);
+    response.end();
+};
+
+Router.Utils.sendJSON = function(response, data, code, headers) {
+    var json = JSON.stringify(data),
+        headers = utils.mergeObjects({
+            'Server'         : 'Beseda',
+            'Content-Type'   : 'text/json',
+            'Content-Length' : json.length }, headers || {});
+
+	response.writeHead(code || 200, headers);
+    response.end(json, 'utf8');
+};
+
 Router.Utils.sendFile = function(request, response, file, type) {
 	util.log(file);
     fs.stat(file, function (error, stat) {
@@ -143,23 +162,4 @@ Router.Utils.sendFile = function(request, response, file, type) {
             }
         }
     });
-};
-
-Router.Utils.sendJSON = function(response, data) {
-    var json = JSON.stringify(data),
-        headers = {
-            'Server'         : 'Beseda',
-            'Content-Type'   : 'text/json',
-            'Content-Length' : json.length };
-
-	response.writeHead(200, headers);
-    response.end(json, 'utf8');
-};
-
-Router.Utils.send = function(response, code, headers) {
-    headers = headers || {};
-    headers['Server'] = 'Beseda';
-
-    response.writeHead(code, headers);
-    response.end();
 };
