@@ -1,11 +1,10 @@
-var Router = require('./router.js');
+var Router = require('./../router.js');
 
 exports = LongPollingTransport = function(io) {
     this.io = io;
     this._connections = {};
 
-    this.io.server.router.get('/beseda/io/longPolling/:id', this._holdRequest.bind(this));
-    this.io.server.router.post('/beseda/io/longPolling/:id', this._receive.bind(this));
+    this._addRoutes();
 
     this._flushInterval = setInterval(this._flushConnections.bind(this),
                                       LongPollingTransport.CHECK_INTERVAL);
@@ -14,10 +13,37 @@ exports = LongPollingTransport = function(io) {
 LongPollingTransport.CHECK_INTERVAL = 1000;
 LongPollingTransport.MAX_LOOP_COUNT = 10;
 
-LongPollingTransport.create = function(connectionId) {
+LongPollingTransport.parseMessages = function(response, data) {
+	try {
+		var messages = JSON.parse(data)
+	} catch (e) {
+		return this._sendInvalidMessages(response);
+	}
+
+	if (!Array.isArray(messages)) {
+		return this._sendInvalidMessages(response);
+	}
+
+	return messages;
+}
+
+LongPollingTransport._sendInvalidMessages = function(response) {
+	Router.Utils.sendJSON(response, {
+		error : 'Invalid messages format'
+	}, 400);
+
+	return false;
+}
+
+LongPollingTransport.prototype.createConnection = function(connectionId) {
     this._connections[connectionId] = new LongPollingTransport.Connection(this, connectionId);
 
     return this._connections[connectionId];
+}
+
+LongPillingTransport.prototype._addRoutes = function() {
+	this.io.server.router.get('/beseda/io/longPolling/:id', this._holdRequest.bind(this));
+    this.io.server.router.post('/beseda/io/longPolling/:id', this._receive.bind(this));
 }
 
 LongPollingTransport.prototype._holdRequest = function(request, response, params) {
@@ -37,7 +63,7 @@ LongPollingTransport.prototype._receive = function(request, response, params) {
         }, 404);
     }
 
-    this._connections[params.id].receive(request, response);
+    this._connections[params.id].receive(request, response, params);
 }
 
 LongPollingTransport.prototype._flushConnections = function() {
@@ -76,7 +102,7 @@ LongPollingTransport.Connection.prototype.hold = function(request, response) {
     this._loopCount   = LongPollingTransport.MAX_LOOP_COUNT;
 }
 
-LongPollingTransport.Connection.prototype.receive = function(request, response) {
+LongPollingTransport.Connection.prototype.receive = function(request, response, params) {
     var id = ++this._lastReceiverId;
 
     this._receivers[id] = new LongPollingTransport.Connection.Receiver(this, id, request, response);
@@ -94,9 +120,13 @@ LongPollingTransport.Connection.prototype.waitOrFlush = function() {
     }
 }
 
+LongPollingTransport.Connection.prototype.deleteReceiver = function(receiverId) {
+	delete this._receivers[receiverId];
+}
+
 LongPollingTransport.Connection.prototype._flush = function() {
     Router.Utils.sendJSON(this._response, {
-        messages : JSON.stringify(this._dataQueue)
+        messages : this._dataQueue
     });
 
 	this._dataQueue = [];
@@ -115,15 +145,21 @@ LongPollingTransport.Connection.Receiver = function(connection, id, request, res
 	this._request.on('end', this._end.bind(this));
 }
 
-LongPollingTransport.Receiver.prototype._collectData = function(chunk) {
+LongPollingTransport.Connection.Receiver.prototype._collectData = function(chunk) {
     this._data += chunk;
 }
 
-LongPollingTransport.Receiver.prototype._end = function() {
+LongPollingTransport.Connection.Receiver.prototype._end = function() {
     Router.Utils.send(this._response);
-
-    this._connection.transport.io.receive(this._connection.id, JSON.parse(this._data));
 
 	this._request.removeListener('data', this._collectData.bind(this));
 	this._request.removeListener('end', this._end.bind(this));
+
+	this._connection.deleteReceiver(this._id);
+
+	var messages = LongPollingTransport.parseMessages(this._data);
+
+	if (messages) {
+		this._connection.transport.io.receive(this._connection.id, messages);
+	}
 }

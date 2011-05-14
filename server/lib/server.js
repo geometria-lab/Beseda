@@ -26,12 +26,11 @@ Server = module.exports = function(options) {
         monitor : false,
 
         transports : [ 'longPolling', 'JSONPLongPolling' ],
-        transportOptions : { longPolling : { reconnectTimeout : 10 } },
 
-        connectionTimeout     : 2000, //TODO: Change to seconds
-        subscriptionTimeout   : 100,
-        publicationTimeout    : 100,
-        unsubscriptionTimeout : 100
+        connectionTimeout     : 2,
+        subscriptionTimeout   : 0.1,
+        publicationTimeout    : 0.1,
+        unsubscriptionTimeout : 0.1
     };
 
     this.options = utils.merge(defaultOptions, options);

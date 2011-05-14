@@ -7,10 +7,10 @@ SubscriptionRequest = module.exports = function(session, requestMessage, channel
 
     this.isApproved = false;
 
-    this._timeout = setTimeout(this.decline.bind(this), 1000);
-                               //this.session.server.options.subscriptionTimeout);
+    this._timeout = setTimeout(this.decline.bind(this),
+                               this.session.server.options.subscriptionTimeout * 1000);
 
-    util.log('Session ' + this.session.connectionID + ' subscription request to channel "' + this._getChannelNames() + '" started');
+    util.log('Session ' + this.session.id + ' subscription request to channel "' + this._getChannelNames() + '" started');
 };
 
 SubscriptionRequest.prototype.approve = function() {
@@ -24,7 +24,7 @@ SubscriptionRequest.prototype.approve = function() {
 
     this._sendResponse(true);
 
-    util.log('Session ' + this.session.connectionID + ' subscription request to channel "' + this._getChannelNames() + '" APPROVED');
+    util.log('Session ' + this.session.id + ' subscription request to channel "' + this._getChannelNames() + '" APPROVED');
 
     //this.session.server.monitor.increment('subscription');
 };
@@ -33,12 +33,12 @@ SubscriptionRequest.prototype.decline = function(error) {
     clearTimeout(this._timeout);
 
     if (this.isApproved) {
-        throw new Error('Session ' + this.session.connectionID + ' subscription request to channel "' + this._getChannelNames() + '" already approved');
+        throw new Error('Session ' + this.session.id + ' subscription request to channel "' + this._getChannelNames() + '" already approved');
     }
 
     this._sendResponse(false, error || 'Subscription declined');
 
-    util.log('Session ' + this.session.connectionID + ' subscription request to channel "' + this._getChannelNames() + '" DECLINED' + (error ? ': ' + error : ''));
+    util.log('Session ' + this.session.id + ' subscription request to channel "' + this._getChannelNames() + '" DECLINED' + (error ? ': ' + error : ''));
 
     //this.session.server.monitor.increment('declinedSubscription');
 };

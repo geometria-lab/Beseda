@@ -54,7 +54,7 @@ IO.prototype._handleConnect = function(request, response, params) {
         var connectionId = ++this._lastConnectionId;
         var transport = this._getTransport(params.transport);
 
-        this._connections[connectionId] = transport.create(connectionId, request, response);
+        this._connections[connectionId] = transport.createConnection(connectionId);
 
         Router.Utils.sendJSON(response, { connectionId : connectionId });
 	} else {

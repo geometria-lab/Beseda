@@ -6,10 +6,10 @@ ConnectionRequest = module.exports = function(session, requestMessage) {
 
     this.isApproved = false;
 
-    this._timeout = setTimeout(this.decline.bind(this), 1000);
-                              // this.session.server.options.connectionTimeout);
+    this._timeout = setTimeout(this.decline.bind(this),
+                               this.session.server.options.connectionTimeout * 1000);
 
-    util.log('Session ' + this.session.connectionID + ' connection request started');
+    util.log('Session ' + this.session.id + ' connection request started');
 };
 
 ConnectionRequest.prototype.approve = function() {
@@ -19,7 +19,7 @@ ConnectionRequest.prototype.approve = function() {
 
     this._sendResponse(true);
 
-    util.log('Session ' + this.session.connectionID + ' connection request APPROVED');
+    util.log('Session ' + this.session.id + ' connection request APPROVED');
 };
 
 ConnectionRequest.prototype.decline = function(error) {
@@ -31,7 +31,7 @@ ConnectionRequest.prototype.decline = function(error) {
 
     this._sendResponse(false, error || 'Connection declined');
 
-    util.log('Session ' + this.session.connectionID + ' connection request DECLINED' + (error ? ': ' + error : ''));
+    util.log('Session ' + this.session.id + ' connection request DECLINED' + (error ? ': ' + error : ''));
 
     this.session.destroy();
 };

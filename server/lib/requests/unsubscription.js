@@ -7,10 +7,10 @@ UnsubscriptionRequest = module.exports = function(session, requestMessage, chann
 
     this.isApproved = false;
 
-    this._timeout = setTimeout(this.decline.bind(this), 1000);
-                               //this.session.server.options.unsubscriptionTimeout);
+    this._timeout = setTimeout(this.decline.bind(this)
+                               this.session.server.options.unsubscriptionTimeout * 1000);
 
-    util.log('Session ' + this.session.connectionID + ' unsubscription request to channel "' + this._getChannelNames() + '" started');
+    util.log('Session ' + this.session.id + ' unsubscription request to channel "' + this._getChannelNames() + '" started');
 };
 
 UnsubscriptionRequest.prototype.approve = function() {
@@ -24,19 +24,19 @@ UnsubscriptionRequest.prototype.approve = function() {
 
     this._sendResponse(true);
 
-    util.log('Session ' + this.session.connectionID + ' unsubscription request to channel "' + this._getChannelNames() + '" APPROVED');
+    util.log('Session ' + this.session.id + ' unsubscription request to channel "' + this._getChannelNames() + '" APPROVED');
 };
 
 UnsubscriptionRequest.prototype.decline = function(error) {
     clearTimeout(this._timeout);
 
     if (this.isApproved) {
-        throw new Error('Session ' + this.session.conectionID + ' unsubscription request to channel "' + this._getChannelNames() + '" already approved');
+        throw new Error('Session ' + this.session.id + ' unsubscription request to channel "' + this._getChannelNames() + '" already approved');
     }
 
     this._sendResponse(false, error || 'Unsubscription declined');
 
-    util.log('Session ' + this.session.connectionID + ' unsubscription request to channel "' + this._getChannelNames() + '" DECLINED' + (error ? ': ' + error : ''));
+    util.log('Session ' + this.session.id + ' unsubscription request to channel "' + this._getChannelNames() + '" DECLINED' + (error ? ': ' + error : ''));
 };
 
 UnsubscriptionRequest.prototype._sendResponse = function(successful, error) {
