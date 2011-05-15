@@ -6,8 +6,8 @@ var fs          = require('fs'),
     io          = require('./../vendor/socket.io');
 
 var Router         = require('./router.js'),
-    MessageRouter  = require('./message_router.js'),
-    MonitorUpdater = require('./monitor_updater.js');
+    MessageRouter  = require('./message_router.js');
+    //MonitorUpdater = require('./monitor_updater.js');
 
 var utils = require('./utils.js');
 
@@ -24,7 +24,7 @@ Server = module.exports = function(options) {
         server : null,
         socketIO : {},
         pubSub : 'memory',
-        monitor : false,
+        //monitor : false,
 
         log : function(message) {
             util.log(message);
@@ -142,11 +142,12 @@ Server = module.exports = function(options) {
 
     /**
      *  Setup Monitor
-     **/
+     *
     if (this.options.monitor) {
         this.monitor = new MonitorUpdater(this, this.options.monitor);
         this.monitor.start();
     }
+	*/
 
     if (this._isHTTPServerOpened()) {
         this._logBesedaStarted();

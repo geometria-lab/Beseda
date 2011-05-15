@@ -3,8 +3,9 @@ Changelog
 
 Version 0.0.3
 ---
-Unrelased
+May 15, 2011
 
+* Disable monitor (not stable)
 * Change default port to 4000 for server and to 4001 for monitor
 
 Version 0.0.2
