@@ -1,9 +1,11 @@
+var util = require('util');
+
 var Router = require('./router.js');
 
 var LongPollingTransport      = require('./transports/long_polling.js'),
 	JSONPLongPollingTransport = require('./transports/jsonp_long_polling.js');
 
-exports = IO = function(server) {
+module.exports = IO = function(server) {
 	process.EventEmitter.call(this);
 
     this.server = server;
@@ -16,7 +18,7 @@ exports = IO = function(server) {
 	this.server.router.get('/beseda/io/:transport', this._handleConnect.bind(this));
 }
 
-util.inherits(Server, process.EventEmitter);
+util.inherits(IO, process.EventEmitter);
 
 IO.TRANSPORTS = {
 	longPolling      : LongPollingTransport,
@@ -31,19 +33,12 @@ IO.prototype.send = function(connectionId, message) {
     this._connections[connectionId].send(message);
 };
 
-IO.prototype.receive = function(connectionId, messages) {
-    for (var i = 0; i < messages.length; i++) {
-        this.emit('message', connectionId, messages[i]);
-    }
-}
-
-IO.prototype.disconnect = function(connectionId) {
-    this.emit('disconnect', connectionId);
-}
-
 IO.prototype._getTransport = function(name) {
     if (!this._transports[name]) {
         this._transports[name] = new IO.TRANSPORTS[name];
+
+		this._transports[name].on('message', this._onMessage.bind(this));
+		this._transports[name].on('disconnect', this._onDisconnect.bind(this));
     }
 
     return this._transports[name];
@@ -62,4 +57,14 @@ IO.prototype._handleConnect = function(request, response, params) {
             error               : 'Invalid transport',
             availableTransports : this.server.options.transports });
     }
+}
+
+IO.prototype._onMessage = function(connectionId, messages) {
+    for (var i = 0; i < messages.length; i++) {
+        this.emit('message', connectionId, messages[i]);
+    }
+}
+
+IO.prototype._onDisconnect = function(connectionId) {
+    this.emit('disconnect', connectionId);
 }

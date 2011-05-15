@@ -7,7 +7,7 @@ var PublicationRequest = module.exports = function(session, requestMessage, chan
 
     this.isApproved = false;
 
-    this._timeout = setTimeout(this.decline.bind(this)
+    this._timeout = setTimeout(this.decline.bind(this),
                                this.session.server.options.publicationTimeout * 1000);
 
     util.log('Session ' + this.session.id + ' publication request to channel "' + this.channel.name + '" started');

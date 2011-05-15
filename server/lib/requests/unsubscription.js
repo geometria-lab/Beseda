@@ -7,7 +7,7 @@ UnsubscriptionRequest = module.exports = function(session, requestMessage, chann
 
     this.isApproved = false;
 
-    this._timeout = setTimeout(this.decline.bind(this)
+    this._timeout = setTimeout(this.decline.bind(this),
                                this.session.server.options.unsubscriptionTimeout * 1000);
 
     util.log('Session ' + this.session.id + ' unsubscription request to channel "' + this._getChannelNames() + '" started');

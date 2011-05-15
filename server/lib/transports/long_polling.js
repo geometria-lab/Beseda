@@ -1,14 +1,24 @@
+var util = require('util');
+
 var Router = require('./../router.js');
 
-exports = LongPollingTransport = function(io) {
+// TODO: Implement disconnect
+
+module.exports = LongPollingTransport = function(io) {
+	process.EventEmitter.call(this);
+
     this.io = io;
     this._connections = {};
 
     this._addRoutes();
 
+	this._connection = LongPollingTransport.Connection;
+
     this._flushInterval = setInterval(this._flushConnections.bind(this),
                                       LongPollingTransport.CHECK_INTERVAL);
 }
+
+util.inherits(LongPollingTransport, process.EventEmitter);
 
 LongPollingTransport.CHECK_INTERVAL = 1000;
 LongPollingTransport.MAX_LOOP_COUNT = 10;
@@ -36,12 +46,12 @@ LongPollingTransport._sendInvalidMessages = function(response) {
 }
 
 LongPollingTransport.prototype.createConnection = function(connectionId) {
-    this._connections[connectionId] = new LongPollingTransport.Connection(this, connectionId);
+    this._connections[connectionId] = new this._connection(this, connectionId);
 
     return this._connections[connectionId];
 }
 
-LongPillingTransport.prototype._addRoutes = function() {
+LongPollingTransport.prototype._addRoutes = function() {
 	this.io.server.router.get('/beseda/io/longPolling/:id', this._holdRequest.bind(this));
     this.io.server.router.post('/beseda/io/longPolling/:id', this._receive.bind(this));
 }
@@ -160,6 +170,6 @@ LongPollingTransport.Connection.Receiver.prototype._end = function() {
 	var messages = LongPollingTransport.parseMessages(this._data);
 
 	if (messages) {
-		this._connection.transport.io.receive(this._connection.id, messages);
+		this._connection.transport.emit('message', this._connection.id, messages);
 	}
 }

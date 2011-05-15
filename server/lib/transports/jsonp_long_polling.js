@@ -3,19 +3,15 @@ var util = require('util');
 var Router               = require('./../router.js'),
 	LongPollingTransport = require('./long_polling.js');
 
-exports = JSONPLongPollingTransport = function(io) {
+module.exports = JSONPLongPollingTransport = function(io) {
 	JSONPLongPollingTransport._super.constructor.call(this, io);
+
+	this._connection = JSONPLongPollingTransport.Connection;
 }
 
 util.inherits(JSONPLongPollingTransport, LongPollingTransport);
 
-JSONPLongPollingTransport.prototype.createConnection = function(connectionId) {
-    this._connections[connectionId] = new JSONPLongPollingTransport.Connection(this, connectionId);
-
-    return this._connections[connectionId];
-}
-
-LongPillingTransport.prototype._addRoutes = function() {
+JSONPLongPollingTransport.prototype._addRoutes = function() {
 	this.io.server.router.get('/beseda/io/JSONPLongPolling/:id', this._holdRequest.bind(this));
     this.io.server.router.get('/beseda/io/JSONPLongPolling/:id/send', this._receive.bind(this));
 }
@@ -51,7 +47,7 @@ LongPollingTransport.Connection.prototype.receive = function(request, response, 
 
 	var messages = JSONPLongPollingTransport.parseMessages(response, params.messages);
 	if (messages) {
-		this.transport.io.receive(this.id, messages);
+		this.transport.emit('message', this.id, messages);
 	}
 }
 

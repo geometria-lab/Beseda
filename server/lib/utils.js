@@ -1,8 +1,8 @@
-exports.clone = function(object) {
+module.exports.clone = function(object) {
     return exports.merge({}, object);
 };
 
-exports.merge = function(object, extend) {
+module.exports.merge = function(object, extend) {
     for (var p in extend) {
         try {
             if (extend[p].constructor == Object) {
@@ -18,11 +18,11 @@ exports.merge = function(object, extend) {
     return object;
 };
 
-exports.ensureArray = function(array) {
+module.exports.ensureArray = function(array) {
     return Array.isArray(array) ? array : [ array ];
 };
 /*
-exports.camelCasetoUnderscore = function(string) {
+module.exports.camelCasetoUnderscore = function(string) {
 	return string.replace(/([A-Z])/g, function($1) {
 		return '_' + $1.toLowerCase();
 	});
