@@ -1,7 +1,3 @@
-module.exports.clone = function(object) {
-    return exports.merge({}, object);
-};
-
 module.exports.merge = function(object, extend) {
     for (var p in extend) {
         try {
@@ -18,13 +14,10 @@ module.exports.merge = function(object, extend) {
     return object;
 };
 
+module.exports.clone = function(object) {
+    return exports.merge({}, object);
+};
+
 module.exports.ensureArray = function(array) {
     return Array.isArray(array) ? array : [ array ];
 };
-/*
-module.exports.camelCasetoUnderscore = function(string) {
-	return string.replace(/([A-Z])/g, function($1) {
-		return '_' + $1.toLowerCase();
-	});
-};
-*/
