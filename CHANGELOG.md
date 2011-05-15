@@ -1,10 +1,20 @@
 Changelog
 ======
 
+Version 0.0.4
+---
+Unreleased
+
+* Socket.IO goodbye! Own much faster and stable IO mechanism.
+  Long polling and JSONP long polling transports implemented. WebSocket and FlashSocket soon!
+* Add params to router
+* Refactor server and client
+
 Version 0.0.3
 ---
-Unrelased
+May 15, 2011
 
+* Disable monitor (not stable)
 * Change default port to 4000 for server and to 4001 for monitor
 
 Version 0.0.2

@@ -4,7 +4,7 @@ var Beseda = function(options) {
     this.setOptions({
         io : {
             host : document.location.hostname,
-            port : document.location.port || 4000
+            port : 4000
         }
     }, options);
 

@@ -18,26 +18,18 @@ Features
     * Publishing
     * Subscribing
 * Horizontal scaling (depends on Pub/Sub engine)
-* Monitor
+* Monitor (coming soon)
 * Server-side clients:
     * PHP
     * Ruby (coming soon)
     * Node.js (coming soon)
     * Python (coming soon)
 * Browsers client. Works well:
-    * Safari 4
-    * Safari 5
-    * Google Chrome 5
-    * Internet Explorer 6
-    * Internet Explorer 7
-    * Internet Explorer 8
-    * Internet Explorer 9
-    * iPhone Safari
-    * iPad Safari
-    * Firefox 3
-    * Firefox 4
-    * Opera 10
-    * Opera 11
+	* Google Chrome 5 and newer
+	* Firefox 2 and newer
+    * Safari 4 and newer. iPhone and iPad versions too
+    * Internet Explorer 6 and newer
+	* Opera 8 and newer
 
 Get started!
 ---
@@ -64,30 +56,24 @@ Get started!
 
     _NOTE: You can find test application in `example` folder._
 
-    3.1. Create you server.js
+    3.1. Create you `server.js`
 
          var Beseda = require('beseda'),
              beseda = new Beseda();
 
-         beseda.listen();
+         beseda.listen(4000, 'localhost');
 
-    3.2. Run by Node.js
+    3.2. Run it
 
     `sudo node server.js`
 
-    3.3. Create you test.html
+    3.3. Create you `test.html`
 
-        <script src="http://localhost:4000/socket.io/socket.io.js" type="text/javascript"></script>
-        <script src="http://localhost:4000/beseda.min.js" type="text/javascript"></script>
         <script src="http://localhost:4000/beseda.min.js" type="text/javascript"></script>
         <script type="text/javascript">
 
         function say(what) {
-            if ('console' in window && 'log' in console) {
-                console.log(what);
-            } else {
-                alert(what);
-            }
+            document.body.
         }
 
         var beseda = new Beseda({ host : 'localhost', port : 4000 });
@@ -101,11 +87,13 @@ Get started!
         });
 
         </script>
+		<body>
         <input type="button" value="Send me a nice message dude..." onclick="beseda.publish('/myFavoriteChannel', 'Nice!');return false"/>
+		</body>
 
     3.4 Test it
 
-    Open test.html in you favorite browser and open console (firebug, javascript console...)
+    Open `test.html` in you favorite browser
 
 Documentation
 ---
@@ -134,8 +122,9 @@ Contributors
 
 Inspired
 ---
-* [Push-it](https://github.com/aaronblohowiak/Push-It)
-* [Juggernaut](https://github.com/maccman/juggernaut)
+* [Socket.IO](http://socket.io)
+* [Push-it](http://github.com/aaronblohowiak/Push-It)
+* [Juggernaut](http://github.com/maccman/juggernaut)
 
 License
 ---
