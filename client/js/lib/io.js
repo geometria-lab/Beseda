@@ -1,34 +1,18 @@
-Beseda.IO = function(host, port) {
-	this.__host = host;
-	this.__port = port;
+Beseda.IO = function(options) {
+	Beseda.IO._super.constructor.call(this);
 
-	this.__transport = null;
-	this.__emitter = null;
+	this.__options = options;
+
+	this.__transport = Beseda.Transport.getBestTransport(options);
+	this.__transport.setEmitter(this);
 };
 
-Beseda.IO.EVENT_CONNECT 	= 'io_connect';
-Beseda.IO.EVENT_MESSAGE 	= 'io_message';
-Beseda.IO.EVENT_DISCONNECT = 'io_disconnect';
-Beseda.IO.EVENT_ERROR 	    = 'io_error';
-
-Beseda.IO.prototype.setTransport = function(transport) {
-	this.__transport = transport;
-
-	if (this.__emitter) {
-		this.__transport.setEmitter(this.__emitter);
-	}
-};
-
-Beseda.IO.prototype.setEmitter = function(emitter) {
-	if (this.__transport) {
-		this.__transport.setEmitter(emitter);
-	} else {
-		this.__emitter = emitter;
-	}
-};
+Beseda.utils.inherits(Beseda.IO, Beseda.EventEmitter);
 
 Beseda.IO.prototype.connect = function() {
-	this.__transport.connect(this.__host, this.__port);
+	this.__transport.connect(this.__options.host,
+							 this.__options.port,
+							 this.__options.ssl);
 };
 
 Beseda.IO.prototype.send = function(data) {
