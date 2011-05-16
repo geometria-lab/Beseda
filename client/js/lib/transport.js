@@ -1,15 +1,36 @@
 Beseda.Transport = function() {
-	this._url = null;
-	this._typeSuffix = null;
+	this._url          = null;
+	this._typeSuffix   = null;
 	this._connectionID = null;
-	this._emitter = null;
-	
+	this._emitter      = null;
+
 	this.__sendQueue = [];
 };
 
 Beseda.Transport.DATA_SEPARATOR	 = '|';
 
-Beseda.Transport.prototype.connect = function(host, port) {
+Beseda.Transport._transports = {
+	'longPolling'      : 'LongPolling',
+	'JSONPLongPolling' : 'JSONPLongPolling'
+};
+
+Beseda.Transport.getBestTransport = function(options) {
+	for(var i = 0; i < options.transports.length; i++) {
+
+		var transportName = Beseda.Transport._transports[options.transports[i]]
+		var transport = Beseda.Transport[transportName];
+		
+		if (transport) {
+			if (transport.isAvailable(options)) {
+				return new transport();
+			}
+		} else {
+			throw Error('Ivalid transport ' + options.transports[i]);
+		}
+	}
+};
+
+Beseda.Transport.prototype.connect = function(host, port, ssl) {
 	throw Error('Abstract method calling.');
 };
 
@@ -29,7 +50,7 @@ Beseda.Transport.prototype._handleConnection = function(data) {
 	this._connectionID = data;
 
 	if (this._emitter) {
-		this._emitter.emit(Beseda.IO.EVENT_CONNECT, this._connectionID);
+		this._emitter.emit('connect', this._connectionID);
 	}
 	
 	while(this.__sendQueue.length) {
@@ -42,7 +63,7 @@ Beseda.Transport.prototype._handleMessage = function(data) {
 		var parsedData = data.split(Beseda.Transport.DATA_SEPARATOR);
 		
 		while(parsedData.length) {
-			this._emitter.emit(Beseda.IO.EVENT_MESSAGE, parsedData.shift());
+			this._emitter.emit('message', parsedData.shift());
 		}
 	}
 };

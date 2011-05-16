@@ -9,12 +9,13 @@ Beseda.Router.prototype.dispatch = function(message) {
     } else {
         if (message.channel.indexOf('/meta/') == 0) {
             var metaChannel = message.channel.substr(6);
+            
             if (!metaChannel in ['connect', 'error', 'subscribe', 'unsubscribe']) {
                 this.client.log('Unsupported meta channel ' + message.channel);
                 this.client.emit('error', message);
+            } else {            
+            		this['_' + metaChannel].call(this, message);
             }
-
-            this['_' + metaChannel].call(this, message);
         } else {
             this._message(message);
         }
