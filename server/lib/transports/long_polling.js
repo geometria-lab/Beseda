@@ -45,7 +45,9 @@ LongPollingTransport._sendInvalidMessages = function(response) {
 	return false;
 }
 
-LongPollingTransport.prototype.createConnection = function(connectionId) {
+LongPollingTransport.prototype.createConnection = function(connectionId, request, response) {
+	this._sendApplyConnection(connectionId, request, response);
+
     this._connections[connectionId] = new this._connection(this, connectionId);
 
     return this._connections[connectionId];
@@ -56,6 +58,10 @@ LongPollingTransport.prototype._addRoutes = function() {
     this.io.server.router.post('/beseda/io/longPolling/:id', this._receive.bind(this));
 }
 
+LongPollingTransport.prototype._sendApplyConnection = function(connectionId, request, response) {
+	Router.Utils.sendJSON(response, { connectionId : connectionId });
+}
+
 LongPollingTransport.prototype._holdRequest = function(request, response, params) {
     if (!this._connections[params.id]) {
         return Router.Utils.sendJSON(response, {
@@ -63,7 +69,7 @@ LongPollingTransport.prototype._holdRequest = function(request, response, params
         }, 404);
     }
 
-    this._connections[params.id].hold(request, response);
+    this._connections[params.id].hold(request, response, params);
 }
 
 LongPollingTransport.prototype._receive = function(request, response, params) {
@@ -102,7 +108,7 @@ LongPollingTransport.Connection.prototype.send = function(data) {
 	++this._updateFlag;
 }
 
-LongPollingTransport.Connection.prototype.hold = function(request, response) {
+LongPollingTransport.Connection.prototype.hold = function(request, response, params) {
     if (this._response !== null) {
         this._flush();
     }
@@ -160,14 +166,14 @@ LongPollingTransport.Connection.Receiver.prototype._collectData = function(chunk
 }
 
 LongPollingTransport.Connection.Receiver.prototype._end = function() {
-    Router.Utils.send(this._response);
+    Router.Utils.send(this._response, 200);
 
 	this._request.removeListener('data', this._collectData.bind(this));
 	this._request.removeListener('end', this._end.bind(this));
 
 	this._connection.deleteReceiver(this._id);
 
-	var messages = LongPollingTransport.parseMessages(this._data);
+	var messages = LongPollingTransport.parseMessages(this._response, this._data);
 
 	if (messages) {
 		this._connection.transport.emit('message', this._connection.id, messages);

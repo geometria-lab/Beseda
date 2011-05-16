@@ -3,7 +3,7 @@ var Beseda = function(options) {
 
     this.setOptions({
         host : document.location.hostname,
-        port : document.location.port || 4000,
+        port : 4000,
         ssl  : false,
 
         transports : [ 'longPolling', 'JSONPLongPolling' ]
@@ -20,7 +20,7 @@ var Beseda = function(options) {
 
     var self = this;
     this._io.on('message', function(data) {
-        self.router.dispatch(JSON.parse(data));
+        self.router.dispatch(data);
     });
     this._io.on('disconnect', function() {
 		self._onDisconnect();
@@ -431,8 +431,8 @@ Beseda.Transport.prototype.setEmitter = function(emitter) {
 	this._emitter = emitter;
 };
 
-Beseda.Transport.prototype._handleConnection = function(data) {
-	this._connectionID = data;
+Beseda.Transport.prototype._handleConnection = function(id) {
+	this._connectionID = id;
 
 	if (this._emitter) {
 		this._emitter.emit('connect', this._connectionID);
@@ -444,11 +444,19 @@ Beseda.Transport.prototype._handleConnection = function(data) {
 };
 
 Beseda.Transport.prototype._handleMessage = function(data) {
-	if (data && data.length > 0) {
-		var parsedData = data.split(Beseda.Transport.DATA_SEPARATOR);
-		
-		while(parsedData.length) {
-			this._emitter.emit('message', parsedData.shift());
+	if (data) {
+		var messages;
+
+		messages = data
+
+		if (!messages.pop) {
+			try {
+				var parsedData = eval('(' + data + ')');//data.split(Beseda.Transport.DATA_SEPARATOR);
+				messages = parsedData.messages;
+			} catch (error) {}
+		}
+		while(messages && messages.length) {
+			this._emitter.emit('message', messages.shift());
 		}
 	}
 };
@@ -462,11 +470,13 @@ Beseda.Transport.prototype._enqueue = function(data) {
 Beseda.Transport.LongPolling = function() {
 	Beseda.Transport.LongPolling._super.constructor.call(this);
 
-	this._typeSuffix = 'long-polling';
+	this._typeSuffix = 'longPolling';
 
 	this._connectionRequest = null;
 	this._pollRequest = null;
 	this._sendRequest = null;
+
+	this._sendSuffix = '';
 
 	this._initRequests();
 
@@ -487,7 +497,7 @@ Beseda.Transport.LongPolling = function() {
 Beseda.utils.inherits(Beseda.Transport.LongPolling, Beseda.Transport);
 
 Beseda.Transport.LongPolling.isAvailable = function(options) {
-	return document.location.hostname === options.host;
+	return false;//document.location.hostname === options.host;
 }
 
 Beseda.Transport.LongPolling.prototype._initRequests = function() {
@@ -502,20 +512,34 @@ Beseda.Transport.LongPolling.prototype.connect = function(host, port, ssl) {
 
 		this._url = protocol + '://' + host + ':' + port + "/beseda/io";
 
-		var connectUrl = this._url + "/connect/" + this._typeSuffix;
+		var connectUrl = this._url + "/" + this._typeSuffix;
 
 		this._connectionRequest.send(connectUrl);
 	}
 };
 
 Beseda.Transport.LongPolling.prototype._handleConnection = function(data) {
-	this._sendRequest.url = 
-	this._pollRequest.url =
-		this._url + "/" + data;
+	if (data !== undefined) {
+		var id = data.connectionId;
 
-	Beseda.Transport.LongPolling._super._handleConnection.call(this, data);
+		if (id == null) {
+			try { 
+				 id = eval('(' + data + ')').connectionId;
+			} catch (error) {}
+		}
+		
+		if (id) { 
+			this._sendRequest.url = 
+			this._pollRequest.url =
+				this._url + "/" + this._typeSuffix + "/" + id;
 
-	this.__poll();
+			this._sendRequest.url += this._sendSuffix;
+
+			Beseda.Transport.LongPolling._super._handleConnection.call(this, id);
+
+			this.__poll();
+		}
+	}
 };
 
 Beseda.Transport.LongPolling.prototype.__poll = function() {
@@ -532,7 +556,7 @@ Beseda.Transport.LongPolling.prototype._handleMessage = function(data) {
 
 Beseda.Transport.LongPolling.prototype.send = function(data) {
 	if (this._connectionID) {
-		this._sendRequest.data = data;
+		this._sendRequest.data = '[' + data + ']';
 		this._sendRequest.send();
 	} else {
 		this._enqueue(data);
@@ -595,9 +619,9 @@ Beseda.Transport.LongPolling.Request.prototype.send = function(url) {
 
 Beseda.Transport.JSONPLongPolling = function() {
 	Beseda.Transport.JSONPLongPolling._super.constructor.call(this);
-	
-	this._dataType = 'jsonp';
-	this._typeSuffix = 'jsonp-polling';
+
+	this._typeSuffix = 'JSONPLongPolling';
+	this._sendSuffix = '/send';
 };
 
 Beseda.utils.inherits(Beseda.Transport.JSONPLongPolling, Beseda.Transport.LongPolling);
@@ -607,57 +631,70 @@ Beseda.Transport.JSONPLongPolling.isAvailable = function(options) {
 }
 
 Beseda.Transport.JSONPLongPolling.prototype._initRequests = function() {
-	this._connectionRequest = new Beseda.Transport.LongPolling.JSONPRequest();
-	this._pollRequest = new Beseda.Transport.LongPolling.JSONPRequest();
+	this._connectionRequest = new Beseda.Transport.JSONPLongPolling.JSONPRequest();
+	this._pollRequest = new Beseda.Transport.JSONPLongPolling.JSONPRequest();
 	
-	this._sendRequest = new Beseda.Transport.LongPolling.Request('POST');
+	this._sendRequest = new Beseda.Transport.JSONPLongPolling.JSONPRequest();
 };
 
-Beseda.Transport.LongPolling.JSONPRequest = function() {
-	Beseda.Transport.LongPolling.JSONPRequest._super.constructor.call(this);
+Beseda.Transport.JSONPLongPolling.JSONPRequest = function() {
+	Beseda.Transport.JSONPLongPolling.JSONPRequest._super.constructor.call(this);
 	
 	this.url = null;
+	this.data = '';
 
-	this.__id = Beseda.Transport.LongPolling.JSONPRequest.__lastID++;
+	this.__id = Beseda.Transport.JSONPLongPolling.JSONPRequest.__lastID++;
 	this.__script = null;
 
 	var self = this;
-	Beseda.Transport.LongPolling.JSONPRequest.__callbacks[this.__id] = function(data) {
+	Beseda.Transport.JSONPLongPolling.JSONPRequest.__callbacks[this.__id] = function(data) {
 		self.__handleData(data);
 	};
 };
 
-Beseda.utils.inherits(Beseda.Transport.LongPolling.JSONPRequest, Beseda.EventEmitter);
+Beseda.utils.inherits(Beseda.Transport.JSONPLongPolling.JSONPRequest, Beseda.EventEmitter);
 
-Beseda.Transport.LongPolling.JSONPRequest.__callbacks = [];
-Beseda.Transport.LongPolling.JSONPRequest.__lastID = 0;
+Beseda.Transport.JSONPLongPolling.JSONPRequest.__callbacks = [];
+Beseda.Transport.JSONPLongPolling.JSONPRequest.__lastID = 0;
 
-Beseda.Transport.LongPolling.JSONPRequest.prototype.__handleData = function(data) {
+Beseda.Transport.JSONPLongPolling.JSONPRequest.prototype.__handleData = function(data) {
 	document.body.removeChild(this.__script);
 	this.__script = null;
 	
 	this.emit('ready', data);
 };
 
-Beseda.Transport.LongPolling.JSONPRequest.prototype.send = function(url) {
+Beseda.Transport.JSONPLongPolling.JSONPRequest.prototype.send = function(url) {
 	if (url) {
 		this.url = url;
 	}
 
-	if (!this.__script) {
-		var requestURL = this.url;
+	// if (this.__script) {
+	//	document.body.removeChild(this.__script);
+	//	this.__script = null;
+	// }
+	
+	var requestURL = this.url;
 
-		requestURL += (requestURL.indexOf('?') === -1 ? '?' : '&') + 
-			'callback=Beseda.Transport.LongPolling.JSONPRequest.__callbacks[' + this.__id + ']&' + 
-				new Date().getTime();
+	requestURL += (requestURL.indexOf('?') === -1 ? '?' : '&') + 
+		'callback=Beseda.Transport.JSONPLongPolling.JSONPRequest.__callbacks[' + this.__id + ']&' + 
+			new Date().getTime() + '&messages=' + this.data;
 
-		this.__script = document.createElement('script');
-		this.__script.src = requestURL;
-		this.__script.async = 'async';
-		
-		document.body.appendChild(this.__script);
+	this.__script = document.createElement('script');
+	this.__script.src = requestURL;
+	this.__script.async = 'async';
+	
+	document.body.appendChild(this.__script);
 
-	}
+	this.data = null;
+	
+};
+
+
+Beseda.Transport.JSONPLongPolling.FormRequest = function() {
+	Beseda.Transport.JSONPLongPolling.JSONPRequest._super.constructor.call(this);
+	
+	this.url = null;
 };
 
 

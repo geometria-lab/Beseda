@@ -20,7 +20,7 @@ var Beseda = function(options) {
 
     var self = this;
     this._io.on('message', function(data) {
-        self.router.dispatch(JSON.parse(data));
+        self.router.dispatch(data);
     });
     this._io.on('disconnect', function() {
 		self._onDisconnect();

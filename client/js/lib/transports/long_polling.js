@@ -1,11 +1,13 @@
 Beseda.Transport.LongPolling = function() {
 	Beseda.Transport.LongPolling._super.constructor.call(this);
 
-	this._typeSuffix = 'long-polling';
+	this._typeSuffix = 'longPolling';
 
 	this._connectionRequest = null;
 	this._pollRequest = null;
 	this._sendRequest = null;
+
+	this._sendSuffix = '';
 
 	this._initRequests();
 
@@ -26,7 +28,7 @@ Beseda.Transport.LongPolling = function() {
 Beseda.utils.inherits(Beseda.Transport.LongPolling, Beseda.Transport);
 
 Beseda.Transport.LongPolling.isAvailable = function(options) {
-	return document.location.hostname === options.host;
+	return false;//document.location.hostname === options.host;
 }
 
 Beseda.Transport.LongPolling.prototype._initRequests = function() {
@@ -41,20 +43,34 @@ Beseda.Transport.LongPolling.prototype.connect = function(host, port, ssl) {
 
 		this._url = protocol + '://' + host + ':' + port + "/beseda/io";
 
-		var connectUrl = this._url + "/connect/" + this._typeSuffix;
+		var connectUrl = this._url + "/" + this._typeSuffix;
 
 		this._connectionRequest.send(connectUrl);
 	}
 };
 
 Beseda.Transport.LongPolling.prototype._handleConnection = function(data) {
-	this._sendRequest.url = 
-	this._pollRequest.url =
-		this._url + "/" + data;
+	if (data !== undefined) {
+		var id = data.connectionId;
 
-	Beseda.Transport.LongPolling._super._handleConnection.call(this, data);
+		if (id == null) {
+			try { 
+				 id = eval('(' + data + ')').connectionId;
+			} catch (error) {}
+		}
+		
+		if (id) { 
+			this._sendRequest.url = 
+			this._pollRequest.url =
+				this._url + "/" + this._typeSuffix + "/" + id;
 
-	this.__poll();
+			this._sendRequest.url += this._sendSuffix;
+
+			Beseda.Transport.LongPolling._super._handleConnection.call(this, id);
+
+			this.__poll();
+		}
+	}
 };
 
 Beseda.Transport.LongPolling.prototype.__poll = function() {
@@ -71,7 +87,7 @@ Beseda.Transport.LongPolling.prototype._handleMessage = function(data) {
 
 Beseda.Transport.LongPolling.prototype.send = function(data) {
 	if (this._connectionID) {
-		this._sendRequest.data = data;
+		this._sendRequest.data = '[' + data + ']';
 		this._sendRequest.send();
 	} else {
 		this._enqueue(data);

@@ -1,61 +1,81 @@
 var util = require('util');
+var qs = require('querystring')
 
 var Router               = require('./../router.js'),
 	LongPollingTransport = require('./long_polling.js');
 
-module.exports = JSONPLongPollingTransport = function(io) {
-	JSONPLongPollingTransport._super.constructor.call(this, io);
+var JSONPLongPollingTransport = module.exports = function(io) {
+	LongPollingTransport.call(this, io);
 
 	this._connection = JSONPLongPollingTransport.Connection;
 }
 
 util.inherits(JSONPLongPollingTransport, LongPollingTransport);
 
+JSONPLongPollingTransport.sendJSONP = function(response, data, callback, code, headers) {
+	headers = headers || {};
+
+	headers['Server'] = 'Beseda';
+	headers['Content-Type'] = 'text/javascript';
+
+	response.writeHead(code || 200, headers);
+    response.end(callback + '(' + JSON.stringify(data) + ');', 'utf8');
+}
+
 JSONPLongPollingTransport.prototype._addRoutes = function() {
 	this.io.server.router.get('/beseda/io/JSONPLongPolling/:id', this._holdRequest.bind(this));
     this.io.server.router.get('/beseda/io/JSONPLongPolling/:id/send', this._receive.bind(this));
 }
 
+JSONPLongPollingTransport.prototype._sendApplyConnection = function(connectionId, request, response) {
+	var callback = qs.parse(request.url.split('?')[1]).callback;
+
+	if (callback) {
+		JSONPLongPollingTransport.sendJSONP
+			(response, { connectionId : connectionId }, callback);
+	}
+}
+
 JSONPLongPollingTransport.Connection = function(transport, connectionId) {
-	JSONPLongPollingTransport.Connection._super.constructor.call(this, transport, connectionId);
+	LongPollingTransport.Connection.call(this, transport, connectionId);
 
 	this._callback = null;
 }
 
 util.inherits(JSONPLongPollingTransport.Connection, LongPollingTransport.Connection);
 
-JSONPLongPollingTransport.Connection.prototype.hold = function(request, response) {
-	var callback = request.url.split('?callback=');
+JSONPLongPollingTransport.Connection.prototype.hold = function(request, response, params) {
+	
+	var callback = params.callback;
 
-	if (!callback || !callback[1]) {
-		return Router.Utils.sendJSON(response, {
+	if (callback) {
+	
+		LongPollingTransport.Connection.prototype.hold.call(this, request, response);
+
+		this._callback = callback;
+
+	} else {
+		Router.Utils.sendJSON(response, {
 			error : 'Callback not present'
 		}, 400);
 	}
-
-	JSONPLongPollingTransport.Connection._super.hold.call(this, request, response);
-
-	this._callback = callback;
 }
 
-LongPollingTransport.Connection.prototype.receive = function(request, response, params) {
+JSONPLongPollingTransport.Connection.prototype.receive = function(request, response, params) {
     if (params.messages === undefined) {
 		return Router.Utils.sendJSON(response, {
 			error : 'Messages not present'
 		}, 400);
 	}
 
-	var messages = JSONPLongPollingTransport.parseMessages(response, params.messages);
+	var messages = LongPollingTransport.parseMessages(response, params.messages);
 	if (messages) {
 		this.transport.emit('message', this.id, messages);
 	}
 }
 
-LongPollingTransport.Connection.prototype._flush = function() {
-    Router.Utils.sendJSON(this._response, {
-		callback : this._callback,
-        messages : this._dataQueue
-    });
+JSONPLongPollingTransport.Connection.prototype._flush = function() {
+	JSONPLongPollingTransport.sendJSONP(this._response, this._dataQueue, this._callback);
 
 	this._dataQueue = [];
 	this._response = null;

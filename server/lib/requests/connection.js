@@ -6,7 +6,7 @@ ConnectionRequest = module.exports = function(session, requestMessage) {
 
     this.isApproved = false;
 
-    this._timeout = setTimeout(this.decline.bind(this),
+    this._timeout = setTimeout(this.decline.bind(this), 
                                this.session.server.options.connectionTimeout * 1000);
 
     util.log('Session ' + this.session.id + ' connection request started');

@@ -46,8 +46,8 @@ Beseda.Transport.prototype.setEmitter = function(emitter) {
 	this._emitter = emitter;
 };
 
-Beseda.Transport.prototype._handleConnection = function(data) {
-	this._connectionID = data;
+Beseda.Transport.prototype._handleConnection = function(id) {
+	this._connectionID = id;
 
 	if (this._emitter) {
 		this._emitter.emit('connect', this._connectionID);
@@ -59,11 +59,19 @@ Beseda.Transport.prototype._handleConnection = function(data) {
 };
 
 Beseda.Transport.prototype._handleMessage = function(data) {
-	if (data && data.length > 0) {
-		var parsedData = data.split(Beseda.Transport.DATA_SEPARATOR);
-		
-		while(parsedData.length) {
-			this._emitter.emit('message', parsedData.shift());
+	if (data) {
+		var messages;
+
+		messages = data
+
+		if (!messages.pop) {
+			try {
+				var parsedData = eval('(' + data + ')');//data.split(Beseda.Transport.DATA_SEPARATOR);
+				messages = parsedData.messages;
+			} catch (error) {}
+		}
+		while(messages && messages.length) {
+			this._emitter.emit('message', messages.shift());
 		}
 	}
 };

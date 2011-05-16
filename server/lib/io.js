@@ -35,7 +35,7 @@ IO.prototype.send = function(connectionId, message) {
 
 IO.prototype._getTransport = function(name) {
     if (!this._transports[name]) {
-        this._transports[name] = new IO.TRANSPORTS[name];
+        this._transports[name] = new IO.TRANSPORTS[name](this);
 
 		this._transports[name].on('message', this._onMessage.bind(this));
 		this._transports[name].on('disconnect', this._onDisconnect.bind(this));
@@ -49,9 +49,7 @@ IO.prototype._handleConnect = function(request, response, params) {
         var connectionId = ++this._lastConnectionId;
         var transport = this._getTransport(params.transport);
 
-        this._connections[connectionId] = transport.createConnection(connectionId);
-
-        Router.Utils.sendJSON(response, { connectionId : connectionId });
+        this._connections[connectionId] = transport.createConnection(connectionId, request, response);
 	} else {
         Router.Utils.sendJSON(response, {
             error               : 'Invalid transport',

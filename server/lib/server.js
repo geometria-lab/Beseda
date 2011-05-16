@@ -80,7 +80,7 @@ Server = module.exports = function(options) {
      *  Setup IO
      **/
 	this.io = new IO(this);
-    this.io.on('message', this.messageRouter.dispatch.bind(this));
+    this.io.on('message', this.messageRouter.dispatch.bind(this.messageRouter));
     this.io.on('disconnect', this._onDisconnect.bind(this));
 
     // Add request listener with static before others

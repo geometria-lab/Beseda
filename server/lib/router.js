@@ -53,25 +53,34 @@ Router.Route = function(path, callback, methods) {
 };
 
 Router.Route.prototype.isValid = function(request) {
+	var result = false;
+
     var method        = request.method == 'HEAD' ? 'GET' : request.method,
         isValidMethod = this.__methods.length == 0 || this.__methods.indexOf(method) !== -1;
 
 	if (isValidMethod) {
+		result = true;
+	
 		var requestPath = url.parse(request.url).pathname;
 
 		var requestPathHash = requestPath.split('/');
-		var i = 0, 
-			l = requestPathHash.length;
+		
+		if (this.__pathHash.length === requestPathHash.length) {
+			var i = 0, 
+				l = this.__pathHash.length;
 
-		while (i < l) {
-			if (this.__pathHash[i] !== requestPathHash[i] &&
-				this.__pathHash[i].indexOf(':') !== 0 ) {
-				result = false;
+			while (i < l) {
+				if (this.__pathHash[i] != requestPathHash[i] &&
+					this.__pathHash[i].indexOf(':') !== 0 ) {
+					result = false;
 
-				break;
+					break;
+				}
+
+				++i;
 			}
-
-			++i;
+		} else {
+			result = false;
 		}
     }
 
@@ -85,7 +94,7 @@ Router.Route.prototype.dispatch = function(request, response) {
 	var params = parsedUrl.query || {};
 
 	var i = 0,
-		l = parsedPath.length;
+		l = this.__pathHash.length;
 
 	while (i < l) {
 		if (this.__pathHash[i].indexOf(':') === 0) {
@@ -111,7 +120,7 @@ Router.Utils.send = function(response, code, headers) {
 
 Router.Utils.sendJSON = function(response, data, code, headers) {
     var json = JSON.stringify(data),
-        headers = utils.mergeObjects({
+        headers = utils.merge({
             'Server'         : 'Beseda',
             'Content-Type'   : 'text/json',
             'Content-Length' : json.length }, headers || {});

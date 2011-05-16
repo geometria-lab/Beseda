@@ -54,7 +54,7 @@ MessageRouter.prototype.dispatch = function(connectionId, message) {
 
 // TODO: Disconnect after timeout if no one events or connection declined
 MessageRouter.prototype._connect = function(connectionId, message) {
-    var session = new Session(connectionId),
+    var session = new Session(this.server, connectionId),
         request = new ConnectionRequest(session, message);
 
     var listeners = this.server.listeners('connect');
@@ -94,7 +94,7 @@ MessageRouter.prototype._subscribe = function(connectionId, message) {
     }
 
     var channels = [];
-    var subscriptions = utils.ensure(message.subscription);
+    var subscriptions = utils.ensureArray(message.subscription);
     for (var i = 0; i < subscriptions.length; i++) {
         if (subscriptions[i].indexOf('/') != 0) {
             return session.send({
@@ -187,7 +187,7 @@ MessageRouter.prototype._unsubscribe = function(conectionID, message) {
     //}
 
     var channels = [];
-    var subscriptions = utils.ensure(message.subscription);
+    var subscriptions = utils.ensureArray(message.subscription);
     for (var i = 0; i < subscriptions.length; i++) {
         if (subscriptions[i].indexOf('/') != 0) {
             return session.send({
