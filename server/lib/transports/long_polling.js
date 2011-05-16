@@ -1,166 +1,175 @@
-///////////////////////////////////////////////////////////////////////////////
-//
-//	Импорт зависимостей
-//
-///////////////////////////////////////////////////////////////////////////////
+var util = require('util');
 
+var Router = require('./../router.js');
 
-exports.BUFFER_OK		 = new Buffer('OK');
-exports.BUFFER_ERROR		 = new Buffer('ERROR');
-exports.BUFFER_NEW_LINE  = new Buffer('\n');
+// TODO: Implement disconnect
 
-exports.BUFFER_SEPARATOR = new Buffer('|');
-exports.BUFFER_JS_SEPARATOR = new Buffer(' + "|" + ');
+module.exports = LongPollingTransport = function(io) {
+	process.EventEmitter.call(this);
 
-var http = require('http');
-var url = require('url');
-var qs = require('querystring');
+    this.io = io;
+    this._connections = {};
 
-var enums = require('./enums');
+    this._addRoutes();
 
-///////////////////////////////////////////////////////////////////////////////
-//
-//	Статичные переменный
-//
-///////////////////////////////////////////////////////////////////////////////
+	this._connection = LongPollingTransport.Connection;
 
-var CHECK_INTERVAL = 1000;
-var MAX_LOOP_COUNT = 10;
+    this._flushInterval = setInterval(this._flushConnections.bind(this),
+                                      LongPollingTransport.CHECK_INTERVAL);
+}
 
-///////////////////////////////////////////////////////////////////////////////
-//
-//	Реализация логики
-//
-///////////////////////////////////////////////////////////////////////////////
+util.inherits(LongPollingTransport, process.EventEmitter);
 
-var connectionMap = {};
+LongPollingTransport.CHECK_INTERVAL = 1000;
+LongPollingTransport.MAX_LOOP_COUNT = 10;
 
-var LongPolling = function() {
-	this.updateFlag = 0;
-	this.currentFlag = 0;
-	this.loopCount = MAX_LOOP_COUNT;
-	
-	this.dataQueue = [];
-	this.response = null;
+LongPollingTransport.parseMessages = function(response, data) {
+	try {
+		var messages = JSON.parse(data)
+	} catch (e) {
+		return this._sendInvalidMessages(response);
+	}
 
-	this.isJSONP = false;
-	this.jsonpCallback = null;
-};
+	if (!Array.isArray(messages)) {
+		return this._sendInvalidMessages(response);
+	}
 
-function handleCheckIteration() {
-	var pollingData;
-	
-	for (var id in connectionMap) {
-		pollingData = connectionMap[id];
+	return messages;
+}
 
-		if (pollingData.response) {
-			if (pollingData.loopCount <= 0 ||
-				pollingData.dataQueue.length > 0 || 
-				pollingData.currentFlag !== pollingData.updateFlag) {
-				flush(pollingData);
-			} else {
-				pollingData.loopCount--;
-			}
-		}
+LongPollingTransport._sendInvalidMessages = function(response) {
+	Router.Utils.sendJSON(response, {
+		error : 'Invalid messages format'
+	}, 400);
+
+	return false;
+}
+
+LongPollingTransport.prototype.createConnection = function(connectionId) {
+    this._connections[connectionId] = new this._connection(this, connectionId);
+
+    return this._connections[connectionId];
+}
+
+LongPollingTransport.prototype._addRoutes = function() {
+	this.io.server.router.get('/beseda/io/longPolling/:id', this._holdRequest.bind(this));
+    this.io.server.router.post('/beseda/io/longPolling/:id', this._receive.bind(this));
+}
+
+LongPollingTransport.prototype._holdRequest = function(request, response, params) {
+    if (!this._connections[params.id]) {
+        return Router.Utils.sendJSON(response, {
+            error : 'Invalid connection id'
+        }, 404);
+    }
+
+    this._connections[params.id].hold(request, response);
+}
+
+LongPollingTransport.prototype._receive = function(request, response, params) {
+    if (!this._connections[params.id]) {
+        return Router.Utils.sendJSON(response, {
+            error : 'Invalid connection id'
+        }, 404);
+    }
+
+    this._connections[params.id].receive(request, response, params);
+}
+
+LongPollingTransport.prototype._flushConnections = function() {
+	for (var id in this._connections) {
+		this._connections[id].waitOrFlush();
 	}
 }
 
-function flush(pollingData) {
-	var i = 0;
-	var l = pollingData.dataQueue.length;
-	var separator = enums.BUFFER_SEPARATOR;
+LongPollingTransport.Connection = function(transport, id) {
+    this.transport = transport;
+    this.id = id;
 
-	if (pollingData.isJSONP) {
-		pollingData.response.write(pollingData.jsonpCallback);
-		pollingData.response.write("(");
+    this._receivers = {};
+    this._lastReceiverId = 0;
 
-		separator = enums.BUFFER_JS_SEPARATOR;
-	}
+	this._updateFlag  = 0;
+	this._currentFlag = 0;
+	this._loopCount   = LongPollingTransport.MAX_LOOP_COUNT;
 
-	while (i < l) {
-		if (i > 0) {
-			pollingData.response.write(separator);
-		}
+	this._dataQueue = [];
+	this._response  = null;
+};
 
-		pollingData.response.write(pollingData.dataQueue[i]);
-		
-		++i;
-	}
-
-	if (pollingData.isJSONP) {
-		pollingData.response.write(");");
-	}
-	
-	pollingData.response.end(enums.NEW_LINE_BUFFER);
-
-	pollingData.dataQueue = [];
-	pollingData.response = null;
+LongPollingTransport.Connection.prototype.send = function(data) {
+    this._dataQueue.push(data);
+	++this._updateFlag;
 }
 
-///////////////////////////////////////////////////////////////////////////////
-//
-//	Експорт модуля
-//
-///////////////////////////////////////////////////////////////////////////////
+LongPollingTransport.Connection.prototype.hold = function(request, response) {
+    if (this._response !== null) {
+        this._flush();
+    }
 
-var init = exports.init = function(id, isJSONP) {
-	if (connectionMap[id]) {
-		return false;
+    this._response    = response;
+    this._currentFlag = this._updateFlag;
+    this._loopCount   = LongPollingTransport.MAX_LOOP_COUNT;
+}
+
+LongPollingTransport.Connection.prototype.receive = function(request, response, params) {
+    var id = ++this._lastReceiverId;
+
+    this._receivers[id] = new LongPollingTransport.Connection.Receiver(this, id, request, response);
+}
+
+LongPollingTransport.Connection.prototype.waitOrFlush = function() {
+    if (this._response) {
+        if (this._loopCount <= 0 ||
+            this._dataQueue.length > 0 ||
+            this._currentFlag !== this._updateFlag) {
+            this._flush();
+        } else {
+            this._loopCount--;
+        }
+    }
+}
+
+LongPollingTransport.Connection.prototype.deleteReceiver = function(receiverId) {
+	delete this._receivers[receiverId];
+}
+
+LongPollingTransport.Connection.prototype._flush = function() {
+    Router.Utils.sendJSON(this._response, {
+        messages : this._dataQueue
+    });
+
+	this._dataQueue = [];
+	this._response = null;
+}
+
+LongPollingTransport.Connection.Receiver = function(connection, id, request, response) {
+    this._connection = connection;
+    this._id = id;
+    this._data = '';
+
+    this._request = request;
+    this._response = response;
+
+    this._request.on('data', this._collectData.bind(this));
+	this._request.on('end', this._end.bind(this));
+}
+
+LongPollingTransport.Connection.Receiver.prototype._collectData = function(chunk) {
+    this._data += chunk;
+}
+
+LongPollingTransport.Connection.Receiver.prototype._end = function() {
+    Router.Utils.send(this._response);
+
+	this._request.removeListener('data', this._collectData.bind(this));
+	this._request.removeListener('end', this._end.bind(this));
+
+	this._connection.deleteReceiver(this._id);
+
+	var messages = LongPollingTransport.parseMessages(this._data);
+
+	if (messages) {
+		this._connection.transport.emit('message', this._connection.id, messages);
 	}
-
-	connectionMap[id] = new LongPolling();
-	connectionMap[id].isJSONP = isJSONP;
-	
-	return true;
-};
-
-var write = exports.write = function(id, data) {
-	var pollingData = connectionMap[id];
-	
-	if (pollingData) {
-		var stringData = data.toString();
-		if (pollingData.isJSONP) {
-			stringData = JSON.stringify(stringData);
-		}
-		
-		pollingData.dataQueue.push(new Buffer(stringData));
-		++pollingData.updateFlag;
-	}
-};
-
-var hold = exports.hold = function(id, request, response) {
-	var pollingData = connectionMap[id];
-
-	if (pollingData) {
-		if (pollingData.response !== null) {
-			flush(pollingData);
-		}
-		
-		if (pollingData.isJSONP) {
-			var query = request.url.split('?')[1];
-			
-			if (!query) {
-				return false;
-			}
-		
-			pollingData.jsonpCallback = new Buffer(qs.parse(query)['callback']);
-		}
-		
-		pollingData.response = response;
-		pollingData.currentFlag = pollingData.updateFlag;
-		pollingData.loopCount = MAX_LOOP_COUNT;
-	}
-	
-	return true;
-};
-
-
-///////////////////////////////////////////////////////////////////////////////
-//
-//	Инициализация
-//
-///////////////////////////////////////////////////////////////////////////////
-
-setInterval(handleCheckIteration, CHECK_INTERVAL);
-
-
+}

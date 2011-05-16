@@ -7,86 +7,55 @@ var ConnectionRequest     = require('./requests/connection.js'),
     UnsubscriptionRequest = require('./requests/unsubscription.js');
 
 var utils = require('./utils.js');
-var io = require('./io');
 
 MessageRouter = module.exports = function(server) {
     this.server = server;
 };
 
-// TODO: Global error emitter.
-
-MessageRouter.prototype.dispatch = function(conectionID, message) {
+MessageRouter.prototype.dispatch = function(connectionId, message) {
     if (message.channel == undefined || message.clientId == undefined || message.id == undefined) {
-       /* io.write(conectionID, JSON.stringify({
+        this.server.io.send(connectionId, {
             channel : '/meta/error',
             data    : 'channel, clientId or id not present'
-        }));*/
-
-        error();
+        });
     }
 
     if (message.channel.indexOf('/meta/') === 0) {
         var metaChannel = message.channel.substr(6);
 
         if (!metaChannel in ['connect', 'subscribe', 'unsubscribe']) {
-            /*io.write(sessiconectionIDonID, JSON.stringify({
+            this.server.io.send(connectionId, {
                 id       : message.id,
                 channel  : '/meta/error',
                 clientId : message.clientId,
                 data     : 'Meta channel ' + message.channel + ' not supported'
-            }));*/
-
-            error();
+            });
         }
 
-		// TODO: change swich
-        this['_' + metaChannel].call(this, conectionID, message);
+        this['_' + metaChannel].call(this, connectionId, message);
     } else if (message.channel.indexOf('/service/') == 0) {
-        /*io.write(conectionID, JSON.stringify({
+        this.server.io.send(connectionId, {
             id       : message.id,
             channel  : '/meta/error',
             clientId : message.clientId,
             data     : 'Service channels not supported'
-        }));*/
-
-        error();
+        });
     } else if (message.channel.indexOf('/') == 0) {
-
-    
-        return this._publish(conectionID, message);
-        
+        return this._publish(connectionId, message);
     } else {
-        /*io.write(conectionID, JSON.stringify({
+        this.server.io.send(connectionId, {
             id       : message.id,
             channel  : '/meta/error',
             clientId : message.clientId,
             data     : 'Channel name must be start with /'
-        }));*/
-
-        error();
+        });
     }
 };
 
 // TODO: Disconnect after timeout if no one events or connection declined
-MessageRouter.prototype._connect = function(conectionID, message) {
-    var session = new Session(conectionID);
-
-    //var session = Session.get(message.clientId);
-    if (!session) {
-    		/*return client.send({
-		    id         : message.id,
-		    channel    : '/meta/connect',
-		    clientId   : message.clientId,
-		    successful : false,
-		    error      : 'Session ' + message.clientId + ' not present'
-		});*/
-
-		error();
-    }
-
-    session.connect();
-
-    var request = new ConnectionRequest(session, message);
+MessageRouter.prototype._connect = function(connectionId, message) {
+    var session = new Session(connectionId),
+        request = new ConnectionRequest(session, message);
 
     var listeners = this.server.listeners('connect');
     if (listeners.length) {
@@ -96,37 +65,33 @@ MessageRouter.prototype._connect = function(conectionID, message) {
     }
 };
 
-MessageRouter.prototype._subscribe = function(conectionID, message) {
+MessageRouter.prototype._subscribe = function(connectionId, message) {
     if (message.subscription == undefined) {
-        /*return client.send({
+        return this.server.io.send({
             id           : message.id,
             channel      : '/meta/subscribe',
             clientId     : message.clientId,
             successful   : false,
             subscription : '',
             error        : 'You must have a subscription in your subscribe message'
-        });*/
-
-        error();
+        });
     }
 
-    var session = Session.get(conectionID);
+    var session = Session.get(connectionId);
     if (!session) {
-       /* return client.send({
+        return this.server.io.send({
             id           : message.id,
             channel      : '/meta/subscribe',
             clientId     : message.clientId,
             successful   : false,
             subscription : message.subscription,
             error        : 'You must send connection message before'
-        });*/
-
-        error();
+        });
     }
 
-    //if (session.id != message.clientId) {
-    //    throw new Error('Client.session not equal message.clientId');
-    //}
+    if (session.id != message.clientId) {
+        throw new Error('Client.session not equal message.clientId');
+    }
 
     var channels = [];
     var subscriptions = utils.ensure(message.subscription);

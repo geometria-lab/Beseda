@@ -1,6 +1,3 @@
-[submodule "server/vendor/socket.io"]
-	path = server/vendor/socket.io
-	url = git@github.com:geometria-lab/Socket.IO-node.git
 [submodule "vendor/minifyjs"]
 	path = vendor/minifyjs
 	url = git@github.com:geometria-lab/minifyjs.git
