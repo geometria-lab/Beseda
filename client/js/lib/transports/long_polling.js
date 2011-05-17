@@ -21,8 +21,14 @@ Beseda.Transport.LongPolling = function() {
 		self._handleMessage(data);
 	};
 
+	this.__handleErrorClosure = function() {
+		self._emitter.emit('error');
+	};
+
 	this._connectionRequest.addListener('ready', this.__handleConnectionClosure);
 	this._pollRequest.addListener('ready', this.__handleMessageClosure);
+	this._connectionRequest.addListener('error', this.__handleErrorClosure);
+	this._pollRequest.addListener('error', this.__handleErrorClosure);
 };
 
 Beseda.utils.inherits(Beseda.Transport.LongPolling, Beseda.Transport);
@@ -38,7 +44,7 @@ Beseda.Transport.LongPolling.prototype._initRequests = function() {
 };
 
 Beseda.Transport.LongPolling.prototype.connect = function(host, port, ssl) {
-	if (!this._url) {
+	//if (!this._url) {
 		var protocol = ssl ? 'https' : 'http';
 
 		this._url = protocol + '://' + host + ':' + port + "/beseda/io";
@@ -46,7 +52,7 @@ Beseda.Transport.LongPolling.prototype.connect = function(host, port, ssl) {
 		var connectUrl = this._url + "/" + this._typeSuffix;
 
 		this._connectionRequest.send(connectUrl);
-	}
+	//xs}
 };
 
 Beseda.Transport.LongPolling.prototype._handleConnection = function(data) {
@@ -106,7 +112,12 @@ Beseda.utils.inherits(Beseda.Transport.LongPolling.Request, Beseda.EventEmitter)
 
 Beseda.Transport.LongPolling.Request.prototype.__requestStateHandler = function(request) {
 	if (request.readyState === 4) {
-		this.emit('ready', request.responseText);
+		if (request.status === 200) {
+			this.emit('ready', request.responseText);
+		} else {
+			this.emit('error');
+		}
+	
 		request.abort();
 	}
 };

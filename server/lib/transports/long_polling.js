@@ -88,6 +88,10 @@ LongPollingTransport.prototype._flushConnections = function() {
 	}
 }
 
+LongPollingTransport.prototype.removeConnection = function(id) {
+	delete this._connections[id];
+}
+
 LongPollingTransport.Connection = function(transport, id) {
     this.transport = transport;
     this.id = id;
@@ -101,6 +105,9 @@ LongPollingTransport.Connection = function(transport, id) {
 
 	this._dataQueue = [];
 	this._response  = null;
+
+	this.__disconnectTimeout = null;
+	
 };
 
 LongPollingTransport.Connection.prototype.send = function(data) {
@@ -116,7 +123,20 @@ LongPollingTransport.Connection.prototype.hold = function(request, response, par
     this._response    = response;
     this._currentFlag = this._updateFlag;
     this._loopCount   = LongPollingTransport.MAX_LOOP_COUNT;
+
+	if (this.__disconnectTimeout) {
+		clearTimeout(this.__disconnectTimeout);
+	}
+
+    this.__disconnectTimeout = setTimeout(this.disconnect.bind(this), 20000);
 }
+
+LongPollingTransport.Connection.prototype.disconnect = function() {
+	util.debug('disconnect ' + this.id);
+	
+	this.transport.emit('disconnect', this.id);
+	this.transport.removeConnection(this.id);
+};
 
 LongPollingTransport.Connection.prototype.receive = function(request, response, params) {
     var id = ++this._lastReceiverId;

@@ -15,6 +15,7 @@ var Beseda = function(options) {
 
     this.router   = new Beseda.Router(this);
     this.clientId = null;
+	this.__channels = [];
 
     this._io = new Beseda.IO(this.options);
 
@@ -24,6 +25,10 @@ var Beseda = function(options) {
     });
     this._io.on('disconnect', function() {
 		self._onDisconnect();
+    });
+    this._io.on('error', function() {
+ 		self._status = Beseda._statuses.DISCONNECTED;
+		setTimeout(function(){ self.connect(); }, 1000)
     });
 };
 
@@ -141,8 +146,10 @@ Beseda.prototype.subscribe = function(channel, callback, additionalMessage) {
 
     this.log('Beseda send subscribe request', message);
 
-    if (callback) {
-        this.on('subscribe:' + message.id, callback);
+    this.__channels.push(channel);
+
+	if (callback) {
+    		this.on('subscribe:' + message.id, callback);
     }
 };
 
@@ -190,6 +197,7 @@ Beseda.prototype.connect = function(callback, additionalMessage) {
     var self = this;
 
     this._io.once('connect', function(connectionID) {
+
         self.clientId = connectionID;
 
         var message = self._createMessage('/meta/connect', additionalMessage);

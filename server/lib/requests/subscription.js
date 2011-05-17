@@ -47,7 +47,7 @@ SubscriptionRequest.prototype._sendResponse = function(successful, error) {
     return this.session.send({
         id           : this.requestMessage.id,
         channel      : '/meta/subscribe',
-        clientId     : this.session.connectionID,
+        clientId     : this.requestMessage.clientId,
         successful   : successful,
         error        : error,
         subscription : this.requestMessage.subscription

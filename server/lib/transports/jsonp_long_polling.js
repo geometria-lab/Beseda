@@ -68,6 +68,8 @@ JSONPLongPollingTransport.Connection.prototype.receive = function(request, respo
 		}, 400);
 	}
 
+	JSONPLongPollingTransport.sendJSONP(response, { success : true }, params.callback);
+
 	var messages = LongPollingTransport.parseMessages(response, params.messages);
 	if (messages) {
 		this.transport.emit('message', this.id, messages);

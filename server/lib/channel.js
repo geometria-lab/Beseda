@@ -42,10 +42,10 @@ Channel.prototype.publish = function(message) {
 
 Channel.prototype.subscribe = function(session) {
     if (this.isSubscribed[session]) {
-        throw new Error('Session ' + session.connectionID + ' already subscribed to channel ' + this.name);
+        throw new Error('Session ' + session.id + ' already subscribed to channel ' + this.name);
     }
 
-    this.subscriptions[session.connectionID] = session;
+    this.subscriptions[session.id] = session;
 
     if (!this._isConnectedToPubSub) {
         this.__pubSub.subscribe(this.name, this._deliverMessage.bind(this));
@@ -54,15 +54,15 @@ Channel.prototype.subscribe = function(session) {
 };
 
 Channel.prototype.isSubscribed = function(session){
-    return !!this.subscriptions[session.connectionID];
+    return this.subscriptions[session.id];
 };
 
 Channel.prototype.unsubscribe = function(session) {
     if (!this.isSubscribed(session)) {
-        throw new Error('Session ' + session.connectionID + ' not subscribed to channel ' + this.name);
+        throw new Error('Session ' + session.id + ' not subscribed to channel ' + this.name);
     }
 
-    delete this.subscriptions[session.connectionID];
+    delete this.subscriptions[session.id];
 
     if (!this.subscriptions.length) {
         this.__pubSub.unsubscribe(this.name);

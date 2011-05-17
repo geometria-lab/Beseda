@@ -36,7 +36,7 @@ Session.prototype.destroy = function() {
     Session.remove(this.id);
 
     var channels = Channel.getAll();
-    for (var i = 0; i < channels.length; i++) {
+    for (var i in channels) {
         if (channels[i].isSubscribed(this)) {
             channels[i].unsubscribe(this);
         }
