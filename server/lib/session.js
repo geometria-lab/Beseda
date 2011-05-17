@@ -9,11 +9,7 @@ Session = module.exports = function(server, connectionId) {
 
     this.createdTimestamp = Date.now();
 
-    if (sessions[this.id]) {
-        throw new Error('Session with connection ' + this.id + ' already exists.');
-    } else {
-        sessions[this.id] = this;
-    }
+    sessions[this.id] = this;
 };
 
 Session.get = function(id) {
