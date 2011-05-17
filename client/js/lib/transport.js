@@ -7,8 +7,6 @@ Beseda.Transport = function() {
 	this.__sendQueue = [];
 };
 
-Beseda.Transport.DATA_SEPARATOR	 = '|';
-
 Beseda.Transport._transports = {
 	'longPolling'      : 'LongPolling',
 	'JSONPLongPolling' : 'JSONPLongPolling'
@@ -60,18 +58,8 @@ Beseda.Transport.prototype._handleConnection = function(id) {
 
 Beseda.Transport.prototype._handleMessage = function(data) {
 	if (data) {
-		var messages;
-
-		messages = data
-
-		if (!messages.pop) {
-			try {
-				var parsedData = eval('(' + data + ')');//data.split(Beseda.Transport.DATA_SEPARATOR);
-				messages = parsedData.messages;
-			} catch (error) {}
-		}
-		while(messages && messages.length) {
-			this._emitter.emit('message', messages.shift());
+		while(data.length) {
+			this._emitter.emit('message', data.shift());
 		}
 	}
 };

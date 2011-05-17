@@ -19,6 +19,10 @@ Beseda.Transport.JSONPLongPolling.prototype._initRequests = function() {
 	this._sendRequest = new Beseda.Transport.JSONPLongPolling.JSONPRequest();
 };
 
+Beseda.Transport.JSONPLongPolling.prototype._parseMessage = function(message) {
+	return message;
+};
+
 Beseda.Transport.JSONPLongPolling.JSONPRequest = function() {
 	Beseda.Transport.JSONPLongPolling.JSONPRequest._super.constructor.call(this);
 	
