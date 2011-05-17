@@ -16,7 +16,9 @@ Beseda.IO.prototype.connect = function() {
 };
 
 Beseda.IO.prototype.send = function(data) {
-	this.__transport.send(data);
+	var dataArray = [].concat(data);
+	
+	this.__transport.send(JSON.stringify(dataArray));
 };
 
 Beseda.IO.prototype.disconnect = function() {

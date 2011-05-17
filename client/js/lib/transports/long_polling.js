@@ -93,7 +93,7 @@ Beseda.Transport.LongPolling.prototype._handleMessage = function(data) {
 
 Beseda.Transport.LongPolling.prototype.send = function(data) {
 	if (this._connectionID) {
-		this._sendRequest.data = '[' + data + ']';
+		this._sendRequest.data = data;
 		this._sendRequest.send();
 	} else {
 		this._enqueue(data);
