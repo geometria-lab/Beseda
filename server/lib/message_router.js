@@ -54,6 +54,11 @@ MessageRouter.prototype.dispatch = function(connectionId, message) {
 
 // TODO: Disconnect after timeout if no one events or connection declined
 MessageRouter.prototype._connect = function(connectionId, message) {
+    var session = Session.get(connectionId);
+    if (session) {
+        return false;
+    }
+
     var session = new Session(this.server, connectionId),
         request = new ConnectionRequest(session, message);
 
