@@ -20,8 +20,8 @@ var Beseda = function(options) {
     this._io = new Beseda.IO(this.options);
 
     var self = this;
-    this._io.on('message', function(data) {
-        self.router.dispatch(data);
+    this._io.on('message', function(message) {
+        self.router.dispatch(message);
     });
     
     this._io.on('disconnect', function() {

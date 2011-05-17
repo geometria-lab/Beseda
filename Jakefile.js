@@ -13,13 +13,12 @@ task('compressJs', [], function(params) {
 
     var javascript = '';
     
-    [
-    		'beseda.js',
-    		'router.js', 
-    		'io.js', 
-    		'transport.js', 
-		'transports/long_polling.js',
-    		'transports/jsonp_long_polling.js'
+    [ 'beseda.js',
+      'router.js',
+      'io.js',
+      'transport.js',
+      'transports/long_polling.js',
+      'transports/jsonp_long_polling.js'
     	].forEach(function(file) {
         javascript += fs.readFileSync('./client/js/lib/' + file) + "\n\n";
     });
