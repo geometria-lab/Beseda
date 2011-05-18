@@ -9,6 +9,12 @@ Unreleased
   Long polling and JSONP long polling transports implemented. WebSocket and FlashSocket soon!
 * Add params to router
 * Refactor server and client
+* Node.js Beseda client
+* Benchmarks
+* Add reconnect and disconnect
+* Restore subscribes if server is down
+* JSONify protocol
+* Command line client and server
 
 Version 0.0.3
 ---

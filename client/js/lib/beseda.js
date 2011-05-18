@@ -36,15 +36,26 @@ var Beseda = function(options) {
 
 Beseda.EventEmitter = function() {
 	this.__events = {};
+    this.__maxListeners = 10;
 };
 
 Beseda.EventEmitter.prototype.addListener = function(event, listener) {
     if (!this.__events[event]) {
         this.__events[event] = [];
     }
-    
+
     this.__events[event].push(listener);
+
+    if (this.__events[event].length > this.__maxListeners) {
+        alert('Warning: possible EventEmitter memory leak detected. ' + this.__events[event].length + ' listeners added. Use emitter.setMaxListeners() to increase limit');
+    }
 };
+
+Beseda.EventEmitter.prototype.setMaxListeners = function(count) {
+    this.__maxListeners = count;
+
+    return this;
+}
 
 Beseda.EventEmitter.prototype.on = Beseda.EventEmitter.prototype.addListener;
 

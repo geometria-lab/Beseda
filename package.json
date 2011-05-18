@@ -1,6 +1,6 @@
 {
     "name": "beseda",
-    "version": "0.0.2",
+    "version": "0.0.4",
     "description": "Beseda is fast and well designed Pub/Sub server with server-side and crossbrowser client-side API for realtime messaging.",
     "keywords" : ["pub/sub", "socket.io", "bayeux"],
     "homepage": "http://geometria-lab.net",
@@ -10,6 +10,8 @@
         { "name": "Sergey Kononenko", "email": "kononencheg@gmail.com" }
     ],
     "main": "./server",
+    "bin" : { "beseda-client" : "./bin/client.js",
+              "beseda-server" : "./bin/server.js" },
     "repository": {
         "type": "git",
         "url": "git://github.com/geometria-lab/Beseda.git"

@@ -8,12 +8,12 @@ var Router = require('./router.js'),
 module.exports = Client = function(options) {
     process.EventEmitter.call(this);
 
-    this.options = utils.mergeObjects({
+    this.options = utils.merge({
         host : '127.0.0.1',
         port : 4000,
         ssl  : false,
 
-        transport : 'longPolling'//, 'JSONPLongPolling' ]
+        transport : 'longPolling'
     }, options);
 
     this._events       = {};
@@ -25,14 +25,9 @@ module.exports = Client = function(options) {
 
     this._io = new IO(this.options);
 
-    this._io.on('message', self.router.dispatch.bind(this));
+    this._io.on('message', this.router.dispatch.bind(this.router));
     this._io.on('disconnect', this._onDisconnect.bind(this));
-    /*
-    this._io.on('error', function() {
- 		self._status = Beseda._statuses.DISCONNECTED;
-		setTimeout(function(){ self.connect(); }, 1000)
-    });
-    */
+    this._io.on('error', this._onError.bind(this));
 };
 
 Client._statuses = {
@@ -57,6 +52,30 @@ Client.prototype.isConnecting = function() {
     return this._status == Client._statuses.CONNECTING;
 };
 
+Client.prototype.connect = function(callback, additionalMessage) {
+    if (this.isConnected()) {
+        return false;
+    }
+
+    this._status = Client._statuses.CONNECTING;
+
+    if (callback) {
+        this.once('connection', callback);
+    }
+
+    var self = this;
+
+    this._io.once('connect', function(connectionID) {
+        self.clientId = connectionID;
+
+        var message = self._createMessage('/meta/connect', additionalMessage);
+
+        self._io.send(message);
+    });
+
+    this._io.connect();
+};
+
 Client.prototype.subscribe = function(channel, callback, additionalMessage) {
     if (this.isDisconnected()) {
         this.connect();
@@ -66,8 +85,6 @@ Client.prototype.subscribe = function(channel, callback, additionalMessage) {
     message.subscription = channel;
 
     message = this._sendMessage('/meta/subscribe', message);
-
-    //this.log('Beseda send subscribe request', message);
 
 	if (callback) {
         this.once('subscribe:' + message.id, callback);
@@ -84,8 +101,6 @@ Client.prototype.unsubscribe = function(channel, callback, additionalMessage) {
 
     message = this._sendMessage('/meta/unsubscribe', message);
 
-    //this.log('Beseda send unsubscribe request', message);
-
     if (callback) {
         this.once('unsubscribe:' + message.id, callback);
     }
@@ -98,36 +113,11 @@ Client.prototype.publish = function(channel, message, callback) {
 
     message = this._sendMessage(channel, { data : message });
 
-    //this.log('Beseda send publish request', message);
-
     if (callback) {
         this.once('message:' + channel + ':' + message.id, callback);
     }
 
     return this;
-};
-
-Client.prototype.connect = function(callback, additionalMessage) {
-    if (this.isConnected()) {
-        return false;
-    }
-
-    this._status = Client._statuses.CONNECTING;
-
-    var self = this;
-
-    this._io.once('connect', function(connectionID) {
-
-        self.clientId = connectionID;
-
-        var message = self._createMessage('/meta/connect', additionalMessage);
-
-    		self._io.send(message);
-
-   		//self.log('Beseda send connection request', message);
-    });
-
-    this._io.connect();
 };
 
 Client.prototype.disconnect = function() {
@@ -139,10 +129,12 @@ Client.prototype._sendMessage = function(channel, message) {
         throw Error ('You must connect before send message');
     }
 
+    var message = this._createMessage(channel, message);
+
     if (this.isConnecting()) {
-        this._messageQueue.push(channel, message);
+        this._messageQueue.push(message);
     } else {
-        this._io.send(this._createMessage(channel, message));
+        this._io.send(message);
     }
 
     return message;
@@ -151,7 +143,7 @@ Client.prototype._sendMessage = function(channel, message) {
 Client.prototype._createMessage = function(channel, message) {
     message = message || {};
 
-    message.id       = this.clientId + '_' + ++Client.__lastMessageID;
+    message.id       = ++Client.__lastMessageID;
     message.channel  = channel;
     message.clientId = this.clientId;
 
@@ -162,14 +154,17 @@ Client.prototype._onDisconnect = function() {
     this._status = Client._statuses.DISCONNECTED;
 
     this.emit('disconnect');
-
-    //this.log('Beseda disconnected');
 };
 
+Client.prototype._onError = function(error) {
+    this._status = Client._statuses.DISCONNECTED;
+    this.emit('error', error);
+}
+
 Client.prototype.flushMessageQueue = function() {
-	var messages = [];
-	while (this._messageQueue.length) {
-		messages.push(this._createMessage(this._messageQueue.shift(), this._messageQueue.shift()));
-	}
-	this._io.send(messages);
+    for (var i = 0; i < this._messageQueue.length; i++) {
+        this._messageQueue[i].clientId = this.clientId;
+    }
+	this._io.send(this._messageQueue);
+    this._messageQueue = [];
 };

@@ -1,9 +1,4 @@
-var LongPollingTransport      = require('./transports/long_polling'),
-    JSONPLongPollingTransport = require('./transports/jsonp_long_polling');
-
-
 module.exports = Transport = function() {
-	this._url          = null;
 	this._typeSuffix   = null;
 	this._connectionID = null;
 	this._emitter      = null;
@@ -12,19 +7,17 @@ module.exports = Transport = function() {
 };
 
 Transport._transports = {
-	longPolling      : LongPollingTransport,
-	JSONPLongPolling : JSONPLongPollingTransport
+	longPolling      : require('./transports/long_polling.js')
+	//JSONPLongPolling : require('./transports/jsonp_long_polling.js')
 };
 
 Transport.getTransport = function(options) {
-	for (var i = 0; i < options.transports.length; i++) {
-		var transport = Transport._transports[options.transports[i]];
-		if (transport) {
-			return new transport;
-		} else {
-			throw Error('Ivalid transport ' + options.transports[i]);
-		}
-	}
+	var transport = Transport._transports[options.transport];
+    if (transport) {
+        return new transport;
+    } else {
+        throw Error('Ivalid transport ' + options.transport);
+    }
 };
 
 Transport.prototype.connect = function(host, port, ssl) {
@@ -43,7 +36,7 @@ Transport.prototype.setEmitter = function(emitter) {
 	this._emitter = emitter;
 };
 
-Beseda.Transport.prototype._handleConnection = function(id) {
+Transport.prototype._handleConnection = function(id) {
 	this._connectionID = id;
 
 	if (this._emitter) {
@@ -55,14 +48,14 @@ Beseda.Transport.prototype._handleConnection = function(id) {
 	}
 };
 
-Beseda.Transport.prototype._handleMessage = function(messages) {
-	if (messages) {
-		while(messages.length) {
-			this._emitter.emit('message', messages.shift());
-		}
+Transport.prototype._handleMessage = function(data) {
+	if (data.messages) {
+        for (var i = 0; i < data.messages.length; i++) {
+            this._emitter.emit('message', data.messages[i]);
+        }
 	}
 };
 
-Beseda.Transport.prototype._enqueue = function(message) {
+Transport.prototype._enqueue = function(message) {
 	this.__sendQueue.push(message);
 };

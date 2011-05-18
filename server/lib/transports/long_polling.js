@@ -132,8 +132,6 @@ LongPollingTransport.Connection.prototype.hold = function(request, response, par
 }
 
 LongPollingTransport.Connection.prototype.disconnect = function() {
-	util.debug('disconnect ' + this.id);
-	
 	this.transport.emit('disconnect', this.id);
 	this.transport.removeConnection(this.id);
 };
