@@ -153,7 +153,7 @@ Server.prototype._onDisconnect = function(connectionId) {
         this.emit('disconnect', session);
         session.destroy();
     } else {
-        util.log('Client without session is disconnected');
+        util.log('Client ' + connectionId + ' without session is disconnected');
     }
 };
 

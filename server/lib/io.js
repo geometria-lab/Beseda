@@ -1,5 +1,7 @@
 var util = require('util');
 
+// TODO: Client ID to hash
+
 var Router = require('./router.js');
 
 var LongPollingTransport      = require('./transports/long_polling.js'),

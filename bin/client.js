@@ -16,13 +16,22 @@ cli.parse({
     interval : ['i', 'Interval of publishing messages in seconds', 'number', 1]
 }, ['publish', 'subscribe']);
 
-function log(clientId, message) {
-    util.log('Client ' + clientId + ' - ' + message);
-}
-
 cli.main(function(args, options) {
+    
+    function log(clientId, message) {
+        util.log('Client ' + clientId + ' - ' + message);
+    }
 
-    var clients = [];
+    function publish(client, channel) {
+        client.publish(channel, 'Hello guys!', function(error, message) {
+            if (!error) {
+                log(this.clientId, 'published ' + message.id + ' to ' + channel);
+                setTimeout(publish.bind(null, client, channel), options.interval * 1000);
+            }
+        });
+    }
+
+    //var clients = [];
 
     var channel = args[0] || '/test';
     if (cli.command == 'subscribe') {
@@ -40,25 +49,37 @@ cli.main(function(args, options) {
         client.on('error', function(error) {
             log(this.clientId, 'ERROR: ' + error);
         });
-        if (cli.command == 'subscribe') {
-            client.subscribe(channel, function() {
-                log(this.clientId, 'subscribed to ' + channel);
-            })
+
+        switch (cli.command) {
+            case 'subscribe':
+                client.subscribe(channel, function() {
+                    log(this.clientId, 'subscribed to ' + channel);
+                });
+                break;
+            case 'publish':
+                publish(client, channel);
+                break;
         }
-
-        clients.push(client);
     }
-
+/*
     if (cli.command == 'publish') {
         console.log('Publish from ' + options.number + ' clients to ' + channel);
+        for (var i = 0; i < clients.length; i++) {
+            clients[i].publish(channel, 'Hello guys!', function(error, message) {
+                if (!error) {
+                    log(this.clientId, 'published ' + message.id + ' to ' + channel);
+                    setTimeout()
+                }
+            });
+        }
+
+
+
         setInterval(function() {
-            for (var i = 0; i < clients.length; i++) {
-                clients[i].publish(channel, 'Hello guys!', function(error, message) {
-                    if (!error) {
-                        log(this.clientId, 'published ' + message.id + ' to ' + channel);
-                    }
-                });
-            }
+
         }, options.interval * 1000);
+
+
     }
+     */
 });

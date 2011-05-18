@@ -70,7 +70,7 @@ LongPollingTransport.prototype._handleMessage = function(message) {
 };
 
 LongPollingTransport.prototype._handleError = function(error) {
-    this._emitter.emit('error', 'FROM IO: ' + error);
+    this._emitter.emit('error', error);
 }
 
 LongPollingTransport.prototype._parseMessage = function(message) {
@@ -96,6 +96,9 @@ LongPollingTransport.Request = function(options) {
     process.EventEmitter.call(this);
 
     this._options = options;
+
+    this._request = null;
+    this._response = null;
     this._responseBody = null;
 };
 
@@ -110,35 +113,38 @@ LongPollingTransport.Request.prototype.send = function(body) {
         }
     }
 
-    var request = (this._options.ssl ? https : http).request(this._options, this._onResponse.bind(this));
-
-    request.on('error', this._onError.bind(this));
+    this._request = (this._options.ssl ? https : http).request(this._options, this._onResponse.bind(this));
+    this._request.on('error', this._onError.bind(this));
 
     if (this._options.method === 'POST' && body) {
-        request.write(body);
+        this._request.write(body);
     }
 
-    request.end();
+    this._request.end();
 };
 
 LongPollingTransport.Request.prototype._onResponse = function(response) {
+    this._response = response;
     this._responseBody = '';
-    if (response.statusCode == 200) {
-        response.on('data', this._collectResponseData.bind(this));
-        response.on('end', this._endRequest.bind(this));
-    } else {
-        this.emit('error', response.statusText);
-    }
+    this._response.on('data', this._collectResponseData.bind(this));
+    this._response.on('end', this._endRequest.bind(this));
 }
 
 LongPollingTransport.Request.prototype._collectResponseData = function(chunk) {
     this._responseBody += chunk;
 }
 
-LongPollingTransport.Request.prototype._endRequest = function() {
-    this.emit('ready', this._responseBody);
+LongPollingTransport.Request.prototype._endRequest = function(response) {
+    if (this._response.statusCode == 200) {
+        this.emit('ready', this._responseBody);
+    } else {
+        this.emit('error', this._response.statusCode + ' - ' + this._responseBody);
+    }
+
+    this._response.removeAllListeners();
+    this._request.removeAllListeners();
 }
 
 LongPollingTransport.Request.prototype._onError = function(error) {
-    this.emit('error', error);
+    this.emit('error', 'Can\'t send request:' + error);
 }
