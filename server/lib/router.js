@@ -39,7 +39,7 @@ Router.prototype.dispatch = function(request, response) {
     		if (route.isValid(request)) {
     			route.dispatch(request, response);
 			result = true;
-			
+
             break;
         }
     }
@@ -105,7 +105,6 @@ Router.Route.prototype.dispatch = function(request, response) {
 		++i;
 	}
 
-
 	this.__callback(request, response, params);
 }
 
@@ -119,15 +118,25 @@ Router.Utils.send = function(response, code, headers) {
     response.end();
 };
 
-Router.Utils.sendJSON = function(response, data, code, headers) {
-    var json = JSON.stringify(data),
-        headers = utils.merge({
-            'Server'         : 'Beseda',
-            'Content-Type'   : 'text/json',
-            'Content-Length' : json.length }, headers || {});
+Router.Utils.sendJSON = function(response, json, code, headers) {
+    var jsonStrings = utils.ensureArray(json);
+
+    headers = headers || {};
+
+    headers['Server']         = 'Beseda';
+    headers['Content-Type']   = 'text/json';
+    headers['Content-Length'] = json.length;
 
 	response.writeHead(code || 200, headers);
-    response.end(json, 'utf8');
+
+    response.write('[');
+    for (var i = 0;i < jsonStrings.length; i++) {
+        if (i !== 0) {
+            response.write(',');
+        }
+        response.write(jsonStrings[i]);
+    }
+    response.end(']');
 };
 
 Router.Utils.sendFile = function(request, response, file, type) {

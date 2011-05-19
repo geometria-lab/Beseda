@@ -159,30 +159,33 @@ MessageRouter.prototype._subscribe = function(connectionId, message) {
     }
 };
 
-MessageRouter.prototype._unsubscribe = function(conectionID, message) {
-    if (message.subscription == undefined) {
-        /*return client.send({
-            id           : message.id,
-            channel      : '/meta/unsubscribe',
-            clientId     : message.clientId,
-            successful   : false,
-            subscription : '',
-            error        : 'You must have a subscription in your unsubscribe message'
-        });*/
-        error();
-    }
-
-    var session = Session.get(conectionID);
+MessageRouter.prototype._unsubscribe = function(connectionID, message) {
+    var session = Session.get(connectionID);
     if (!session) {
-        /*return session.send({
+        /*
+        return session.send({
             id           : message.id,
             channel      : '/meta/unsubscribe',
             clientId     : message.clientId,
             successful   : false,
             subscription : message.subscription,
             error        : 'You must send connection message before'
-        });*/
+        });
+        */
     }
+
+    if (message.subscription == undefined) {
+        return session.send({
+            id           : message.id,
+            channel      : '/meta/unsubscribe',
+            clientId     : message.clientId,
+            successful   : false,
+            subscription : '',
+            error        : 'You must have a subscription in your unsubscribe message'
+        });
+    }
+
+
 
     //if (session.id != message.clientId) {
     //    throw new Error('Client.session not equal message.clientId');
@@ -239,17 +242,18 @@ MessageRouter.prototype._unsubscribe = function(conectionID, message) {
     }
 };
 
-MessageRouter.prototype._publish = function(conectionID, message) {
+MessageRouter.prototype._publish = function(connectionID, message) {
     var session = Session.get(conectionID);
     if (!session) {
-        /*return client.send({
+        /*
+        return session.send({
             id           : message.id,
             channel      : message.channel,
             clientId     : message.clientId,
             successful   : false,
             error        : 'You must send connection message before'
-        });*/
-        error();
+        });
+        */
     }
 
     //if (session.id != message.clientId) {
@@ -257,14 +261,13 @@ MessageRouter.prototype._publish = function(conectionID, message) {
     //}
 
     if (message.channel.indexOf('*') != -1) {
-        /*return client.send({
+        return session.send({
             id           : message.id,
             channel      : message.channel,
             clientId     : message.clientId,
             successful   : false,
             error        : 'Wildcards not supported yet'
-        });*/
-        error();
+        });
     }
 
     var channel = Channel.get(message.channel);
@@ -281,5 +284,3 @@ MessageRouter.prototype._publish = function(conectionID, message) {
         request.approve();
     }
 };
-
-function error() { throw Error(); }

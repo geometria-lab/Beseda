@@ -22,12 +22,15 @@ util.inherits(LongPollingTransport, process.EventEmitter);
 
 LongPollingTransport.CHECK_INTERVAL = 1000;
 
+LongPollingTransport.ERROR_INVALID_MESSAGES_FORMAT = new Buffer('{ "error" : "Invalid messages format" }');
+LongPollingTransport.ERROR_INVALID_CONNECTION_ID = new Buffer('{ "error" : "Invalid connection id" }');
+
 LongPollingTransport.FRUSH_LOOP_COUNT = 10;
 LongPollingTransport.DESTROY_LOOP_COUNT = 20;
 
 LongPollingTransport.parseMessages = function(response, data) {
 	try {
-		var messages = JSON.parse(data)
+		var messages = JSON.parse(data);
 	} catch (e) {
 		return this._sendInvalidMessages(response);
 	}
@@ -40,9 +43,7 @@ LongPollingTransport.parseMessages = function(response, data) {
 }
 
 LongPollingTransport._sendInvalidMessages = function(response) {
-	Router.Utils.sendJSON(response, {
-		error : 'Invalid messages format'
-	}, 400);
+	Router.Utils.sendJSON(response, LongPollingTransport.INVALID_MESSAGES_FORMAT, 400);
 
 	return false;
 }
@@ -70,14 +71,12 @@ LongPollingTransport.prototype._addRoutes = function() {
 }
 
 LongPollingTransport.prototype._sendApplyConnection = function(connectionId, request, response) {
-	Router.Utils.sendJSON(response, { connectionId : connectionId });
+	Router.Utils.sendJSON(response, ['{ "connectionId" : ', connectionId, ' }']);
 }
 
 LongPollingTransport.prototype._holdRequest = function(request, response, params) {
     if (!this._connections[params.id]) {
-        return Router.Utils.sendJSON(response, {
-            error : 'Invalid connection id'
-        }, 404);
+        return Router.Utils.sendJSON(response, LongPollingTransport.ERROR_INVALID_CONNECTION_ID, 404);
     }
 
     this._connections[params.id].hold(request, response, params);
@@ -90,9 +89,7 @@ LongPollingTransport.prototype._destroy = function(request, response, params) {
 
 LongPollingTransport.prototype._receive = function(request, response, params) {
     if (!this._connections[params.id]) {
-        return Router.Utils.sendJSON(response, {
-            error : 'Invalid connection id'
-        }, 404);
+        return Router.Utils.sendJSON(response, LongPollingTransport.ERROR_INVALID_CONNECTION_ID, 404);
     }
 
     this._connections[params.id].receive(request, response, params);
@@ -169,9 +166,7 @@ LongPollingTransport.Connection.prototype.deleteReceiver = function(receiverId) 
 }
 
 LongPollingTransport.Connection.prototype._flush = function() {
-    Router.Utils.sendJSON(this._response, {
-        messages : this._dataQueue
-    });
+    Router.Utils.sendJSON(this._response, this._dataQueue);
 
 	this._dataQueue = [];
 	this._response = null;
