@@ -32,10 +32,16 @@ cli.main(function(args, options) {
         connected = 0;
     for (var i = 0; i < options.number; i++) {
         var client = new Client(options);
+        
         client.on('connection', function() {
-            log(this.clientId, 'connected');
+            util.log(this.clientId + ' connected');
             connected++;
+
+            if (connected == options.number) {
+		        eval(cli.command)(args, options, clients);
+		    }
         });
+        
         client.on('message', function(channel, data, message) {
             log(this.clientId, JSON.stringify(message));
             if (options.debug) {
@@ -48,8 +54,8 @@ cli.main(function(args, options) {
         client.connect();
         clients.push(client);
     }
-
-    var interval = setInterval(function() {
+    
+	/*var interval = setInterval(function() {
         if (options.number > 1) {
             cli.progress(connected / options.number);
         }
@@ -58,7 +64,7 @@ cli.main(function(args, options) {
             clearInterval(interval);
             eval(cli.command)(args, options, clients);
         }
-    }, 100);
+    }, 100);*/
 });
 
 function subscribe(args, options, clients) {
@@ -69,9 +75,10 @@ function subscribe(args, options, clients) {
 
     var channel = args[0];
 
-    for (var i = 0; i < clients.number; i++) {
-        client.subscribe(channel, function() {
-            log(this.clientId, 'subscribed to ' + channel);
+    for (var i = 0; i < clients.length; i++) {
+
+        clients[i].subscribe(channel, function() {
+            util.log(this.clientId + ' subscribed to ' + channel);
         });
     }
 }

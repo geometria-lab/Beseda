@@ -36,7 +36,7 @@ Channel.prototype.publish = function(message) {
 	
     this.__pubSub.publish(this.name, message);
 
-    this.publishedTimestamp = Date.now();
+    //this.publishedTimestamp = Date.now();
     this.publishedCount++;
 };
 
@@ -82,5 +82,5 @@ Channel.prototype._deliverMessage = function(message) {
     this.receivedTimestamp = Date.now();
     this.receivedCount++;
 
-    util.log('Receive new message to "' + this.name + '" and deliver to ' + count + ' subscribers');
+    //util.log('Receive new message to "' + this.name + '" and deliver to ' + count + ' subscribers');
 };

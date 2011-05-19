@@ -1,3 +1,4 @@
+//TODO: если ошибка на отсылку переподключение с отправкой!
 var Beseda = function(options) {
 	Beseda._super.constructor.call(this);
 
@@ -22,10 +23,6 @@ var Beseda = function(options) {
     var self = this;
     this._io.on('message', function(message) {
         self.router.dispatch(message);
-    });
-    
-    this._io.on('disconnect', function() {
-		self._onDisconnect();
     });
     
     this._io.on('error', function() {
@@ -229,6 +226,11 @@ Beseda.prototype.connect = function(callback, additionalMessage) {
 
 Beseda.prototype.disconnect = function() {
     this._io.disconnect();
+    
+	this.clientId = null;
+	this.__channels = [];
+
+	this._status = Beseda._statuses.DISCONNECTED;
 };
 
 Beseda.prototype.setOptions = function(options, extend) {

@@ -32,17 +32,18 @@ Router.prototype.addRoute = function(route) {
 }
 
 Router.prototype.dispatch = function(request, response) {
+	var result = false;
     for (var i = 0, l = this._routes.length; i < l; i++) {
     		var route = this._routes[i];
 
     		if (route.isValid(request)) {
     			route.dispatch(request, response);
-
-            return true;
+			result = true;
+			
+            break;
         }
     }
-
-    return false;
+    return result;
 };
 
 Router.Route = function(path, callback, methods) {

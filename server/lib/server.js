@@ -4,6 +4,8 @@ var fs    = require('fs'),
     http  = require('http'),
     https = require('https');
 
+var profiler = require('v8-profiler');
+
 var IO             = require('./io.js'),
 	Router         = require('./router.js'),
     MessageRouter  = require('./message_router.js');

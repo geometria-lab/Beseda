@@ -54,8 +54,17 @@ LongPollingTransport.prototype.createConnection = function(connectionId, request
 }
 
 LongPollingTransport.prototype._addRoutes = function() {
-	this.io.server.router.get('/beseda/io/longPolling/:id', this._holdRequest.bind(this));
-    this.io.server.router.post('/beseda/io/longPolling/:id', this._receive.bind(this));
+	this.io.server.router.addRoute(new Router.Route(
+		'/beseda/io/longPolling/:id', this._receive.bind(this), ['PUT']
+	));
+	
+	this.io.server.router.addRoute(new Router.Route(
+		'/beseda/io/longPolling/:id', this._destroy.bind(this), ['DELETE']
+	));
+	
+	this.io.server.router.addRoute(new Router.Route(
+		'/beseda/io/longPolling/:id', this._holdRequest.bind(this), ['GET']
+	));
 }
 
 LongPollingTransport.prototype._sendApplyConnection = function(connectionId, request, response) {
@@ -71,6 +80,11 @@ LongPollingTransport.prototype._holdRequest = function(request, response, params
 
     this._connections[params.id].hold(request, response, params);
 }
+
+LongPollingTransport.prototype._destroy = function(request, response, params) {
+	this.emit('disconnect', params.id);
+	this.removeConnection(params.id);
+};
 
 LongPollingTransport.prototype._receive = function(request, response, params) {
     if (!this._connections[params.id]) {
@@ -128,7 +142,7 @@ LongPollingTransport.Connection.prototype.hold = function(request, response, par
 		clearTimeout(this.__disconnectTimeout);
 	}
 
-    this.__disconnectTimeout = setTimeout(this.disconnect.bind(this), 20000);
+    this.__disconnectTimeout = setTimeout(this.disconnect.bind(this), 900000);
 }
 
 LongPollingTransport.Connection.prototype.disconnect = function() {

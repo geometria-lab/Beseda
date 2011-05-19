@@ -58,6 +58,8 @@ Client.prototype.isConnecting = function() {
 };
 
 Client.prototype.connect = function(callback, additionalMessage) {
+	util.log("connect");
+	
     if (this.isConnected()) {
         return false;
     }
@@ -167,6 +169,7 @@ Client.prototype.flushMessageQueue = function() {
     for (var i = 0; i < this._messageQueue.length; i++) {
         this._messageQueue[i].clientId = this.clientId;
     }
+    
 	this._io.send(this._messageQueue);
     this._messageQueue = [];
 };
