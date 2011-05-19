@@ -21,7 +21,9 @@ module.exports = LongPollingTransport = function(io) {
 util.inherits(LongPollingTransport, process.EventEmitter);
 
 LongPollingTransport.CHECK_INTERVAL = 1000;
-LongPollingTransport.MAX_LOOP_COUNT = 10;
+
+LongPollingTransport.FRUSH_LOOP_COUNT = 10;
+LongPollingTransport.DESTROY_LOOP_COUNT = 20;
 
 LongPollingTransport.parseMessages = function(response, data) {
 	try {
@@ -115,13 +117,10 @@ LongPollingTransport.Connection = function(transport, id) {
 
 	this._updateFlag  = 0;
 	this._currentFlag = 0;
-	this._loopCount   = LongPollingTransport.MAX_LOOP_COUNT;
+	this._loopCount   = LongPollingTransport.DESTROY_LOOP_COUNT;
 
 	this._dataQueue = [];
 	this._response  = null;
-
-	this.__disconnectTimeout = null;
-	
 };
 
 LongPollingTransport.Connection.prototype.send = function(data) {
@@ -136,13 +135,7 @@ LongPollingTransport.Connection.prototype.hold = function(request, response, par
 
     this._response    = response;
     this._currentFlag = this._updateFlag;
-    this._loopCount   = LongPollingTransport.MAX_LOOP_COUNT;
-
-	if (this.__disconnectTimeout) {
-		clearTimeout(this.__disconnectTimeout);
-	}
-
-    this.__disconnectTimeout = setTimeout(this.disconnect.bind(this), 900000);
+    this._loopCount   = LongPollingTransport.DESTROY_LOOP_COUNT;
 }
 
 LongPollingTransport.Connection.prototype.disconnect = function() {
@@ -157,15 +150,18 @@ LongPollingTransport.Connection.prototype.receive = function(request, response, 
 }
 
 LongPollingTransport.Connection.prototype.waitOrFlush = function() {
-    if (this._response) {
-        if (this._loopCount <= 0 ||
-            this._dataQueue.length > 0 ||
-            this._currentFlag !== this._updateFlag) {
-            this._flush();
-        } else {
-            this._loopCount--;
-        }
-    }
+	if (this._loopCount <= 0) {
+		this.disconnect();
+	} else if (this._response) {
+		if (this._loopCount <= LongPollingTransport.FRUSH_LOOP_COUNT ||
+			this._dataQueue.length > 0 ||
+			this._currentFlag !== this._updateFlag) {
+
+			this._flush();
+		}
+	}
+
+	this._loopCount--;
 }
 
 LongPollingTransport.Connection.prototype.deleteReceiver = function(receiverId) {
