@@ -34,14 +34,28 @@ LongPollingTransport.prototype.connect = function(host, port, ssl) {
     connectionRequest.send();
 };
 
+LongPollingTransport.prototype.disconnect = function() {
+    var disconnectRequest = new LongPollingTransport.Request({
+        method : 'DELETE',
+        host   : this._host,
+        port   : this._port,
+        ssl    : this._ssl,
+        path   : '/beseda/io/' + this._typeSuffix + '/' + this._connectionID
+    });
+    disconnectRequest.on('error', this._handleError.bind(this));
+    disconnectRequest.send();
+
+    this._connectionID = null;
+}
+
 LongPollingTransport.prototype.send = function(data) {
 	if (this._connectionID) {
         var sendRequest = new LongPollingTransport.Request({
-            method : 'POST',
-            host : this._host,
-            port : this._port,
-            ssl  : this._ssl,
-            path : '/beseda/io/' + this._typeSuffix + '/' + this._connectionID
+            method : 'PUT',
+            host   : this._host,
+            port   : this._port,
+            ssl    : this._ssl,
+            path   : '/beseda/io/' + this._typeSuffix + '/' + this._connectionID
         });
         sendRequest.on('error', this._handleError.bind(this));
         sendRequest.send(data);
@@ -106,9 +120,7 @@ util.inherits(LongPollingTransport.Request, process.EventEmitter);
 
 LongPollingTransport.Request.prototype.send = function(body) {
     if (body) {
-        if (this._options.method == 'POST') {
-            this._options.headers = { 'Content-Type' : 'application/x-www-form-urlencoded' };
-        } else {
+        if (this._options.method == 'GET') {
             this._options.path += (this._options.path.indexOf('?') === -1 ? '?' : '&') + qs.escape(body);
         }
     }
@@ -116,7 +128,7 @@ LongPollingTransport.Request.prototype.send = function(body) {
     this._request = (this._options.ssl ? https : http).request(this._options, this._onResponse.bind(this));
     this._request.on('error', this._onError.bind(this));
 
-    if (this._options.method === 'POST' && body) {
+    if (body) {
         this._request.write(body);
     }
 

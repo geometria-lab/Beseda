@@ -26,8 +26,13 @@ module.exports = Client = function(options) {
     this._io = new IO(this.options);
 
     this._io.on('message', this.router.dispatch.bind(this.router));
-    this._io.on('disconnect', this._onDisconnect.bind(this));
     this._io.on('error', this._onError.bind(this));
+
+    process.on('exit', function() {
+        process.nextTick(function(){
+            this.disconnect();
+        }.bind(this));
+    }.bind(this));
 };
 
 Client._statuses = {
@@ -114,6 +119,7 @@ Client.prototype.publish = function(channel, message, callback) {
     message = this._sendMessage(channel, { data : message });
 
     if (callback) {
+        // TODO: Handle errors from IO
         this.once('message:' + channel + ':' + message.id, callback);
     }
 
@@ -121,6 +127,8 @@ Client.prototype.publish = function(channel, message, callback) {
 };
 
 Client.prototype.disconnect = function() {
+    this._status = Client._statuses.DISCONNECTED;
+
     this._io.disconnect();
 };
 
@@ -148,12 +156,6 @@ Client.prototype._createMessage = function(channel, message) {
     message.clientId = this.clientId;
 
     return message;
-};
-
-Client.prototype._onDisconnect = function() {
-    this._status = Client._statuses.DISCONNECTED;
-
-    this.emit('disconnect');
 };
 
 Client.prototype._onError = function(error) {
