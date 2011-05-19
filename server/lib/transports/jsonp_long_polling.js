@@ -1,5 +1,5 @@
-var util = require('util');
-var qs = require('querystring')
+var util = require('util'),
+var qs = require('querystring');
 
 var Router               = require('./../router.js'),
 	LongPollingTransport = require('./long_polling.js');
@@ -12,14 +12,25 @@ var JSONPLongPollingTransport = module.exports = function(io) {
 
 util.inherits(JSONPLongPollingTransport, LongPollingTransport);
 
-JSONPLongPollingTransport.sendJSONP = function(response, data, callback, code, headers) {
+JSONPLongPollingTransport.sendJSONP = function(response, json, callback, code, headers) {
+    var jsonString = utils.ensureArray(json);
+
 	headers = headers || {};
 
 	headers['Server'] = 'Beseda';
 	headers['Content-Type'] = 'text/javascript';
 
 	response.writeHead(code || 200, headers);
-    response.end(callback + '(' + JSON.stringify(data) + ');', 'utf8');
+
+    response.write(callback);
+    response.write('([');
+    for (var i = 0; i < jsonString.length; i++) {
+        if (i !== 0) {
+            response.write(',');
+        }
+        response.write(jsonStrings[i]);
+    }
+    response.end(']);');
 }
 
 JSONPLongPollingTransport.prototype._addRoutes = function() {
@@ -32,8 +43,7 @@ JSONPLongPollingTransport.prototype._sendApplyConnection = function(connectionId
 	var callback = qs.parse(request.url.split('?')[1]).callback;
 
 	if (callback) {
-		JSONPLongPollingTransport.sendJSONP
-			(response, { connectionId : connectionId }, callback);
+		JSONPLongPollingTransport.sendJSONP(response, { connectionId : connectionId }, callback);
 	}
 }
 
