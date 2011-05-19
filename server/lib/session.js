@@ -7,7 +7,7 @@ Session = module.exports = function(server, connectionId) {
 	this.server = server;
     this.id = connectionId;
 
-    this.createdTimestamp = Date.now();
+    //this.createdTimestamp = Date.now();
 
     sessions[this.id] = this;
 };

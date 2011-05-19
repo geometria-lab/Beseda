@@ -1,3 +1,5 @@
+var util = require('util')
+
 module.exports = Transport = function() {
 	this._typeSuffix   = null;
 	this._connectionID = null;
@@ -50,8 +52,8 @@ Transport.prototype._handleConnection = function(id) {
 
 Transport.prototype._handleMessage = function(data) {
 	if (data.messages) {
-        for (var i = 0; i < data.messages.length; i++) {
-            this._emitter.emit('message', data.messages[i]);
+        while(data.messages.length) {
+            this._emitter.emit('message', data.messages.shift());
         }
 	}
 };

@@ -25,6 +25,7 @@ JSONPLongPollingTransport.sendJSONP = function(response, data, callback, code, h
 JSONPLongPollingTransport.prototype._addRoutes = function() {
 	this.io.server.router.get('/beseda/io/JSONPLongPolling/:id', this._holdRequest.bind(this));
     this.io.server.router.get('/beseda/io/JSONPLongPolling/:id/send', this._receive.bind(this));
+    this.io.server.router.get('/beseda/io/JSONPLongPolling/:id/destroy', this._destroy.bind(this));
 }
 
 JSONPLongPollingTransport.prototype._sendApplyConnection = function(connectionId, request, response) {

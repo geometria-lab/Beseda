@@ -6,8 +6,10 @@ Beseda.Transport.LongPolling = function() {
 	this._connectionRequest = null;
 	this._pollRequest = null;
 	this._sendRequest = null;
+	this._disconnectRequest = null;
 
 	this._sendSuffix = '';
+	this._deleteSuffix = '';
 
 	this._initRequests();
 
@@ -34,13 +36,14 @@ Beseda.Transport.LongPolling = function() {
 Beseda.utils.inherits(Beseda.Transport.LongPolling, Beseda.Transport);
 
 Beseda.Transport.LongPolling.isAvailable = function(options) {
-	return false;//document.location.hostname === options.host;
+	return document.location.hostname === options.host;
 }
 
 Beseda.Transport.LongPolling.prototype._initRequests = function() {
 	this._connectionRequest = new Beseda.Transport.LongPolling.Request('GET');
 	this._pollRequest       = new Beseda.Transport.LongPolling.Request('GET');
-	this._sendRequest       = new Beseda.Transport.LongPolling.Request('POST');
+	this._sendRequest       = new Beseda.Transport.LongPolling.Request('PUT');
+	this._disconnectRequest = new Beseda.Transport.LongPolling.Request('DELETE');
 };
 
 Beseda.Transport.LongPolling.prototype.connect = function(host, port, ssl) {
@@ -62,6 +65,11 @@ Beseda.Transport.LongPolling.prototype.send = function(data) {
 	}
 };
 
+Beseda.Transport.LongPolling.prototype.disconnect = function(data) {
+	this._disconnectRequest.send();
+	this._connectionID = null;
+};
+
 Beseda.Transport.LongPolling.prototype._handleConnection = function(message) {
 	var data = this._parseMessage(message);
 	
@@ -70,9 +78,11 @@ Beseda.Transport.LongPolling.prototype._handleConnection = function(message) {
 	if (id) { 
 		this._sendRequest.url = 
 		this._pollRequest.url =
+		this._disconnectRequest.url = 
 			this._url + "/" + this._typeSuffix + "/" + id;
 
 		this._sendRequest.url += this._sendSuffix;
+		this._disconnectRequest.url += this._deleteSuffix;
 
 		Beseda.Transport.LongPolling._super._handleConnection.call(this, id);
 
@@ -136,7 +146,7 @@ Beseda.Transport.LongPolling.Request.prototype.send = function(url) {
 	request.open(this.method, encodeURI(requestURL), true);
 
 	var sendData = null;
-	if (this.method === 'POST') {
+	if (this.method !== 'GET') {
 		sendData = this.data;
 		request.setRequestHeader
 			('Content-Type', 'application/x-www-form-urlencoded');

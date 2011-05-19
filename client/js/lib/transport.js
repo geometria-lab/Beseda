@@ -57,9 +57,9 @@ Beseda.Transport.prototype._handleConnection = function(id) {
 };
 
 Beseda.Transport.prototype._handleMessage = function(data) {
-	if (data) {
-		while(data.length) {
-			this._emitter.emit('message', data.shift());
+	if (data && data.messages) {
+		while(data.messages.length) {
+			this._emitter.emit('message', data.messages.shift());
 		}
 	}
 };

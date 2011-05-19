@@ -4,6 +4,7 @@ Beseda.Transport.JSONPLongPolling = function() {
 
 	this._typeSuffix = 'JSONPLongPolling';
 	this._sendSuffix = '/send';
+	this._deleteSuffix = '/destroy';
 };
 
 Beseda.utils.inherits(Beseda.Transport.JSONPLongPolling, Beseda.Transport.LongPolling);
@@ -17,6 +18,7 @@ Beseda.Transport.JSONPLongPolling.prototype._initRequests = function() {
 	this._pollRequest = new Beseda.Transport.JSONPLongPolling.JSONPRequest();
 	
 	this._sendRequest = new Beseda.Transport.JSONPLongPolling.JSONPRequest();
+	this._disconnectRequest = new Beseda.Transport.JSONPLongPolling.JSONPRequest();
 };
 
 Beseda.Transport.JSONPLongPolling.prototype._parseMessage = function(message) {
