@@ -24,15 +24,12 @@ Server = module.exports = function(options) {
 		    port : 4000,
 		    ssl  : false
 		},
+
         pubSub  : 'memory',
         monitor : false,
+        debug   : false,
 
         transports : [ 'longPolling', 'JSONPLongPolling' ],
-
-        connectionTimeout     : 2,
-        subscriptionTimeout   : 0.1,
-        publicationTimeout    : 0.1,
-        unsubscriptionTimeout : 0.1
     };
 
     this.options = utils.merge(defaultOptions, options);
@@ -147,15 +144,21 @@ Server.prototype.listen = function(port, host) {
     this._logBesedaStarted();
 };
 
+Server.prototype.log = function(message) {
+    if (this.options.debug) {
+        util.log(message);
+    }
+}
+
 Server.prototype._onDisconnect = function(connectionId) {
     var session = Session.get(connectionId);
 
     if (session) {
-        util.log('Session ' + session.id + ' is disconnected');
+        this.log('Session ' + session.id + ' is disconnected');
         this.emit('disconnect', session);
         session.destroy();
     } else {
-        util.log('Client ' + connectionId + ' without session is disconnected');
+        this.log('Client ' + connectionId + ' without session is disconnected');
     }
 };
 

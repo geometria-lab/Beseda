@@ -11,10 +11,15 @@ Unreleased
 * Refactor server and client
 * Node.js Beseda client
 * Benchmarks
-* Add reconnect and disconnect
+* Add reconnect and disconnect on server
 * Restore subscribes if server is down
 * JSONify protocol
 * Command line client and server
+* Remove requests timeouts
+* Longpolling to CRUD
+* Disconnection request
+
+
 
 Version 0.0.3
 ---

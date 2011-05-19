@@ -79,8 +79,8 @@ Channel.prototype._deliverMessage = function(message) {
         }
     }
 
-    this.receivedTimestamp = Date.now();
-    this.receivedCount++;
+    //this.receivedTimestamp = Date.now();
+    //this.receivedCount++;
 
-    //util.log('Receive new message to "' + this.name + '" and deliver to ' + count + ' subscribers');
+    this.session.server.log('Receive new message to "' + this.name + '" and deliver to ' + count + ' subscribers');
 };

@@ -7,36 +7,29 @@ var PublicationRequest = module.exports = function(session, requestMessage, chan
 
     this.isApproved = false;
 
-    this._timeout = setTimeout(this.decline.bind(this),
-                               this.session.server.options.publicationTimeout * 1000);
-
-    util.log('Session ' + this.session.id + ' publication request to channel "' + this.channel.name + '" started');
+    this.session.server.log('Session ' + this.session.id + ' publication request to channel "' + this.channel.name + '" started');
 };
 
 PublicationRequest.prototype.approve = function() {
-    clearTimeout(this._timeout);
-
     this.isApproved = true;
 
     this.channel.publish(this.requestMessage);
 
     this._sendResponse(true);
 
-    util.log('Session ' + this.session.id + ' publication request to channel "' + this.channel.name + '" APPROVED');
+    this.session.server.log('Session ' + this.session.id + ' publication request to channel "' + this.channel.name + '" APPROVED');
 
    // this.session.server.monitor.increment('publication');
 };
 
 PublicationRequest.prototype.decline = function(error) {
-    clearTimeout(this._timeout);
-
     if (this.isApproved) {
         throw new Error('Session ' + this.session.id + ' publication request to channel "' + this.channel.name + '" already approved');
     }
 
     this._sendResponse(false, error || 'Publication declined');
 
-    util.log('Session ' + this.session.id + ' publication request to channel "' + this.channel.name + '" DECLINED' + (error ? ': ' + error : ''));
+    this.session.server.log('Session ' + this.session.id + ' publication request to channel "' + this.channel.name + '" DECLINED' + (error ? ': ' + error : ''));
 
     //this.session.server.monitor.increment('declinedPublication');
 };

@@ -6,32 +6,25 @@ ConnectionRequest = module.exports = function(session, requestMessage) {
 
     this.isApproved = false;
 
-    this._timeout = setTimeout(this.decline.bind(this), 
-                               this.session.server.options.connectionTimeout * 1000);
-
-    util.log('Session ' + this.session.id + ' connection request started');
+    this.session.server.log('Session ' + this.session.id + ' connection request started');
 };
 
 ConnectionRequest.prototype.approve = function() {
-    clearTimeout(this._timeout);
-
     this.isApproved = true;
 
     this._sendResponse(true);
 
-    util.log('Session ' + this.session.id + ' connection request APPROVED');
+    this.session.server.log('Session ' + this.session.id + ' connection request APPROVED');
 };
 
 ConnectionRequest.prototype.decline = function(error) {
-    clearTimeout(this._timeout);
-
     if (this.isApproved) {
         throw new Error('Session ' + this.requestMessage.clientId + ' connection request already approved');
     }
 
     this._sendResponse(false, error || 'Connection declined');
 
-    util.log('Session ' + this.session.id + ' connection request DECLINED' + (error ? ': ' + error : ''));
+    this.session.server.log('Session ' + this.session.id + ' connection request DECLINED' + (error ? ': ' + error : ''));
 
     this.session.destroy();
 };
