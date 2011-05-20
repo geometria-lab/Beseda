@@ -82,5 +82,5 @@ Channel.prototype._deliverMessage = function(message) {
     //this.receivedTimestamp = Date.now();
     //this.receivedCount++;
 
-    this.session.server.log('Receive new message to "' + this.name + '" and deliver to ' + count + ' subscribers');
+    //this.session.server.log('Receive new message to "' + this.name + '" and deliver to ' + count + ' subscribers');
 };

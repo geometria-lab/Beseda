@@ -243,7 +243,7 @@ MessageRouter.prototype._unsubscribe = function(connectionID, message) {
 };
 
 MessageRouter.prototype._publish = function(connectionID, message) {
-    var session = Session.get(conectionID);
+    var session = Session.get(connectionID);
     if (!session) {
         /*
         return session.send({

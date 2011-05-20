@@ -1,5 +1,5 @@
 var util = require('util'),
-var qs = require('querystring');
+    qs = require('querystring');
 
 var Router               = require('./../router.js'),
 	LongPollingTransport = require('./long_polling.js');
@@ -13,37 +13,39 @@ var JSONPLongPollingTransport = module.exports = function(io) {
 util.inherits(JSONPLongPollingTransport, LongPollingTransport);
 
 JSONPLongPollingTransport.sendJSONP = function(response, json, callback, code, headers) {
-    var jsonString = utils.ensureArray(json);
-
 	headers = headers || {};
 
 	headers['Server'] = 'Beseda';
 	headers['Content-Type'] = 'text/javascript';
 
 	response.writeHead(code || 200, headers);
-
-    response.write(callback);
-    response.write('([');
-    for (var i = 0; i < jsonString.length; i++) {
-        if (i !== 0) {
-            response.write(',');
-        }
-        response.write(jsonStrings[i]);
-    }
-    response.end(']);');
+    response.end(callback + '(' + json + ');');
 }
 
 JSONPLongPollingTransport.prototype._addRoutes = function() {
-	this.io.server.router.get('/beseda/io/JSONPLongPolling/:id', this._holdRequest.bind(this));
-    this.io.server.router.get('/beseda/io/JSONPLongPolling/:id/send', this._receive.bind(this));
-    this.io.server.router.get('/beseda/io/JSONPLongPolling/:id/destroy', this._destroy.bind(this));
+	this.io.server.router.get(
+		'/beseda/io/JSONPLongPolling/:id', 
+		this._holdRequest.bind(this)
+	);
+	
+    this.io.server.router.get(
+    		'/beseda/io/JSONPLongPolling/:id/send', 
+    		this._receive.bind(this)
+    	);
+    	
+    this.io.server.router.get(
+    		'/beseda/io/JSONPLongPolling/:id/destroy', 
+    		this._destroy.bind(this)
+    	);
 }
 
 JSONPLongPollingTransport.prototype._sendApplyConnection = function(connectionId, request, response) {
 	var callback = qs.parse(request.url.split('?')[1]).callback;
 
 	if (callback) {
-		JSONPLongPollingTransport.sendJSONP(response, { connectionId : connectionId }, callback);
+		JSONPLongPollingTransport.sendJSONP(response, JSON.stringify({ 
+			connectionId : connectionId 
+		}), callback);
 	}
 }
 
@@ -79,7 +81,7 @@ JSONPLongPollingTransport.Connection.prototype.receive = function(request, respo
 		}, 400);
 	}
 
-	JSONPLongPollingTransport.sendJSONP(response, { success : true }, params.callback);
+	JSONPLongPollingTransport.sendJSONP(response, '', params.callback);
 
 	var messages = LongPollingTransport.parseMessages(response, params.messages);
 	if (messages) {
@@ -88,7 +90,9 @@ JSONPLongPollingTransport.Connection.prototype.receive = function(request, respo
 }
 
 JSONPLongPollingTransport.Connection.prototype._flush = function() {
-	JSONPLongPollingTransport.sendJSONP(this._response, this._dataQueue, this._callback);
+	JSONPLongPollingTransport.sendJSONP(
+		this._response, JSON.stringify(this._dataQueue), this._callback
+	);
 
 	this._dataQueue = [];
 	this._response = null;
