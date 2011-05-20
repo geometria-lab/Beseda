@@ -25,8 +25,8 @@ LongPollingTransport.CHECK_INTERVAL = 1000;
 LongPollingTransport.ERROR_INVALID_MESSAGES_FORMAT = new Buffer('{ "error" : "Invalid messages format" }');
 LongPollingTransport.ERROR_INVALID_CONNECTION_ID = new Buffer('{ "error" : "Invalid connection id" }');
 
-LongPollingTransport.FRUSH_LOOP_COUNT = 10;
-LongPollingTransport.DESTROY_LOOP_COUNT = 20;
+LongPollingTransport.FRUSH_LOOP_COUNT = 50;
+LongPollingTransport.DESTROY_LOOP_COUNT = 60;
 
 LongPollingTransport.parseMessages = function(response, data) {
 	try {
@@ -71,7 +71,7 @@ LongPollingTransport.prototype._addRoutes = function() {
 }
 
 LongPollingTransport.prototype._sendApplyConnection = function(connectionId, request, response) {
-	Router.Utils.sendJSON(response, ['{ "connectionId" : ', connectionId, ' }']);
+	Router.Utils.sendJSON(response, '{ "connectionId" : ' + connectionId + ' }');
 }
 
 LongPollingTransport.prototype._holdRequest = function(request, response, params) {
@@ -166,7 +166,7 @@ LongPollingTransport.Connection.prototype.deleteReceiver = function(receiverId) 
 }
 
 LongPollingTransport.Connection.prototype._flush = function() {
-    Router.Utils.sendJSON(this._response, this._dataQueue);
+    Router.Utils.sendJSON(this._response, JSON.stringify(this._dataQueue));
 
 	this._dataQueue = [];
 	this._response = null;

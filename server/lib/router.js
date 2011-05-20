@@ -33,11 +33,12 @@ Router.prototype.addRoute = function(route) {
 
 Router.prototype.dispatch = function(request, response) {
 	var result = false;
+	var parsedURL = Router.Utils.parseURL(request.url);
     for (var i = 0, l = this._routes.length; i < l; i++) {
     		var route = this._routes[i];
 
-    		if (route.isValid(request)) {
-    			route.dispatch(request, response);
+    		if (route.isValid(request, parsedURL)) {
+    			route.dispatch(request, response, parsedURL);
 			result = true;
 
             break;
@@ -51,20 +52,21 @@ Router.Route = function(path, callback, methods) {
     this.__callback = callback;
 
     this.__pathHash = path.split('/');
+    this.__pathHash.shift();
 };
 
-Router.Route.prototype.isValid = function(request) {
+Router.Route.prototype.isValid = function(request, parsedURL) {
 	var result = false;
 
     var method        = request.method == 'HEAD' ? 'GET' : request.method,
-        isValidMethod = this.__methods.length == 0 || this.__methods.indexOf(method) !== -1;
+        isValidMethod = this.__methods.length == 0 || 
+        					this.__methods.indexOf(method) !== -1;
 
+	
 	if (isValidMethod) {
 		result = true;
-	
-		var requestPath = url.parse(request.url).pathname;
 
-		var requestPathHash = requestPath.split('/');
+		var requestPathHash = parsedURL.path;
 		
 		if (this.__pathHash.length === requestPathHash.length) {
 			var i = 0, 
@@ -88,11 +90,9 @@ Router.Route.prototype.isValid = function(request) {
     return result;
 };
 
-Router.Route.prototype.dispatch = function(request, response) {
-	var parsedUrl = url.parse(request.url, true);
-	var parsedPath = parsedUrl.pathname.split('/');
-
-	var params = parsedUrl.query || {};
+Router.Route.prototype.dispatch = function(request, response, parsedURL) {
+	var parsedPath = parsedURL.path;
+	var params = parsedURL.search;
 
 	var i = 0,
 		l = this.__pathHash.length;
@@ -119,24 +119,13 @@ Router.Utils.send = function(response, code, headers) {
 };
 
 Router.Utils.sendJSON = function(response, json, code, headers) {
-    var jsonStrings = utils.ensureArray(json);
-
     headers = headers || {};
 
     headers['Server']         = 'Beseda';
     headers['Content-Type']   = 'text/json';
-    headers['Content-Length'] = json.length;
 
 	response.writeHead(code || 200, headers);
-
-    response.write('[');
-    for (var i = 0;i < jsonStrings.length; i++) {
-        if (i !== 0) {
-            response.write(',');
-        }
-        response.write(jsonStrings[i]);
-    }
-    response.end(']');
+	response.end(json);
 };
 
 Router.Utils.sendFile = function(request, response, file, type) {
@@ -182,3 +171,75 @@ Router.Utils.sendFile = function(request, response, file, type) {
         }
     });
 };
+
+Router.Utils.parseURL = function(url) {
+	var pathAndSearch = url.substring(1).split('?');
+
+	var result = {
+		'path'	   : pathAndSearch[0].split('/'),
+		'search'	   : {}
+	};
+
+	var search = pathAndSearch[1];
+	if (search) {
+		var i = 0,
+			l = search.length;
+
+		var sep = '&';
+		var temp = [];
+
+		var key = null;
+	
+		while (i < l) {
+
+			if (search[i] === '=') {
+				key = temp.join('');
+				result.search[key] = '';
+				
+				temp = [];
+			} else if (search[i] === '&') {
+				if (key) {
+					result.search[key] = unescape(temp.join(''));
+					key = null;
+				}
+				
+				temp = [];
+			} else {
+				temp.push(search[i])
+			}
+
+			++i;
+		}
+
+		if (key) {
+			result.search[key] = unescape(temp.join(''));
+		}
+	}
+
+	return result;
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -51,9 +51,9 @@ Transport.prototype._handleConnection = function(id) {
 };
 
 Transport.prototype._handleMessage = function(data) {
-	if (data.messages) {
-        while(data.messages.length) {
-            this._emitter.emit('message', data.messages.shift());
+	if (data) {
+        while(data.length) {
+            this._emitter.emit('message', data.shift());
         }
 	}
 };

@@ -1,3 +1,4 @@
+//TODO: если ошибка на отсылку переподключение с отправкой!
 var Beseda = function(options) {
 	Beseda._super.constructor.call(this);
 
@@ -472,9 +473,9 @@ Beseda.Transport.prototype._handleConnection = function(id) {
 };
 
 Beseda.Transport.prototype._handleMessage = function(data) {
-	if (data && data.messages) {
-		while(data.messages.length) {
-			this._emitter.emit('message', data.messages.shift());
+	if (data) {
+		while(data.length) {
+			this._emitter.emit('message', data.shift());
 		}
 	}
 };
@@ -523,7 +524,7 @@ Beseda.Transport.LongPolling = function() {
 Beseda.utils.inherits(Beseda.Transport.LongPolling, Beseda.Transport);
 
 Beseda.Transport.LongPolling.isAvailable = function(options) {
-	return document.location.hostname === options.host;
+	return !document.location.hostname === options.host;
 }
 
 Beseda.Transport.LongPolling.prototype._initRequests = function() {
