@@ -43,7 +43,7 @@ cli.main(function(args, options) {
         });
 
         client.on('message', function(channel, data, message) {
-            util.print(this.clientId + ": " +JSON.stringify(message) + '\n');
+            util.print(this.clientId + ": " + message.id + '\n');
         });
         
         client.on('error', function(error) {
@@ -55,7 +55,7 @@ cli.main(function(args, options) {
         clients.push(client);
     }
 });
-
+    
 function checkArgs(args) {
     if (cli.command == 'subscribe') {
     		if (!args[0]) {
@@ -110,8 +110,8 @@ function publish(args, client, count) {
 			//util.log("CLIENT " + client.clientId + " SUCCESS COUNT: " + clientSuccessCount);
 			
 			if (errorCount + successCount == args[2]) {
-				util.print("GLOBAL ERROR COUNT: " + errorCount + "\n");			
-				util.print("GLOBAL SUCCESS COUNT: " + successCount + "\n");
+				util.log("GLOBAL ERROR COUNT: " + errorCount);			
+				util.log("GLOBAL SUCCESS COUNT: " + successCount);
 			}
 		}
     };
