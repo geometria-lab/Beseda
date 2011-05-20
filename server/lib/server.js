@@ -29,7 +29,7 @@ Server = module.exports = function(options) {
         monitor : false,
         debug   : false,
 
-        transports : [ 'longPolling', 'JSONPLongPolling' ],
+        transports : [ 'longPolling', 'JSONPLongPolling' ]
     };
 
     this.options = utils.merge(defaultOptions, options);
