@@ -7,15 +7,19 @@ var cli  = require('./../vendor/cli');
 var Client = require('./../client/nodejs');
 
 cli.parse({
-    host : [ 'h',   'Host',       'ip',      '127.0.0.1' ],
-    port : [ 'p',   'Port',       'number',  4000 ],
-    ssl  : [ false, 'Enable SSL', 'boolean', false ],
+    host : [ 'h',   'Host',       'ip',     '127.0.0.1' ],
+    port : [ 'p',   'Port',       'number', 4000 ],
+    ssl  : [ 's',   'Enable SSL', 'boolean' ],
 
     transport : ['t', 'Transport',         'string', 'longPolling'],
+
     number    : ['n', 'Number of clients', 'number', 1],
 
-    debug : ['v', 'Display debug information', 'boolean', false]
-}, ['publish', 'subscribe']);
+    debug : ['d', 'Display debug information', 'boolean']
+}, {
+    publish   : 'Publish message to channel',
+    subscribe : 'Subscribe to channel'
+});
 
 cli.main(function(args, options) {
     function log(clientId, message, force) {
