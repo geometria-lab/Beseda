@@ -108,7 +108,7 @@ function publish(args, options, client, count) {
     client.removeAllListeners('error');
 
     var publishClosure = function() {
-    	if (count--) {
+    	    if (count--) {
 			client.publish(channel, message, function(error) {
                 if (error) {
                     errors.push([this.clientId, error]);
@@ -121,11 +121,11 @@ function publish(args, options, client, count) {
 
 				publishClosure();
 			});
-		} else {
+		} else if (errorCount + successCount === args[2]) {
             for (var i = 0; i < errors.length; i++) {
                 cli.error('Client ' + errors[i][0] + ' error: ' + errors[i][1]);
             }
-            process.exit(0);
+            //process.exit(0);
 		}
     };
 

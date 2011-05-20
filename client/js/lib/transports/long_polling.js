@@ -36,7 +36,7 @@ Beseda.Transport.LongPolling = function() {
 Beseda.utils.inherits(Beseda.Transport.LongPolling, Beseda.Transport);
 
 Beseda.Transport.LongPolling.isAvailable = function(options) {
-	return !document.location.hostname === options.host;
+	return document.location.hostname === options.host;
 }
 
 Beseda.Transport.LongPolling.prototype._initRequests = function() {

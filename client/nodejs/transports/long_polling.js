@@ -48,7 +48,7 @@ LongPollingTransport.prototype.disconnect = function() {
     this._connectionID = null;
 }
 
-LongPollingTransport.prototype.send = function(data) {
+LongPollingTransport.prototype.send = function(data, ids) {
 	if (this._connectionID) {
         var sendRequest = new LongPollingTransport.Request({
             method : 'PUT',
@@ -57,7 +57,17 @@ LongPollingTransport.prototype.send = function(data) {
             ssl    : this._ssl,
             path   : '/beseda/io/' + this._typeSuffix + '/' + this._connectionID
         });
-        sendRequest.on('error', this._handleError.bind(this));
+
+        
+        sendRequest.on('error', function(error) {
+            var i = ids.length - 1;
+            while (i >= 0) {            
+                this._emitter.emit('message:' + ids[i], error);
+                
+                i--;
+            }
+        }.bind(this));
+        
         sendRequest.send(data);
 	} else {
 		this._enqueue(data);
@@ -158,5 +168,6 @@ LongPollingTransport.Request.prototype._endRequest = function(response) {
 }
 
 LongPollingTransport.Request.prototype._onError = function(error) {
+    debugger;
     this.emit('error', 'Can\'t send request:' + error);
 }

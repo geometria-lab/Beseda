@@ -65,7 +65,7 @@ Router.prototype._unsubscribe = function(message) {
 
 Router.prototype._message = function(message) {
     if ('successful' in message) {
-        this.client.emit('message:' + message.channel + ':' + message.id, message.error, message);
+        this.client.emit('message:' + message.id, message.error, message);
 
         if (!message.successful) {
             this.client.emit('error', 'Beseda publish request declined', message);

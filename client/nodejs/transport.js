@@ -26,7 +26,7 @@ Transport.prototype.connect = function(host, port, ssl) {
 	throw Error('Abstract method calling.');
 };
 
-Transport.prototype.send = function(data) {
+Transport.prototype.send = function(data, ids) {
 	throw Error('Abstract method calling.');
 };
 

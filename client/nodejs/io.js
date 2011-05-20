@@ -24,7 +24,12 @@ IO.prototype.connect = function() {
 IO.prototype.send = function(messages) {
     messages = utils.ensureArray(messages);
 
-	this.__transport.send(JSON.stringify(messages));
+    var ids = [];
+    for (var i = 0; i < messages.length; i++) {
+        ids.push(messages[i].id);
+    }
+
+	this.__transport.send(JSON.stringify(messages), ids);
 };
 
 IO.prototype.disconnect = function() {
