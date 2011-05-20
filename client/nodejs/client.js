@@ -58,8 +58,6 @@ Client.prototype.isConnecting = function() {
 };
 
 Client.prototype.connect = function(callback, additionalMessage) {
-	util.log("connect");
-	
     if (this.isConnected()) {
         return false;
     }

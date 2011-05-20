@@ -22,104 +22,112 @@ cli.parse({
 });
 
 cli.main(function(args, options) {
-    function log(clientId, message, force) {
-        if (options.debug || force) {
-            util.log('Client ' + clientId + ' - ' + message);
-        }
-    }
-
     checkArgs(args);
+
+    if (cli.command == 'publish') {
+        console.log(options.number + ' clients publishing ' + (options.number * args[2]) + ' messages...\n');
+    }
 
     var clients   = [],
         connected = 0;
-    
+
     for (var i = 0; i < options.number; i++) {
         var client = new Client(options);
 
         client.on('connection', function() {
-            util.log(this.clientId + ' connected');
+            if (options.debug) {
+                cli.info('Client ' + this.clientId + ' connected');
+            }
 
             if (cli.command == 'subscribe') {
-            		subscribe(args, this)
+                subscribe(args, options, this);
             } else {
-            		publish(args, this, args[2]/options.number);
+                publish(args, options, this, args[2]/options.number);
             }
         });
 
         client.on('message', function(channel, data, message) {
-            util.print(this.clientId + ": " +JSON.stringify(message) + '\n');
+            if (options.debug) {
+                cli.info('Client ' + this.clientId + ' received: ' + JSON.stringify(message));
+            } else {
+                console.log(JSON.stringify(message));
+            }
         });
-        
+
         client.on('error', function(error) {
-             util.print(this.clientId + ": " + error + '\n');
+            cli.error('Client ' + this.clientId + " error: " + error);
         });
-        
+
         client.connect();
-        
+
         clients.push(client);
     }
 });
 
 function checkArgs(args) {
     if (cli.command == 'subscribe') {
-    		if (!args[0]) {
-        		console.log("Channel not present.\n Use: beseda-client subscribe [CHANNEL]");
-    		}
+        if (!args[0]) {
+            console.log("Channel not present.\n Use: beseda-client subscribe [CHANNEL]");
+            process.exit(1);
+        }
     } else {
-    		var use = 'Use: beseda-client publish CHANNEL MESSAGE [COUNT=1]';
+        var use = 'Use: beseda-client publish CHANNEL MESSAGE [COUNT=1]';
 
-		if (!args[0]) {
-		    console.log("Channel not present.\n" + use);
-		    return;
-		}
+        if (!args[0]) {
+            console.log("Channel not present.\n" + use);
+            process.exit(1);
+        }
 
-		if (!args[1]) {
-		    console.log("Message not present.\n" + use);
-		    return;
-		}
+        if (!args[1]) {
+            console.log("Message not present.\n" + use);
+            process.exit(1);
+        }
+
+        args[2] = args[2] ? Number(args[2]) : 1;
     }
 }
 
-function subscribe(args, client) {
+function subscribe(args, options, client) {
     var channel = args[0];
 
     client.subscribe(channel, function() {
-        util.log(this.clientId + ' subscribed to ' + channel);
+        if (options.debug) {
+            cli.info('Client ' + this.clientId + ' subscribed to ' + channel);
+        }
     });
 }
 
+var errors = [];
 var successCount = 0;
-var errorCount = 0; 
+var errorCount = 0;
 
-function publish(args, client, count) {
-
+function publish(args, options, client, count) {
     var channel  = args[0],
         message  = args[1];
 
-   	var clientErrorCount = 0;
-   	var clientSuccessCount = 0;
-   	
-    var publishClosure = function() {
-    		if (--count) {
-			client.publish(channel, message, function(error) {
-				error ? errorCount++ : successCount++;
-				error ? clientErrorCount++ : clientSuccessCount++;
+    client.removeAllListeners('error');
 
-				util.print(error ? 'e' : '.');
-			
+    var publishClosure = function() {
+    	if (count--) {
+			client.publish(channel, message, function(error) {
+                if (error) {
+                    errors.push([this.clientId, error]);
+                    errorCount++;
+                } else {
+                    successCount++;
+                }
+
+                cli.progress(errorCount + successCount / args[2]);
+
 				publishClosure();
 			});
 		} else {
-			//util.log("CLIENT " + client.clientId + " ERROR COUNT: " + clientErrorCount);			
-			//util.log("CLIENT " + client.clientId + " SUCCESS COUNT: " + clientSuccessCount);
-			
-			if (errorCount + successCount == args[2]) {
-				util.print("GLOBAL ERROR COUNT: " + errorCount + "\n");			
-				util.print("GLOBAL SUCCESS COUNT: " + successCount + "\n");
-			}
+            for (var i = 0; i < errors.length; i++) {
+                cli.error('Client ' + errors[i][0] + ' error: ' + errors[i][1]);
+            }
+            process.exit(0);
 		}
     };
 
     publishClosure();
-
 }

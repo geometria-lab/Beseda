@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-var cli  = require('cli'),
+var cli  = require('./../vendor/cli'),
     util = require('util');
 
 var Beseda = require('./../server');
@@ -14,7 +14,7 @@ cli.parse({
     monitor : [ 'm',   'Enable monitor', 'boolean', 0 ],
 
     debug : ['d', 'Display debug information', 'boolean', false]
-});
+}, {});
 
 cli.main(function(args, options) {
     options.server = {
