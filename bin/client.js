@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 
+// TODO: Refactor this shit
+
 var util = require('util');
 
 var cli  = require('./../vendor/cli');

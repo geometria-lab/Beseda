@@ -1,7 +1,7 @@
 Beseda
 ============
 
-Beseda is fast, well designed and featured [Node.js](http://nodejs.org) Pub/Sub server based on patched [Socket.io](http://socket.io).
+Beseda is fast, well designed and featured [Node.js](http://nodejs.org) Pub/Sub server.
 Beseda offers server-side and client-side crossbrowser API for realtime messaging.
 
 Features
@@ -21,8 +21,8 @@ Features
 * Monitor (coming soon)
 * Server-side clients:
     * PHP
+    * Node.js
     * Ruby (coming soon)
-    * Node.js (coming soon)
     * Python (coming soon)
 * Browsers client. Works well:
 	* Google Chrome 5 and newer
