@@ -141,7 +141,7 @@ Beseda.Transport.LongPolling.Request.prototype.send = function(url) {
         this.url = url;
     }
 
-    var requestURL = this.url;
+    var requestURL = this.url + '/' + (new Date().getTime());
 
     if (request != null)
         request.abort();

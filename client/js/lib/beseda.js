@@ -246,9 +246,9 @@ Beseda.prototype.setOptions = function(options, extend) {
 };
 
 Beseda.prototype.log = function() {
-    if ('console' in window && 'log' in console) {
-		console.log.apply(console, arguments);
-    }
+    //if ('console' in window && 'log' in console) {
+	//	console.log.apply(console, arguments);
+   // }
 };
 
 Beseda.prototype._sendMessage = function(channel, message) {

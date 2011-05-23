@@ -21,7 +21,7 @@ cli.main(function(args, options) {
         host : options.host,
         port : options.port,
         ssl  : options.ssl
-    }
+    };
 
     var beseda = new Beseda(options);
     beseda.listen();

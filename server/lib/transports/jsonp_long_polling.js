@@ -24,17 +24,17 @@ JSONPLongPollingTransport.sendJSONP = function(response, json, callback, code, h
 
 JSONPLongPollingTransport.prototype._addRoutes = function() {
 	this.io.server.router.get(
-		'/beseda/io/JSONPLongPolling/:id', 
+		'/beseda/io/JSONPLongPolling/:id/:time', 
 		this._holdRequest.bind(this)
 	);
 	
     this.io.server.router.get(
-    		'/beseda/io/JSONPLongPolling/:id/send', 
+    		'/beseda/io/JSONPLongPolling/:id/send/:time', 
     		this._receive.bind(this)
     	);
     	
     this.io.server.router.get(
-    		'/beseda/io/JSONPLongPolling/:id/destroy', 
+    		'/beseda/io/JSONPLongPolling/:id/destroy/:time', 
     		this._destroy.bind(this)
     	);
 }
