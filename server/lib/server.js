@@ -169,5 +169,7 @@ Server.prototype._isHTTPServerOpened = function() {
 Server.prototype._logBesedaStarted = function() {
     var serverAddress = this.httpServer.address();
 
-    util.log('Beseda started on ' + serverAddress.address + ':' + serverAddress.port);
+    (this.options.debug ? util : console).log('Beseda started on ' +
+                                              serverAddress.address +
+                                              ':' + serverAddress.port);
 };

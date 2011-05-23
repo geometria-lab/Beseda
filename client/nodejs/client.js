@@ -2,6 +2,8 @@ var util = require('util');
 
 var utils = require('./../../server/lib/utils.js');
 
+require('v8-profiler');
+
 var Router = require('./router.js'),
     IO     = require('./io.js');
 
@@ -119,8 +121,8 @@ Client.prototype.publish = function(channel, message, callback) {
     message = this._sendMessage(channel, { data : message });
 
     if (callback) {
-        // TODO: Handle errors from IO
-        this.once('message:' + channel + ':' + message.id, callback);
+        this.once('message:' + message.id, callback);
+        this._io.once('message:' + message.id, callback);
     }
 
     return this;
@@ -133,19 +135,17 @@ Client.prototype.disconnect = function() {
 };
 
 Client.prototype._sendMessage = function(channel, message) {
-    if (this.isDisconnected()) {
-        throw Error ('You must connect before send message');
+    if (!this.isDisconnected()) {
+        message = this._createMessage(channel, message);
+
+        if (this.isConnecting()) {
+            this._messageQueue.push(message);
+        } else {
+            this._io.send(message);
+        }
+
+        return message;
     }
-
-    var message = this._createMessage(channel, message);
-
-    if (this.isConnecting()) {
-        this._messageQueue.push(message);
-    } else {
-        this._io.send(message);
-    }
-
-    return message;
 };
 
 Client.prototype._createMessage = function(channel, message) {
@@ -160,7 +160,10 @@ Client.prototype._createMessage = function(channel, message) {
 
 Client.prototype._onError = function(error) {
     this._status = Client._statuses.DISCONNECTED;
-    this.emit('error', error);
+
+    if (this.listeners('error').length) {
+        this.emit('error', error);
+    }
 }
 
 Client.prototype.flushMessageQueue = function() {

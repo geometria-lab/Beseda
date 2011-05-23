@@ -13,7 +13,10 @@ MessageRouter = module.exports = function(server) {
 };
 
 MessageRouter.prototype.dispatch = function(connectionId, message) {
-    if (message.channel == undefined || message.clientId == undefined || message.id == undefined) {
+    if (message.channel  === undefined ||
+        message.clientId === undefined || 
+        message.id       === undefined) {
+        
         this.server.io.send(connectionId, {
             channel : '/meta/error',
             data    : 'channel, clientId or id not present'
@@ -33,14 +36,14 @@ MessageRouter.prototype.dispatch = function(connectionId, message) {
         }
 
         this['_' + metaChannel].call(this, connectionId, message);
-    } else if (message.channel.indexOf('/service/') == 0) {
+    } else if (message.channel.indexOf('/service/') === 0) {
         this.server.io.send(connectionId, {
             id       : message.id,
             channel  : '/meta/error',
             clientId : message.clientId,
             data     : 'Service channels not supported'
         });
-    } else if (message.channel.indexOf('/') == 0) {
+    } else if (message.channel.indexOf('/') === 0) {
         return this._publish(connectionId, message);
     } else {
         this.server.io.send(connectionId, {

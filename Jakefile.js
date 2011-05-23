@@ -13,7 +13,8 @@ task('compressJs', [], function(params) {
 
     var javascript = '';
     
-    [ 'beseda.js',
+    [ 'json.js',
+      'beseda.js',
       'router.js',
       'io.js',
       'transport.js',
