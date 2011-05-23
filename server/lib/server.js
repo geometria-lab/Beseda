@@ -4,12 +4,8 @@ var fs    = require('fs'),
     http  = require('http'),
     https = require('https');
 
-var profiler = require('v8-profiler');
-
-var IO             = require('./io.js'),
-	Router         = require('./router.js'),
+var Router         = require('./router.js'),
     MessageRouter  = require('./message_router.js');
-    //MonitorUpdater = require('./monitor_updater.js');
 
 var utils = require('./utils.js');
 
@@ -25,8 +21,7 @@ Server = module.exports = function(options) {
 		    ssl  : false
 		},
 
-        pubSub  : 'memory',
-        monitor : false,
+        pubSub : 'memory',
         debug   : false,
 
         transports : [ 'longPolling', 'JSONPLongPolling' ]
@@ -110,14 +105,6 @@ Server = module.exports = function(options) {
     } else {
         // Use PubSub from options
         this.pubSub = this.options.pubSub;
-    }
-
-    /**
-     *  Setup Monitor
-     **/
-    if (this.options.monitor) {
-        this.monitor = new MonitorUpdater(this, this.options.monitor);
-        this.monitor.start();
     }
 
     if (this._isHTTPServerOpened()) {

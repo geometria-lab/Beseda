@@ -19,7 +19,6 @@ Features
     * Subscribing
 * Horizontal scaling (depends on Pub/Sub engine)
 * Monitor (coming soon)
-* Command Line Interface
 * Server-side clients:
     * PHP
     * Node.js
