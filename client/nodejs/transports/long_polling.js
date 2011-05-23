@@ -168,6 +168,5 @@ LongPollingTransport.Request.prototype._endRequest = function(response) {
 }
 
 LongPollingTransport.Request.prototype._onError = function(error) {
-    debugger;
     this.emit('error', 'Can\'t send request:' + error);
 }

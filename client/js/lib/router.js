@@ -3,7 +3,10 @@ Beseda.Router = function(client) {
 };
 
 Beseda.Router.prototype.dispatch = function(message) {
-    if (message.channel == undefined || message.clientId == undefined || message.id == undefined) {
+    if (message.channel == undefined || 
+        message.clientId == undefined || 
+        message.id == undefined) {
+        
         this.client.log('Beseda receive incorrect message', message);
         this.client.emit('error', message);
     } else {
@@ -24,7 +27,7 @@ Beseda.Router.prototype.dispatch = function(message) {
 
 Beseda.Router.prototype._connect = function(message) {
     if (message.successful) {
-        this.client._status = Beseda._statuses.CONNECTED;
+        this.client._status = Beseda._statuses.CONNECTED; //TODO: <- Improve this 
 
         this.client.flushMessageQueue();
 
@@ -71,7 +74,7 @@ Beseda.Router.prototype._unsubscribe = function(message) {
 
 Beseda.Router.prototype._message = function(message) {
     if ('successful' in message) {
-        this.client.emit('message:' + message.channel + ':' + message.id, message.error, message);
+        this.client.emit('message:' + message.id, message.error, message);
 
         if (message.successful) {
             this.client.log('Beseda publish to ' + message.channel, message);

@@ -15,10 +15,15 @@ Beseda.IO.prototype.connect = function() {
 							 this.__options.ssl);
 };
 
-Beseda.IO.prototype.send = function(data) {
-	var dataArray = [].concat(data);
+Beseda.IO.prototype.send = function(messages) {
+	var dataArray = [].concat(messages);
+
+	var ids = [];
+    for (var i = 0; i < dataArray.length; i++) {
+        ids.push(dataArray[i].id);
+    }
 	
-	this.__transport.send(JSON.stringify(dataArray));
+	this.__transport.send(JSON.stringify(dataArray), ids);
 };
 
 Beseda.IO.prototype.disconnect = function() {

@@ -32,7 +32,7 @@ Beseda.Transport.prototype.connect = function(host, port, ssl) {
 	throw Error('Abstract method calling.');
 };
 
-Beseda.Transport.prototype.send = function(data) {
+Beseda.Transport.prototype.send = function(data, ids) {
 	throw Error('Abstract method calling.');
 };
 
