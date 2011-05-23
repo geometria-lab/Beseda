@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 
+// TODO: Refactor this shit
+
 var util = require('util');
 
 var cli  = require('./../vendor/cli');
@@ -108,7 +110,7 @@ function publish(args, options, client, count) {
     client.removeAllListeners('error');
 
     var publishClosure = function() {
-    	    if (count--) {
+        if (count--) {
 			client.publish(channel, message, function(error) {
                 if (error) {
                     errors.push([this.clientId, error]);
@@ -125,7 +127,7 @@ function publish(args, options, client, count) {
             for (var i = 0; i < errors.length; i++) {
                 cli.error('Client ' + errors[i][0] + ' error: ' + errors[i][1]);
             }
-            //process.exit(0);
+            process.exit(0);
 		}
     };
 

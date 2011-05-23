@@ -1,7 +1,7 @@
 Beseda
 ============
 
-Beseda is fast, well designed and featured [Node.js](http://nodejs.org) Pub/Sub server based on patched [Socket.io](http://socket.io).
+Beseda is fast, well designed and featured [Node.js](http://nodejs.org) Pub/Sub server.
 Beseda offers server-side and client-side crossbrowser API for realtime messaging.
 
 Features
@@ -19,10 +19,11 @@ Features
     * Subscribing
 * Horizontal scaling (depends on Pub/Sub engine)
 * Monitor (coming soon)
+* Command Line Interface
 * Server-side clients:
     * PHP
+    * Node.js
     * Ruby (coming soon)
-    * Node.js (coming soon)
     * Python (coming soon)
 * Browsers client. Works well:
 	* Google Chrome 5 and newer
@@ -44,28 +45,21 @@ Get started!
 
     2.1. **Install from npm**
 
-    `npm install beseda`
+    `npm install -g beseda`
 
     2.2. **Get last unstable version from git**
 
     `git clone http://github.com/geometria-lab/Beseda.git`
 
-    `npm install Beseda`
+    `npm install -g Beseda`
 
 3. **Use Beseda**
 
     _NOTE: You can find test application in `example` folder._
 
-    3.1. Create you `server.js`
+    3.1. Run Beseda server
 
-         var Beseda = require('beseda'),
-             beseda = new Beseda();
-
-         beseda.listen(4000, 'localhost');
-
-    3.2. Run it
-
-    `sudo node server.js`
+    `beseda-server -h 127.0.0.1 -p 4000`
 
     3.3. Create you `test.html`
 
@@ -73,7 +67,9 @@ Get started!
         <script type="text/javascript">
 
         function say(what) {
-            document.body.
+            var p = document.createElement('p');
+            p.innerHTML = what;
+            document.body.appendChild(p);
         }
 
         var beseda = new Beseda({ host : 'localhost', port : 4000 });

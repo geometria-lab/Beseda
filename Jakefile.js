@@ -12,7 +12,7 @@ task('compressJs', [], function(params) {
         mjs = require('./vendor/minifyjs');
 
     var javascript = '';
-    
+
     [ 'json.js',
       'beseda.js',
       'router.js',
