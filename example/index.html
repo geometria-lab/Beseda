@@ -1,12 +1,15 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta charset="utf-8" />
+    
     <title>Beseda</title>
-    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.5.2/jquery.min.js" type="text/javascript" charset="utf-8"></script>
-    <script src="/socket.io/socket.io.js" type="text/javascript" charset="utf-8"></script>
-    <script src="/beseda.js" type="text/javascript" charset="utf-8"></script>
-    <script src="/example.js" type="text/javascript" charset="utf-8"></script>
+    
+    <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.0/jquery.js"></script>
+
+    <script type="text/javascript" src="/beseda/js/beseda.js"></script>
+    
+    <script type="text/javascript" src="/example.js"></script>
 </head>
 <body>
   <div id="header">
@@ -22,10 +25,11 @@
       <input type="submit" value="Subscribe" />
   </form>
 
-  <form id="unsubscribe" style="float:left;padding:20px">
+  <form id="unsubscribe" style="float: left;padding: 20px;position: relative; z-index: 9000">
     <p>
       Unsubscribe from a channel:
     </p>
+
       <label>Channel:</label>
       <input type="text" value="" class="channel" autocomplete="off"/>
       <input type="submit" value="Unsubscribe" />
@@ -49,5 +53,7 @@
   <h2>Messages:</h2>
   <ul id="messages">
   </ul>
+    
+  
 </body>
 </html>

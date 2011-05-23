@@ -1,8 +1,10 @@
+var util = require('util');
+
 // TODO: Needs empty channels cleanup by timestamp?
 var channels = {};
 
-Channel = module.exports = function(server, name) {
-    this.server = server;
+Channel = module.exports = function(pubSub, name) {
+    this.__pubSub = pubSub;
     this.name   = name;
     this.subscriptions = {};
 
@@ -22,7 +24,7 @@ Channel = module.exports = function(server, name) {
 };
 
 Channel.get = function(name) {
-    return channels[name]
+    return channels[name];
 };
 
 Channel.getAll = function() {
@@ -30,9 +32,11 @@ Channel.getAll = function() {
 };
 
 Channel.prototype.publish = function(message) {
-    this.server.pubSub.publish(this.name, message);
+	//this.server.monitor.increment("publication");
+	
+    this.__pubSub.publish(this.name, message);
 
-    this.publishedTimestamp = Date.now();
+    //this.publishedTimestamp = Date.now();
     this.publishedCount++;
 };
 
@@ -44,13 +48,13 @@ Channel.prototype.subscribe = function(session) {
     this.subscriptions[session.id] = session;
 
     if (!this._isConnectedToPubSub) {
-        this.server.pubSub.subscribe(this.name, this._deliverMessage.bind(this));
+        this.__pubSub.subscribe(this.name, this._deliverMessage.bind(this));
         this._isConnectedToPubSub = true;
     }
 };
 
 Channel.prototype.isSubscribed = function(session){
-    return !!this.subscriptions[session.id];
+    return this.subscriptions[session.id];
 };
 
 Channel.prototype.unsubscribe = function(session) {
@@ -61,7 +65,7 @@ Channel.prototype.unsubscribe = function(session) {
     delete this.subscriptions[session.id];
 
     if (!this.subscriptions.length) {
-        this.server.pubSub.unsubscribe(this.name);
+        this.__pubSub.unsubscribe(this.name);
         this._isConnectedToPubSub = false;
     }
 };
@@ -75,8 +79,8 @@ Channel.prototype._deliverMessage = function(message) {
         }
     }
 
-    this.receivedTimestamp = Date.now();
-    this.receivedCount++;
+    //this.receivedTimestamp = Date.now();
+    //this.receivedCount++;
 
-    this.server.log('Receive new message to "' + this.name + '" and deliver to ' + count + ' subscribers');
+    //this.session.server.log('Receive new message to "' + this.name + '" and deliver to ' + count + ' subscribers');
 };

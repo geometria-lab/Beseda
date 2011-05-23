@@ -1,59 +1,57 @@
-var fs          = require('fs'),
-    path        = require('path'),
-    util        = require(process.binding('natives').util ? 'util' : 'sys'),
-    http        = require('http'),
-    https       = require('https'),
-    io          = require('./../vendor/socket.io');
+var fs    = require('fs'),
+    path  = require('path'),
+    util  = require('util'),
+    http  = require('http'),
+    https = require('https');
 
-var Router         = require('./router.js'),
-    MessageRouter  = require('./message_router.js'),
-    MonitorUpdater = require('./monitor_updater.js');
+var profiler = require('v8-profiler');
+
+var IO             = require('./io.js'),
+	Router         = require('./router.js'),
+    MessageRouter  = require('./message_router.js');
+    //MonitorUpdater = require('./monitor_updater.js');
 
 var utils = require('./utils.js');
 
-// TODO: Change router to connect framework
+// TODO: initialize options via setters
 
 Server = module.exports = function(options) {
     process.EventEmitter.call(this);
 
-    this.options = utils.merge({
-        host : '0.0.0.0',
-        port : 4000,
-        ssl  : false,
+    var defaultOptions = {
+        server  : {
+		    host : '0.0.0.0',
+		    port : 4000,
+		    ssl  : false
+		},
 
-        server : null,
-        socketIO : {},
-        pubSub : 'memory',
+        pubSub  : 'memory',
         monitor : false,
+        debug   : false,
 
-        log : function(message) {
-            util.log(message);
-        },
+        transports : [ 'longPolling', 'JSONPLongPolling' ]
+    };
 
-        connectionTimeout     : 2000,
-        subscriptionTimeout   : 100,
-        publicationTimeout    : 100,
-        unsubscriptionTimeout : 100
-    }, options);
+    this.options = utils.merge(defaultOptions, options);
 
     /**
      *  Setup HTTP server
      **/
-    if (!this.options.server) {
+    if (this.options.server.constructor == Object) {
         // Create own http server from options
-        if (this.options.ssl != false) {
+        if (this.options.server.ssl != false) {
             // Create https server with credentials
             var credentials = {};
-            if (path.existsSync(this.options.ssl.key)) {
-                credentials.key = fs.readFileSync(this.options.ssl.key, 'utf8');
+            if (path.existsSync(this.options.server.ssl.key)) {
+                credentials.key = fs.readFileSync(this.options.server.ssl.key, 'utf8');
             } else {
-                credentials.key = this.options.ssl.key;
+                credentials.key = this.options.server.ssl.key;
             }
 
-            if (path.existsSync(this.options.ssl.cert)) {
-                credentials.cert = fs.readFileSync(this.options.ssl.cert, 'utf8');
+            if (path.existsSync(this.options.server.ssl.cert)) {
+                credentials.cert = fs.readFileSync(this.options.server.ssl.cert, 'utf8');
             } else {
-                credentials.cert = this.options.ssl.cert;
+                credentials.cert = this.options.server.ssl.cert;
             }
 
             this.httpServer = https.createServer(credentials);
@@ -69,53 +67,27 @@ Server = module.exports = function(options) {
     /**
      *  Setup Routers
      **/
-    this.router = new Router(this);
-    this.router.get('/beseda.js', function(dispatcher) {
-        var file = __dirname + '/../../client/js/beseda.js';
-        dispatcher.sendFile(file, 'text/javascript');
-    }).get('/beseda.min.js', function(dispatcher) {
-        var file = __dirname + '/../../client/js/beseda.min.js';
-        dispatcher.sendFile(file, 'text/javascript');
-    });
+    this.router = new Router();
+    this.router.get('/beseda/js/:filename', function(request, response, params) {
+		var file = __dirname + '/../../client/js/' + params.filename;
+		Router.Utils.sendFile(request, response, file, 'text/javascript');
+	});
+
     this.messageRouter = new MessageRouter(this);
 
-    /**
-     *  Setup Socket.IO
+	/**
+     *  Setup IO
      **/
-    if (this.options.socketIO.constructor == Object) {
-        // Create socketIO from options
-        var socketOptions = utils.clone(this.options.socketIO);
-
-        // Set our log to socketIo
-        if (socketOptions.log == undefined) {
-            socketOptions.log = this.options.log;
-        }
-
-        this.socketIO = io.listen(this.httpServer, socketOptions);
-    } else {
-        // Use socket.io from options
-        this.socketIO = this.options.socketIO;
-    }
-
-    // Add connection listener
-    this.socketIO.on('connection', function(client) {
-        client.on('message', function(message) {
-        	this._onMessage(client, message);
-        }.bind(this));
-
-        client.on('disconnect', function() {
-            this._onDisconnect(client);
-        }.bind(this));
-    }.bind(this));
+	this.io = new IO(this);
+    this.io.on('message', this.messageRouter.dispatch.bind(this.messageRouter));
+    this.io.on('disconnect', this._onDisconnect.bind(this));
 
     // Add request listener with static before others
     var self = this;
     var listeners = this.httpServer.listeners('request');
     this.httpServer.removeAllListeners('request');
     this.httpServer.addListener('request', function(request, response) {
-        var dispatcher = self.router.dispatch(request, response);
-
-        if (!dispatcher.isDispatched) {
+        if (!self.router.dispatch(request, response)) {
             for (var i = 0; i < listeners.length; i++) {
                 listeners[i].call(this, request, response);
             }
@@ -173,26 +145,21 @@ Server.prototype.listen = function(port, host) {
 };
 
 Server.prototype.log = function(message) {
-    return this.options.log(message);
-};
-
-Server.prototype._onMessage = function(client, message) {
-	//try {
-		 this.messageRouter.dispatch(client, JSON.parse(message));
-	//} catch (error) {
-	//	util.log('Unable to encode message: ' + message + '!');
-	//}
-};
-
-Server.prototype._onDisconnect = function(client) {
-    if (client.session) {
-        this.log('Session ' + client.session.id + ' is disconnected');
-        client.session.destroy();
-    } else {
-        this.log('Client without session is disconnected');
+    if (this.options.debug) {
+        util.log(message);
     }
+}
 
-    this.emit('disconnect', client.session);
+Server.prototype._onDisconnect = function(connectionId) {
+    var session = Session.get(connectionId);
+
+    if (session) {
+        this.log('Session ' + session.id + ' is disconnected');
+        this.emit('disconnect', session);
+        session.destroy();
+    } else {
+        this.log('Client ' + connectionId + ' without session is disconnected');
+    }
 };
 
 Server.prototype._isHTTPServerOpened = function() {
@@ -202,5 +169,7 @@ Server.prototype._isHTTPServerOpened = function() {
 Server.prototype._logBesedaStarted = function() {
     var serverAddress = this.httpServer.address();
 
-    this.log('Beseda started on ' + serverAddress.address + ':' + serverAddress.port);
+    (this.options.debug ? util : console).log('Beseda started on ' +
+                                              serverAddress.address +
+                                              ':' + serverAddress.port);
 };

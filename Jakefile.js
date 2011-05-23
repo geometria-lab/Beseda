@@ -12,8 +12,16 @@ task('compressJs', [], function(params) {
         mjs = require('./vendor/minifyjs');
 
     var javascript = '';
-    ['client', 'events', 'router', 'utils'].forEach(function(file){
-        javascript += fs.readFileSync('./client/js/lib/' + file + '.js') + "\n\n";
+
+    [ 'json.js',
+      'beseda.js',
+      'router.js',
+      'io.js',
+      'transport.js',
+      'transports/long_polling.js',
+      'transports/jsonp_long_polling.js'
+    	].forEach(function(file) {
+        javascript += fs.readFileSync('./client/js/lib/' + file) + "\n\n";
     });
 
     fs.writeFile('./client/js/beseda.js', javascript);

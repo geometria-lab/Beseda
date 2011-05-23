@@ -12,19 +12,22 @@ MessageRouter = module.exports = function(server) {
     this.server = server;
 };
 
-MessageRouter.prototype.dispatch = function(client, message) {
-    if (message.channel == undefined || message.clientId == undefined || message.id == undefined) {
-        return client.send({
+MessageRouter.prototype.dispatch = function(connectionId, message) {
+    if (message.channel  === undefined ||
+        message.clientId === undefined || 
+        message.id       === undefined) {
+        
+        this.server.io.send(connectionId, {
             channel : '/meta/error',
             data    : 'channel, clientId or id not present'
         });
     }
 
-    if (message.channel.indexOf('/meta/') == 0) {
+    if (message.channel.indexOf('/meta/') === 0) {
         var metaChannel = message.channel.substr(6);
 
         if (!metaChannel in ['connect', 'subscribe', 'unsubscribe']) {
-            return client.send({
+            this.server.io.send(connectionId, {
                 id       : message.id,
                 channel  : '/meta/error',
                 clientId : message.clientId,
@@ -32,18 +35,18 @@ MessageRouter.prototype.dispatch = function(client, message) {
             });
         }
 
-        this['_' + metaChannel].call(this, client, message);
-    } else if (message.channel.indexOf('/service/') == 0) {
-        return client.send({
+        this['_' + metaChannel].call(this, connectionId, message);
+    } else if (message.channel.indexOf('/service/') === 0) {
+        this.server.io.send(connectionId, {
             id       : message.id,
             channel  : '/meta/error',
             clientId : message.clientId,
             data     : 'Service channels not supported'
         });
-    } else if (message.channel.indexOf('/') == 0) {
-        return this._publish(client, message);
+    } else if (message.channel.indexOf('/') === 0) {
+        return this._publish(connectionId, message);
     } else {
-        return client.send({
+        this.server.io.send(connectionId, {
             id       : message.id,
             channel  : '/meta/error',
             clientId : message.clientId,
@@ -53,22 +56,23 @@ MessageRouter.prototype.dispatch = function(client, message) {
 };
 
 // TODO: Disconnect after timeout if no one events or connection declined
-MessageRouter.prototype._connect = function(client, message) {
-    var session = new Session(this.server, message.clientId, client);
-
-    var request = new ConnectionRequest(session, message);
-
-    var listeners = this.server.listeners('connect');
-    if (listeners.length) {
-        this.server.emit('connect', request, message);
-    } else {
-        request.approve();
-    }
+MessageRouter.prototype._connect = function(connectionId, message) {
+    var session = Session.get(connectionId);
+	if (!session) {
+        var session = new Session(this.server, connectionId),
+            request = new ConnectionRequest(session, message),
+            listeners = this.server.listeners('connect');
+		if (listeners.length) {
+		    this.server.emit('connect', request, message);
+		} else {
+		    request.approve();
+		}
+	}
 };
 
-MessageRouter.prototype._subscribe = function(client, message) {
+MessageRouter.prototype._subscribe = function(connectionId, message) {
     if (message.subscription == undefined) {
-        return client.send({
+        return this.server.io.send({
             id           : message.id,
             channel      : '/meta/subscribe',
             clientId     : message.clientId,
@@ -78,9 +82,9 @@ MessageRouter.prototype._subscribe = function(client, message) {
         });
     }
 
-    var session = client.session;
+    var session = Session.get(connectionId);
     if (!session) {
-        return client.send({
+        return this.server.io.send({
             id           : message.id,
             channel      : '/meta/subscribe',
             clientId     : message.clientId,
@@ -95,10 +99,10 @@ MessageRouter.prototype._subscribe = function(client, message) {
     }
 
     var channels = [];
-    var subscriptions = utils.ensure(message.subscription);
+    var subscriptions = utils.ensureArray(message.subscription);
     for (var i = 0; i < subscriptions.length; i++) {
         if (subscriptions[i].indexOf('/') != 0) {
-            return client.send({
+            return session.send({
                 id           : message.id,
                 channel      : '/meta/subscribe',
                 clientId     : message.clientId,
@@ -109,7 +113,7 @@ MessageRouter.prototype._subscribe = function(client, message) {
         }
 
         if (subscriptions[i].indexOf('/meta/') == 0) {
-            return client.send({
+            return session.send({
                 id           : message.id,
                 channel      : '/meta/subscribe',
                 clientId     : message.clientId,
@@ -120,7 +124,7 @@ MessageRouter.prototype._subscribe = function(client, message) {
         }
 
         if (subscriptions[i].indexOf('*') != -1) {
-            return client.send({
+            return session.send({
                 id           : message.id,
                 channel      : '/meta/subscribe',
                 clientId     : message.clientId,
@@ -132,11 +136,11 @@ MessageRouter.prototype._subscribe = function(client, message) {
 
         var channel = Channel.get(subscriptions[i]);
         if (!channel) {
-            channel = new Channel(this.server, subscriptions[i]);
+            channel = new Channel(this.server.pubSub, subscriptions[i]);
         }
 
         if (channel.isSubscribed(session)) {
-            return client.send({
+            return session.send({
                 id           : message.id,
                 channel      : '/meta/subscribe',
                 successful   : false,
@@ -158,9 +162,23 @@ MessageRouter.prototype._subscribe = function(client, message) {
     }
 };
 
-MessageRouter.prototype._unsubscribe = function(client, message) {
+MessageRouter.prototype._unsubscribe = function(connectionID, message) {
+    var session = Session.get(connectionID);
+    if (!session) {
+        /*
+        return session.send({
+            id           : message.id,
+            channel      : '/meta/unsubscribe',
+            clientId     : message.clientId,
+            successful   : false,
+            subscription : message.subscription,
+            error        : 'You must send connection message before'
+        });
+        */
+    }
+
     if (message.subscription == undefined) {
-        return client.send({
+        return session.send({
             id           : message.id,
             channel      : '/meta/unsubscribe',
             clientId     : message.clientId,
@@ -170,27 +188,17 @@ MessageRouter.prototype._unsubscribe = function(client, message) {
         });
     }
 
-    var session = client.session;
-    if (!session) {
-        return client.send({
-            id           : message.id,
-            channel      : '/meta/unsubscribe',
-            clientId     : message.clientId,
-            successful   : false,
-            subscription : message.subscription,
-            error        : 'You must send connection message before'
-        });
-    }
 
-    if (session.id != message.clientId) {
-        throw new Error('Client.session not equal message.clientId');
-    }
+
+    //if (session.id != message.clientId) {
+    //    throw new Error('Client.session not equal message.clientId');
+    //}
 
     var channels = [];
-    var subscriptions = utils.ensure(message.subscription);
+    var subscriptions = utils.ensureArray(message.subscription);
     for (var i = 0; i < subscriptions.length; i++) {
         if (subscriptions[i].indexOf('/') != 0) {
-            return client.send({
+            return session.send({
                 id           : message.id,
                 channel      : '/meta/unsubscribe',
                 clientId     : message.clientId,
@@ -201,7 +209,7 @@ MessageRouter.prototype._unsubscribe = function(client, message) {
         }
 
         if (subscriptions[i].indexOf('*') != -1) {
-            return client.send({
+            return session.send({
                 id           : message.id,
                 channel      : '/meta/unsubscribe',
                 clientId     : message.clientId,
@@ -214,7 +222,7 @@ MessageRouter.prototype._unsubscribe = function(client, message) {
         var channel = Channel.get(subscriptions[i]);
 
         if (!channel || !channel.isSubscribed(session)) {
-            return client.send({
+            return session.send({
                 id           : message.id,
                 channel      : '/meta/unsubscribe',
                 clientId     : message.clientId,
@@ -237,24 +245,26 @@ MessageRouter.prototype._unsubscribe = function(client, message) {
     }
 };
 
-MessageRouter.prototype._publish = function(client, message) {
-    var session = client.session;
+MessageRouter.prototype._publish = function(connectionID, message) {
+    var session = Session.get(connectionID);
     if (!session) {
-        return client.send({
+        /*
+        return session.send({
             id           : message.id,
             channel      : message.channel,
             clientId     : message.clientId,
             successful   : false,
             error        : 'You must send connection message before'
         });
+        */
     }
 
-    if (session.id != message.clientId) {
-        throw new Error('Client.session not equal message.clientId');
-    }
+    //if (session.id != message.clientId) {
+   //     throw new Error('Client.session not equal message.clientId');
+    //}
 
     if (message.channel.indexOf('*') != -1) {
-        return client.send({
+        return session.send({
             id           : message.id,
             channel      : message.channel,
             clientId     : message.clientId,
@@ -265,7 +275,7 @@ MessageRouter.prototype._publish = function(client, message) {
 
     var channel = Channel.get(message.channel);
     if (!channel) {
-        channel = new Channel(this.server, message.channel);
+        channel = new Channel(this.server.pubSub, message.channel);
     }
 
     var request = new PublicationRequest(session, message, channel);

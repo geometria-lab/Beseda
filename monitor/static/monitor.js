@@ -19,6 +19,7 @@ var Monitor = {
 
         this.socketIO = new io.Socket();
         this.socketIO.on('message', function(message) {
+        	message = JSON.parse(message);
             Monitor['_' + message.type + 'MessageHandler'](message);
         });
         this.socketIO.connect();
@@ -123,7 +124,7 @@ var Monitor = {
                '/' + date.getDate() + ', ' + date.getHours() + ':' +
                date.getMinutes() + ':' + date.getSeconds();
     }
-}
+};
 
 $(document).ready(function() {
     Monitor.init();

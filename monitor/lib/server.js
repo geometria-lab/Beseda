@@ -55,7 +55,7 @@ Server = module.exports = function(options) {
 
             this._servers[server.name] = server;
 
-            this.socketIO.broadcast({ type : 'servers', servers : [ server ] });
+            this.socketIO.broadcast(JSON.stringify({ type : 'servers', servers : [ server ] }));
 
             this.log('Received stats update from ' + server.name);
         }.bind(this));
@@ -110,11 +110,11 @@ Server = module.exports = function(options) {
     });
 
     this._markAsDownInterval = setInterval(this._markAsDown.bind(this), 1000);
-}
+};
 
 Server.prototype.log = function(message) {
     return util.log(message);
-}
+};
 
 Server.prototype.listen = function(port, host) {
     host = host || this.options.host;
@@ -127,7 +127,7 @@ Server.prototype.listen = function(port, host) {
     }
 
     this.log('Beseda Monitor started on ' + host + ':' + port);
-}
+};
 
 Server.prototype._authorize = function(request, response) {
     if ('authorization' in request.headers && request.headers['authorization'].indexOf('Basic ') === 0) {
@@ -146,7 +146,7 @@ Server.prototype._authorize = function(request, response) {
     response.end();
 
     return false;
-}
+};
 
 Server.prototype._markAsDown = function() {
     var now = Date.now();
@@ -159,7 +159,7 @@ Server.prototype._markAsDown = function() {
             server.isDown = true;
         }
     }
-}
+};
 
 Server.prototype._onConnection = function(client) {
     client.on('message', this._onMessage.bind(this, null, client));
@@ -168,10 +168,10 @@ Server.prototype._onConnection = function(client) {
         servers.push(this._servers[name]);
     }
 
-    client.send({ type : 'servers', servers : servers });
-}
+    client.send(JSON.stringify({ type : 'servers', servers : servers }));
+};
 
 Server.prototype._onMessage = function(message, client) {
     console.log(message);
     console.log(client);
-}
+};

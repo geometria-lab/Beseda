@@ -1,8 +1,4 @@
-exports.clone = function(object) {
-    return exports.merge({}, object);
-};
-
-exports.merge = function(object, extend) {
+module.exports.merge = function(object, extend) {
     for (var p in extend) {
         try {
             if (extend[p].constructor == Object) {
@@ -18,6 +14,10 @@ exports.merge = function(object, extend) {
     return object;
 };
 
-exports.ensure = function(array) {
+module.exports.clone = function(object) {
+    return exports.merge({}, object);
+};
+
+module.exports.ensureArray = function(array) {
     return Array.isArray(array) ? array : [ array ];
 };
