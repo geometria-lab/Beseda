@@ -727,9 +727,9 @@ Beseda.prototype.setOptions = function(options, extend) {
 };
 
 Beseda.prototype.log = function() {
-    if ('console' in window && 'log' in console) {
-		console.log.apply(console, arguments);
-    }
+    //if ('console' in window && 'log' in console) {
+	//	console.log.apply(console, arguments);
+   // }
 };
 
 Beseda.prototype._sendMessage = function(channel, message) {
@@ -1127,7 +1127,7 @@ Beseda.Transport.LongPolling.Request.prototype.send = function(url) {
         this.url = url;
     }
 
-    var requestURL = this.url;
+    var requestURL = this.url + '/' + (new Date().getTime());
 
     if (request != null)
         request.abort();
@@ -1233,8 +1233,7 @@ Beseda.Transport.JSONPLongPolling.JSONPRequest.prototype.send = function(url) {
     (function(index, self, timeout){
         Beseda.Transport.JSONPLongPolling.JSONPRequest.__callbacks[self.__id][index] = function(data) {
             clearTimeout(timeout);
-        
-            console.log('request_' + self.__id + '_' + index);
+
             document.body.removeChild(document.getElementById('request_' + self.__id + '_' + index));
             delete self.__scripts[index];
 
@@ -1242,8 +1241,7 @@ Beseda.Transport.JSONPLongPolling.JSONPRequest.prototype.send = function(url) {
         };
     })(this.__requestIndex, this, timeout);
 
-    
-    var requestURL = this.url;
+    var requestURL = this.url + '/' + (new Date().getTime());
 
     requestURL += (requestURL.indexOf('?') === -1 ? '?' : '&') + 
         'callback=Beseda.Transport.JSONPLongPolling.JSONPRequest.__callbacks[' + 
@@ -1259,7 +1257,6 @@ Beseda.Transport.JSONPLongPolling.JSONPRequest.prototype.send = function(url) {
     this.data = null;
     this.__requestIndex++;
 };
-
 
 Beseda.Transport.JSONPLongPolling.FormRequest = function() {
     Beseda.Transport.JSONPLongPolling.JSONPRequest._super.constructor.call(this);

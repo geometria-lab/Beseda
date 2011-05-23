@@ -68,8 +68,7 @@ Beseda.Transport.JSONPLongPolling.JSONPRequest.prototype.send = function(url) {
         };
     })(this.__requestIndex, this, timeout);
 
-    
-    var requestURL = this.url;
+    var requestURL = this.url + '/' + (new Date().getTime());
 
     requestURL += (requestURL.indexOf('?') === -1 ? '?' : '&') + 
         'callback=Beseda.Transport.JSONPLongPolling.JSONPRequest.__callbacks[' + 
@@ -85,7 +84,6 @@ Beseda.Transport.JSONPLongPolling.JSONPRequest.prototype.send = function(url) {
     this.data = null;
     this.__requestIndex++;
 };
-
 
 Beseda.Transport.JSONPLongPolling.FormRequest = function() {
     Beseda.Transport.JSONPLongPolling.JSONPRequest._super.constructor.call(this);

@@ -17,7 +17,7 @@ module.exports = IO = function(server) {
     this._transports = {};
     this._connections = {};
 
-	this.server.router.get('/beseda/io/:transport', this._handleConnect.bind(this));
+	this.server.router.get('/beseda/io/:transport/:time', this._handleConnect.bind(this));
 }
 
 util.inherits(IO, process.EventEmitter);

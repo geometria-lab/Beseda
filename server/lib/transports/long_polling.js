@@ -58,15 +58,15 @@ LongPollingTransport.prototype.createConnection = function(connectionId, request
 
 LongPollingTransport.prototype._addRoutes = function() {
 	this.io.server.router.addRoute(new Router.Route(
-		'/beseda/io/longPolling/:id', this._receive.bind(this), ['PUT']
+		'/beseda/io/longPolling/:id/:time', this._receive.bind(this), ['PUT']
 	));
 	
 	this.io.server.router.addRoute(new Router.Route(
-		'/beseda/io/longPolling/:id', this._destroy.bind(this), ['DELETE']
+		'/beseda/io/longPolling/:id/:time', this._destroy.bind(this), ['DELETE']
 	));
 	
 	this.io.server.router.addRoute(new Router.Route(
-		'/beseda/io/longPolling/:id', this._holdRequest.bind(this), ['GET']
+		'/beseda/io/longPolling/:id/:time', this._holdRequest.bind(this), ['GET']
 	));
 }
 
