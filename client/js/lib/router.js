@@ -17,7 +17,7 @@ Beseda.Router.prototype.dispatch = function(message) {
                 this.client.log('Unsupported meta channel ' + message.channel);
                 this.client.emit('error', message);
             } else {            
-            		this['_' + metaChannel].call(this, message);
+                this['_' + metaChannel].call(this, message);
             }
         } else {
             this._message(message);

@@ -60,8 +60,7 @@ Beseda.Transport.JSONPLongPolling.JSONPRequest.prototype.send = function(url) {
     (function(index, self, timeout){
         Beseda.Transport.JSONPLongPolling.JSONPRequest.__callbacks[self.__id][index] = function(data) {
             clearTimeout(timeout);
-        
-            console.log('request_' + self.__id + '_' + index);
+
             document.body.removeChild(document.getElementById('request_' + self.__id + '_' + index));
             delete self.__scripts[index];
 
