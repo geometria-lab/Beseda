@@ -3,23 +3,22 @@ Changelog
 
 Version 0.0.4
 ---
-Unreleased
+May 23, 2011
 
 * Socket.IO goodbye! Own much faster and stable IO mechanism.
   Long polling and JSONP long polling transports implemented. WebSocket and FlashSocket soon!
 * Add params to router
 * Refactor server and client
 * Node.js Beseda client
-* Benchmarks
+* Command line client and server
 * Add reconnect and disconnect on server
 * Restore subscribes if server is down
 * JSONify protocol
-* Command line client and server
 * Remove requests timeouts
 * Longpolling to CRUD
 * Disconnection request
-
-
+* Fixed memory leaks
+* Lot of optimization
 
 Version 0.0.3
 ---

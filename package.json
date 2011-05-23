@@ -6,23 +6,25 @@
     "homepage": "http://geometria-lab.net",
     "author": "Geometria Lab",
     "contributors": [
-        { "name": "Ivan Shumkov", "email": "ivan@shumkov.ru" },
+        { "name": "Ivan Shumkov",     "email": "ivan@shumkov.ru" },
         { "name": "Sergey Kononenko", "email": "kononencheg@gmail.com" }
     ],
     "main": "./server",
-    "bin" : { "beseda-client" : "./bin/client.js",
-              "beseda-server" : "./bin/server.js" },
+    "bin" : {
+        "beseda-client" : "./bin/client.js",
+        "beseda-server" : "./bin/server.js"
+    },
     "repository": {
-        "type": "git",
-        "url": "git://github.com/geometria-lab/Beseda.git"
+        "type" : "git",
+        "url"  : "git://github.com/geometria-lab/Beseda.git"
     },
     "dependencies" : {
         "redis-node" : ">=0.4.0",
         "cli"        : ">=0.3.3"
     },
-    "engines": [ "node >=0.4" ],
+    "engines" : [ "node >=0.4" ],
     "licenses" : [{
-        "type" : "BSD"
-      , "url"  : "http://www.opensource.org/licenses/bsd-license.php"
+        "type" : "BSD",
+        "url"  : "http://www.opensource.org/licenses/bsd-license.php"
     }]
 }
