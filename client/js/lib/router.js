@@ -33,7 +33,7 @@ Beseda.Router.prototype._connect = function(message) {
 
         this.client.log('Beseda connected');
         
-   		this.client.emit('connection', message);
+        this.client.emit('connection', message);
     } else {
         this.client.disconnect();
 

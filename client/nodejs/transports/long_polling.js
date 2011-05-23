@@ -24,10 +24,10 @@ LongPollingTransport.prototype.connect = function(host, port, ssl) {
 
     var connectionRequest = new LongPollingTransport.Request({
         method : 'GET',
-        host : this._host,
-        port : this._port,
-        ssl  : this._ssl,
-        path : '/beseda/io/' + this._typeSuffix
+        host   : this._host,
+        port   : this._port,
+        ssl    : this._ssl,
+        path   : '/beseda/io/' + this._typeSuffix
     });
     connectionRequest.on('ready', this._handleConnection.bind(this));
     connectionRequest.on('error', this._handleError.bind(this));
@@ -49,7 +49,7 @@ LongPollingTransport.prototype.disconnect = function() {
 }
 
 LongPollingTransport.prototype.send = function(data, ids) {
-	if (this._connectionID) {
+    if (this._connectionID) {
         var sendRequest = new LongPollingTransport.Request({
             method : 'PUT',
             host   : this._host,

@@ -171,7 +171,7 @@ Beseda.prototype.subscribe = function(channel, callback, additionalMessage) {
 
     message = this._sendMessage('/meta/subscribe', message);
 
-    //this.log('Beseda send subscribe request', message);
+    this.log('Beseda send subscribe request', message);
 
     this.__channels[channel] = message;
 
@@ -190,7 +190,7 @@ Beseda.prototype.unsubscribe = function(channel, callback, additionalMessage) {
 
     message = this._sendMessage('/meta/unsubscribe', message);
 
-    //this.log('Beseda send unsubscribe request', message);
+    this.log('Beseda send unsubscribe request', message);
 
     if (callback) {
         this.once('unsubscribe:' + message.id, callback);
@@ -204,7 +204,7 @@ Beseda.prototype.publish = function(channel, message, callback) {
 
     message = this._sendMessage(channel, { data : message });
 
-    //this.log('Beseda send publish request', message);
+    this.log('Beseda send publish request', message);
 
     if (callback) {
         this.once('message:' + message.id, callback);
@@ -531,11 +531,19 @@ Beseda.Transport.LongPolling = function() {
 	this.__handleErrorClosure = function() {
 		self._emitter.emit('error');
 	};
+	
+	this.__handleSendClosure = function() {
+		self._sendRequest.removeAllListeners('error');
+	};
+	
 
 	this._connectionRequest.addListener('ready', this.__handleConnectionClosure);
-	this._pollRequest.addListener('ready', this.__handleMessageClosure);
 	this._connectionRequest.addListener('error', this.__handleErrorClosure);
+	
+	this._pollRequest.addListener('ready', this.__handleMessageClosure);
 	this._pollRequest.addListener('error', this.__handleErrorClosure);
+	
+	this._sendRequest.addListener('ready', this.__handleSendClosure);
 };
 
 Beseda.utils.inherits(Beseda.Transport.LongPolling, Beseda.Transport);
@@ -567,7 +575,7 @@ Beseda.Transport.LongPolling.prototype.send = function(data, ids) {
 		this._sendRequest.send();
 		
 		var self = this;
-		this._sendRequest.on('error', function(error){
+		this._sendRequest.once('error', function(error){
 			var i = ids.length - 1;
             while (i >= 0) {            
                 self._emitter.emit('message:' + ids[i], error);
@@ -622,8 +630,6 @@ Beseda.Transport.LongPolling.prototype.__poll = function() {
 		this._pollRequest.send();
 	}
 };
-
-
 
 Beseda.Transport.LongPolling.Request = function(method) {
 	Beseda.Transport.LongPolling.Request._super.constructor.call(this);
