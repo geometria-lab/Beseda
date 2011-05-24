@@ -1,4 +1,4 @@
-var util = require('util');
+var Channel = require('./../channel.js');
 
 SubscriptionRequest = module.exports = function(session, requestMessage, channels) {
     this.session  = session;
@@ -14,14 +14,12 @@ SubscriptionRequest.prototype.approve = function() {
     this.isApproved = true;
 
     for (var i = 0; i < this.channels.length; i++) {
-        this.channels[i].subscribe(this.session);
+        this.session.subscribe(this.channels[i]);
     }
 
     this._sendResponse(true);
 
     this.session.server.log('Session ' + this.session.id + ' subscription request to channel "' + this._getChannelNames() + '" APPROVED');
-
-    //this.session.server.monitor.increment('subscription');
 };
 
 SubscriptionRequest.prototype.decline = function(error) {
@@ -29,11 +27,15 @@ SubscriptionRequest.prototype.decline = function(error) {
         throw new Error('Session ' + this.session.id + ' subscription request to channel "' + this._getChannelNames() + '" already approved');
     }
 
+    for (var i = 0; i < this.channels.length; i++) {
+        if (!this.channels[i].hasSubscriptions()) {
+            Channel.remove(this.channels[i].name);
+        }
+    }
+
     this._sendResponse(false, error || 'Subscription declined');
 
     this.session.server.log('Session ' + this.session.id + ' subscription request to channel "' + this._getChannelNames() + '" DECLINED' + (error ? ': ' + error : ''));
-
-    //this.session.server.monitor.increment('declinedSubscription');
 };
 
 SubscriptionRequest.prototype._sendResponse = function(successful, error) {

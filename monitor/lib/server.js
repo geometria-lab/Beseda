@@ -8,8 +8,6 @@ var Router = require('./../../server/lib/router.js');
 
 var utils = require('./../../server/lib/utils.js');
 
-// TODO: Change router to connect framework
-
 Server = module.exports = function(options) {
     this.options = utils.merge({
         host : '0.0.0.0',

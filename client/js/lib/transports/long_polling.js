@@ -41,11 +41,11 @@ Beseda.Transport.LongPolling = function() {
     this._sendRequest.addListener('ready', this.__handleSendClosure);
 };
 
-Beseda.utils.inherits(Beseda.Transport.LongPolling, Beseda.Transport);
+Beseda.Utils.inherits(Beseda.Transport.LongPolling, Beseda.Transport);
 
 Beseda.Transport.LongPolling.isAvailable = function(options) {
     return document.location.hostname === options.host;
-}
+};
 
 Beseda.Transport.LongPolling.prototype._initRequests = function() {
     this._connectionRequest = new Beseda.Transport.LongPolling.Request('GET');
@@ -134,7 +134,7 @@ Beseda.Transport.LongPolling.Request = function(method) {
     this.data = null;
 };
 
-Beseda.utils.inherits(Beseda.Transport.LongPolling.Request, Beseda.EventEmitter);
+Beseda.Utils.inherits(Beseda.Transport.LongPolling.Request, EventEmitter);
 
 Beseda.Transport.LongPolling.Request.prototype.send = function(url) {
     if (url) {
@@ -152,7 +152,7 @@ Beseda.Transport.LongPolling.Request.prototype.send = function(url) {
     var self = this;
     request.onreadystatechange = function() {
         self.__requestStateHandler(request);
-    }
+    };
 
     if (this.method === 'GET' && this.data) {
         requestURL += 

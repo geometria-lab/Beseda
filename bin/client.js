@@ -111,7 +111,7 @@ function publish(args, options, client, count) {
 
     var publishClosure = function() {
         if (count--) {
-			client.publish(channel, message, function(error) {
+            client.publish(channel, message, function(error) {
                 if (error) {
                     errors.push([this.clientId, error]);
                     errorCount++;
@@ -121,14 +121,14 @@ function publish(args, options, client, count) {
 
                 cli.progress(errorCount + successCount / args[2]);
 
-				publishClosure();
-			});
-		} else if (errorCount + successCount === args[2]) {
+                publishClosure();
+            });
+        } else if (errorCount + successCount === args[2]) {
             for (var i = 0; i < errors.length; i++) {
                 cli.error('Client ' + errors[i][0] + ' error: ' + errors[i][1]);
             }
             process.exit(0);
-		}
+        }
     };
 
     publishClosure();

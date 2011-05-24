@@ -18,7 +18,7 @@ RedisPubSub = module.exports = function(options) {
 
 RedisPubSub.prototype.subscribe = function(channel, callback) {
     this.clientSubscribe.subscribeTo(channel, function(channel, message) {
-        callback(JSON.parse(message));
+        callback(channel, JSON.parse(message));
     });
 }
 

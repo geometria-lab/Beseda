@@ -14,6 +14,6 @@ MemoryPubSub.prototype.publish = function(channel, message) {
     var subscription = this.subscriptions[channel];
     
     if (subscription) {
-        subscription(message);
+        subscription(channel, message);
     }
 };

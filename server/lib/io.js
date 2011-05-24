@@ -1,18 +1,16 @@
 var util = require('util');
 
-// TODO: Client ID to hash
-
 var Router = require('./router.js');
 
 var LongPollingTransport      = require('./transports/long_polling.js'),
 	JSONPLongPollingTransport = require('./transports/jsonp_long_polling.js');
 
+var utils = require('./utils.js');
+
 module.exports = IO = function(server) {
 	process.EventEmitter.call(this);
 
     this.server = server;
-
-	this._lastConnectionId = 0;
 
     this._transports = {};
     this._connections = {};
@@ -48,7 +46,7 @@ IO.prototype._getTransport = function(name) {
 
 IO.prototype._handleConnect = function(request, response, params) {
 	if (this.server.options.transports.indexOf(params.transport) !== -1) {
-        var connectionId = ++this._lastConnectionId;
+        var connectionId = utils.uid();
         var transport = this._getTransport(params.transport);
 
         this._connections[connectionId] = transport.createConnection(connectionId, request, response);
@@ -68,4 +66,5 @@ IO.prototype._onMessage = function(connectionId, messages) {
 
 IO.prototype._onDisconnect = function(connectionId) {
     this.emit('disconnect', connectionId);
+    delete this._connections[connectionId];
 }

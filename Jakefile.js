@@ -14,6 +14,7 @@ task('compressJs', [], function(params) {
     var javascript = '';
 
     [ 'json.js',
+      'events.js',
       'beseda.js',
       'router.js',
       'io.js',

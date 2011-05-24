@@ -1,15 +1,31 @@
-var Channel = require('./channel.js');
-var utils = require('./utils.js');
-
 var sessions = {};
 
 Session = module.exports = function(server, connectionId) {
-	this.server = server;
-    this.id = connectionId;
-
-    //this.createdTimestamp = Date.now();
+    this.server = server;
+    this.id     = connectionId;
 
     sessions[this.id] = this;
+};
+
+Session.prototype.subscribe = function(channel) {
+    this.server.subscriptionManager.subscribe(this, channel);
+};
+
+Session.prototype.isSubscribed = function(channel) {
+    return this.server.subscriptionManager.hasSubscription(this, channel)
+}
+
+Session.prototype.unsubscribe = function(channel) {
+    this.server.subscriptionManager.unsubscribe(this, channel);
+};
+
+Session.prototype.send = function(message) {
+	this.server.io.send(this.id, message);
+};
+
+Session.prototype.destroy = function() {
+    this.server.subscriptionManager.unsubscribeFromAll(this);
+    Session.remove(this.id);
 };
 
 Session.get = function(id) {
@@ -22,19 +38,4 @@ Session.getAll = function() {
 
 Session.remove = function(id) {
     delete sessions[id];
-};
-
-Session.prototype.send = function(message) {
-	this.server.io.send(this.id, message);
-};
-
-Session.prototype.destroy = function() {
-    Session.remove(this.id);
-
-    var channels = Channel.getAll();
-    for (var i in channels) {
-        if (channels[i].isSubscribed(this)) {
-            channels[i].unsubscribe(this);
-        }
-    }
 };

@@ -1,14 +1,12 @@
 Example
 ============
 
-1. Start Beseda server and Monitor
+1. Start Beseda server
 
-   `sudo node server.js`
+   `node server.js`
+
 2. Try Beseda
 
    [127.0.0.1:4000](http://127.0.0.1:4000)
 
-   _Do not forget open Firebug or JavaScript console._
-3. Monitor Beseda
-
-   [127.0.0.1:4001](http://127.0.0.1:4001)
+   _You can see logs in Firebug or JavaScript console._

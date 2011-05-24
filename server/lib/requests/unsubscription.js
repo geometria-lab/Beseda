@@ -14,7 +14,7 @@ UnsubscriptionRequest.prototype.approve = function() {
     this.isApproved = true;
 
     for (var i = 0; i < this.channels.length; i++) {
-        this.channels[i].unsubscribe(this.session);
+        this.session.unsubscribe(this.channels[i]);
     }
 
     this._sendResponse(true);

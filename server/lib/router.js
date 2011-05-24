@@ -24,7 +24,6 @@ Router.prototype.post = function(path, callback) {
     return this;
 };
 
-// TODO: Check duplicates?
 Router.prototype.addRoute = function(route) {
 	this._routes.push(route);
 
@@ -129,7 +128,6 @@ Router.Utils.sendJSON = function(response, json, code, headers) {
 };
 
 Router.Utils.sendFile = function(request, response, file, type) {
-	util.log(file);
     fs.stat(file, function (error, stat) {
         if (error) {
             util.log('Can\'t send file "' + request.url + ' (' + file +')": ' + error);
@@ -154,11 +152,10 @@ Router.Utils.sendFile = function(request, response, file, type) {
                 headers['Content-Length'] = stat.size;
                 headers['Content-Type']   = type;
 
-                // TODO: Impement stream and buffer for caching
                 try {
                     var content = fs.readFileSync(file, 'utf8');
                 } catch (e) {
-                    sys.puts('Can\'t send file "' + request.url + ' (' + file +')": ' + error);
+                    util.log('Can\'t send file "' + request.url + ' (' + file +')": ' + error);
 
                     Router.Utils.send(response, 404);
 

@@ -7,7 +7,7 @@ Beseda.IO = function(options) {
     this.__transport.setEmitter(this);
 };
 
-Beseda.utils.inherits(Beseda.IO, Beseda.EventEmitter);
+Beseda.Utils.inherits(Beseda.IO, EventEmitter);
 
 Beseda.IO.prototype.connect = function() {
     this.__transport.connect(this.__options.host,
