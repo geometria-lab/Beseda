@@ -19,6 +19,7 @@ May 23, 2011
 * Disconnection request
 * Fixed memory leaks
 * Lot of optimization
+* Router parameters
 
 Version 0.0.3
 ---

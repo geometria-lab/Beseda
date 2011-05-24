@@ -2,8 +2,6 @@ var util = require('util');
 
 var Router = require('./../router.js');
 
-// TODO: Implement disconnect
-
 module.exports = LongPollingTransport = function(io) {
 	process.EventEmitter.call(this);
 
@@ -12,7 +10,7 @@ module.exports = LongPollingTransport = function(io) {
 
     this._addRoutes();
 
-	this._connection = LongPollingTransport.Connection;
+	this._connectionClass = LongPollingTransport.Connection;
 
     this._flushInterval = setInterval(this._flushConnections.bind(this),
                                       LongPollingTransport.CHECK_INTERVAL);
@@ -51,22 +49,22 @@ LongPollingTransport._sendInvalidMessages = function(response) {
 LongPollingTransport.prototype.createConnection = function(connectionId, request, response) {
 	this._sendApplyConnection(connectionId, request, response);
 
-    this._connections[connectionId] = new this._connection(this, connectionId);
+    this._connections[connectionId] = new this._connectionClass(this, connectionId);
 
     return this._connections[connectionId];
 }
 
 LongPollingTransport.prototype._addRoutes = function() {
 	this.io.server.router.addRoute(new Router.Route(
-		'/beseda/io/longPolling/:id/:time', this._receive.bind(this), ['PUT']
+		'/beseda/io/longPolling/:id/:time', this._receive.bind(this), { methods : ['PUT'] }
 	));
 	
 	this.io.server.router.addRoute(new Router.Route(
-		'/beseda/io/longPolling/:id/:time', this._destroy.bind(this), ['DELETE']
+		'/beseda/io/longPolling/:id/:time', this._destroy.bind(this), { methods : ['DELETE'] }
 	));
 	
 	this.io.server.router.addRoute(new Router.Route(
-		'/beseda/io/longPolling/:id/:time', this._holdRequest.bind(this), ['GET']
+		'/beseda/io/longPolling/:id/:time', this._holdRequest.bind(this), { methods : ['GET'] }
 	));
 }
 

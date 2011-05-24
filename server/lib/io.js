@@ -17,6 +17,7 @@ module.exports = IO = function(server) {
     this._transports = {};
     this._connections = {};
 
+	//TODO: Add more protocols to handle
 	this.server.router.get('/beseda/io/:transport/:time', this._handleConnect.bind(this));
 }
 

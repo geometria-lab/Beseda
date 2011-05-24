@@ -9,10 +9,12 @@ Beseda.IO = function(options) {
 
 Beseda.utils.inherits(Beseda.IO, Beseda.EventEmitter);
 
-Beseda.IO.prototype.connect = function() {
-    this.__transport.connect(this.__options.host,
-                             this.__options.port,
-                             this.__options.ssl);
+Beseda.IO.prototype.connect = function(host, port, ssl) {
+	host = host && host.length !== 0 ? host : this.options.host;
+	port = !isNaN(port)              ? port : this.options.port;
+	ssl  = ssl !== undefined         ? ssl  : this.options.ssl;
+
+    this.__transport.connect(host, port, ssl);
 };
 
 Beseda.IO.prototype.send = function(messages) {

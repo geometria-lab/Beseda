@@ -4,7 +4,8 @@ var fs    = require('fs'),
     http  = require('http'),
     https = require('https');
 
-var Router         = require('./router.js'),
+var IO             = require('./io.js')
+	Router         = require('./router.js'),
     MessageRouter  = require('./message_router.js');
 
 var utils = require('./utils.js');

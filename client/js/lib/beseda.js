@@ -213,7 +213,10 @@ Beseda.prototype.publish = function(channel, message, callback) {
     return this;
 };
 
-Beseda.prototype.connect = function(callback, additionalMessage) {
+/**
+ *
+ */
+Beseda.prototype.connect = function(host, port, ssl) {
     if (this.isConnected()) {
         return false;
     }
@@ -225,7 +228,7 @@ Beseda.prototype.connect = function(callback, additionalMessage) {
         this._io.addListener('connect', this.__handleConnectionClosure);
     }
 
-    this._io.connect();
+    this._io.connect(host, port, ssl);
 
     for (var key in this.__channels) {
     		this._sendMessage('/meta/subscribe', this.__channels[key]);

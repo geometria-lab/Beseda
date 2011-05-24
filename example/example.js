@@ -52,3 +52,25 @@ $(document).delegate('#unsubscribe', 'submit', function(event) {
 beseda.on('message', function(channel, message, fullMessage) {
     $('#messages').prepend('<li><span class="channel">' + channel + '</span><span class="date">' + (new Date()).toString()+ '</span><pre class="message">' + JSON.stringify(fullMessage) + '</pre></li>');
 });
+
+var ws = new WebSocket('ws://0.0.0.0:4001/');
+ws.addEventListener('open', handleOpen);
+ws.addEventListener('message', handleMessage);
+ws.addEventListener('error', handleError);
+ws.addEventListener('close', handleClose);
+
+function handleOpen(event) {
+	ws.send('hello!');
+}
+
+function handleMessage(event) {
+	ws.send(event.data);
+}
+
+function handleError(event) {
+	debugger;
+}
+
+function handleClose(event) {
+	debugger;
+}
