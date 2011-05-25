@@ -68,9 +68,9 @@ function handleMessage(event) {
 }
 
 function handleError(event) {
-	debugger;
+	//debugger;
 }
 
 function handleClose(event) {
-	debugger;
+	//debugger;
 }
