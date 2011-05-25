@@ -15,7 +15,7 @@ Beseda.Transport._transports = {
 Beseda.Transport.getBestTransport = function(options) {
     for(var i = 0; i < options.transports.length; i++) {
 
-        var transportName = Beseda.Transport._transports[options.transports[i]]
+        var transportName = Beseda.Transport._transports[options.transports[i]];
         var transport = Beseda.Transport[transportName];
         
         if (transport) {

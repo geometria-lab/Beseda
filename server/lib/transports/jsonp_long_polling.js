@@ -44,7 +44,7 @@ JSONPLongPollingTransport.prototype._sendApplyConnection = function(connectionId
 
 	if (callback) {
 		JSONPLongPollingTransport.sendJSONP(response, JSON.stringify({ 
-			connectionId : connectionId 
+			connectionId : connectionId
 		}), callback);
 	}
 }

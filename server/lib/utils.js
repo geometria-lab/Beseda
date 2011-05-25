@@ -21,3 +21,28 @@ module.exports.clone = function(object) {
 module.exports.ensureArray = function(array) {
     return Array.isArray(array) ? array : [ array ];
 };
+
+var base64chars, base64charsLength;
+
+module.exports.uid = function(length) {
+    length = length || 10;
+
+    if (!base64chars) {
+        base64chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'.split('');
+        base64charsLength = base64chars.length;
+    }
+
+    for (var i = 0, id = []; i < length; i++) {
+        id[i] = base64chars[0 | Math.random() * base64charsLength];
+    }
+
+    return id.join('');
+}
+
+module.exports.isObjectEmpty = function(object) {
+    for (var p in object) {
+        return false;
+    }
+
+    return true;
+}

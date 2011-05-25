@@ -7,7 +7,7 @@ Beseda.IO = function(options) {
     this.__transport.setEmitter(this);
 };
 
-Beseda.utils.inherits(Beseda.IO, Beseda.EventEmitter);
+Beseda.Utils.inherits(Beseda.IO, EventEmitter);
 
 Beseda.IO.prototype.connect = function(host, port, ssl) {
 	host = host && host.length !== 0 ? host : this.options.host;

@@ -69,7 +69,7 @@ LongPollingTransport.prototype._addRoutes = function() {
 }
 
 LongPollingTransport.prototype._sendApplyConnection = function(connectionId, request, response) {
-	Router.Utils.sendJSON(response, '{ "connectionId" : ' + connectionId + ' }');
+	Router.Utils.sendJSON(response, '{ "connectionId" : "' + connectionId + '" }');
 }
 
 LongPollingTransport.prototype._holdRequest = function(request, response, params) {

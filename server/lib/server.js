@@ -4,13 +4,13 @@ var fs    = require('fs'),
     http  = require('http'),
     https = require('https');
 
-var IO             = require('./io.js')
-	Router         = require('./router.js'),
-    MessageRouter  = require('./message_router.js');
+
+var IO                  = require('./io.js'),
+    Router              = require('./router.js'),
+    MessageRouter       = require('./message_router.js'),
+    SubscriptionManager = require('./subscription_manager.js');
 
 var utils = require('./utils.js');
-
-// TODO: initialize options via setters
 
 Server = module.exports = function(options) {
     process.EventEmitter.call(this);
@@ -89,6 +89,11 @@ Server = module.exports = function(options) {
             }
         }
     });
+
+    /**
+     *  Setup subscription manager
+     **/
+    this.subscriptionManager = new SubscriptionManager(this);
 
     /**
      *  Setup PubSub

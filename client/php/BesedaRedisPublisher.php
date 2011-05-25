@@ -67,7 +67,7 @@ class BesedaRedisPublisher
     {
         $uid = '';
 
-        for ($i = 0; $i < 22; $i++) {
+        for ($i = 0; $i < 10; $i++) {
             $uid .= self::$_base64chars[mt_rand(0, 63)];
         }
 

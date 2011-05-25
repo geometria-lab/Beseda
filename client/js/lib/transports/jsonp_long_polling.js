@@ -7,11 +7,11 @@ Beseda.Transport.JSONPLongPolling = function() {
     this._deleteSuffix = '/destroy';
 };
 
-Beseda.utils.inherits(Beseda.Transport.JSONPLongPolling, Beseda.Transport.LongPolling);
+Beseda.Utils.inherits(Beseda.Transport.JSONPLongPolling, Beseda.Transport.LongPolling);
 
 Beseda.Transport.JSONPLongPolling.isAvailable = function(options) {
     return true;
-}
+};
 
 Beseda.Transport.JSONPLongPolling.prototype._initRequests = function() {
     this._connectionRequest = new Beseda.Transport.JSONPLongPolling.JSONPRequest();
@@ -38,7 +38,7 @@ Beseda.Transport.JSONPLongPolling.JSONPRequest = function() {
     Beseda.Transport.JSONPLongPolling.JSONPRequest.__callbacks[this.__id] = {};
 };
 
-Beseda.utils.inherits(Beseda.Transport.JSONPLongPolling.JSONPRequest, Beseda.EventEmitter);
+Beseda.Utils.inherits(Beseda.Transport.JSONPLongPolling.JSONPRequest, EventEmitter);
 
 Beseda.Transport.JSONPLongPolling.JSONPRequest.__callbacks = [];
 Beseda.Transport.JSONPLongPolling.JSONPRequest.__lastID = 0;
