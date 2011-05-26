@@ -882,7 +882,7 @@ Beseda.prototype.applyConnection = function() {
 };
 
 Beseda.prototype.__destroy = function() {
-	self._status = Beseda._statuses.DISCONNECTED;
+	this._status = Beseda._statuses.DISCONNECTED;
 
 	this.clientId = null;
 	this.__messageQueue = [];
@@ -1026,6 +1026,8 @@ Beseda.IO.prototype.disconnect = function() {
 
 
 Beseda.Transport = function() {
+    this._url          = null;
+    this._typeSuffix   = null;
     this._connectionID = null;
     this._emitter      = null;
 
@@ -1117,11 +1119,18 @@ Beseda.Transport.prototype._handleMessages = function(messages) {
 };
 
 Beseda.Transport.prototype._handleError = function(error) {
+	var messages = [];
     for (var id in this.__pendingMessages) {
-		 this._emitter.emit('message:' + id, error);
-	}
-	this._emitter.emit('error');
+	    messages.push(this.__pendingMessages[id]);
 
+		this._emitter.emit('message:' + id, error);
+	}
+
+	if (messages.length) {
+		this._enqueue(messages);
+	}
+	
+	this._emitter.emit('error');
 	this.__pendingMessages = {};
 };
 
@@ -1295,8 +1304,8 @@ Beseda.Transport.LongPolling.prototype.connect = function(host, port, ssl) {
     this._openRequest.send(this._url + "/" + this._typeSuffix);
 };
 
-Beseda.Transport.LongPolling.prototype._handleOpen = function(data) {
-    var data = this._decodeData(data);
+Beseda.Transport.LongPolling.prototype._handleOpen = function(connectionData) {
+    var data = this._decodeData(connectionData);
 
 	this._isConnected = true;
 
@@ -1385,11 +1394,11 @@ Beseda.Transport.LongPolling.Request.prototype.__requestStateHandler = function(
             this.emit('ready', request.responseText);
         } else {
             this.emit('error');
-	        this.__requestStateHandler = null;
         }
 
         request.onreadystatechange = null;
         request.abort();
+	    request = null;
     }
 };
 

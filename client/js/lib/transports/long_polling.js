@@ -163,10 +163,10 @@ Beseda.Transport.LongPolling.Request.prototype.__requestStateHandler = function(
             this.emit('ready', request.responseText);
         } else {
             this.emit('error');
-	        this.__requestStateHandler = null;
         }
 
         request.onreadystatechange = null;
         request.abort();
+	    request = null;
     }
 };

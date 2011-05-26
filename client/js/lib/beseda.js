@@ -219,7 +219,7 @@ Beseda.prototype.applyConnection = function() {
 };
 
 Beseda.prototype.__destroy = function() {
-	self._status = Beseda._statuses.DISCONNECTED;
+	this._status = Beseda._statuses.DISCONNECTED;
 
 	this.clientId = null;
 	this.__messageQueue = [];

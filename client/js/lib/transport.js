@@ -92,11 +92,18 @@ Beseda.Transport.prototype._handleMessages = function(messages) {
 };
 
 Beseda.Transport.prototype._handleError = function(error) {
+	var messages = [];
     for (var id in this.__pendingMessages) {
-		 this._emitter.emit('message:' + id, error);
-	}
-	this._emitter.emit('error');
+	    messages.push(this.__pendingMessages[id]);
 
+		this._emitter.emit('message:' + id, error);
+	}
+
+	if (messages.length) {
+		this._enqueue(messages);
+	}
+	
+	this._emitter.emit('error');
 	this.__pendingMessages = {};
 };
 

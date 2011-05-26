@@ -12,6 +12,10 @@ Unreleased
 * Use own router for serve static in example
 * Connection ID and Message ID must be a unique hash
 * Refactor Session and Channel: needs SubscriptionManager
+* Websocket transport
+* Refactor client's transport classes
+* Fix reconnect bugs
+
 
 Version 0.0.4
 ---
