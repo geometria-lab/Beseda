@@ -1,16 +1,20 @@
 var util = require('util')
 
-module.exports = Transport = function() {
-	this._typeSuffix   = null;
-	this._connectionID = null;
-	this._emitter      = null;
+var Transport = module.exports = function() {
+    this._connectionID = null;
+    this._emitter      = null;
 
-	this.__sendQueue = [];
+	this._isConnected  = false;
+
+	this._typeSuffix = null;
+
+    this.__sendQueue = [];
+	this.__pendingMessages = {};
 };
 
 Transport._transports = {
-	longPolling      : require('./transports/long_polling.js')
-	//JSONPLongPolling : require('./transports/jsonp_long_polling.js')
+	'longPolling'      : require('./transports/long_polling.js'),
+	'webSocket'        : require('./transports/web_socket.js')
 };
 
 Transport.getTransport = function(options) {
@@ -26,7 +30,21 @@ Transport.prototype.connect = function(host, port, ssl) {
 	throw Error('Abstract method calling.');
 };
 
-Transport.prototype.send = function(data, ids) {
+Transport.prototype.send = function(messages) {
+	if (this._isConnected) {
+		var i = messages.length - 1;
+		while (i >= 0) {
+			this.__pendingMessages[messages[i].id] = true;
+			i--;
+		}
+
+		this._doSend(JSON.stringify(messages));
+	} else {
+		this._enqueue(messages);
+	}
+};
+
+Transport.prototype._doSend = function(data) {
 	throw Error('Abstract method calling.');
 };
 
@@ -50,13 +68,29 @@ Transport.prototype._handleConnection = function(id) {
 	}
 };
 
-Transport.prototype._handleMessage = function(data) {
-	if (data) {
-        while(data.length) {
-            this._emitter.emit('message', data.shift());
-        }
+Transport.prototype._handleMessages = function(messages) {
+	var message;
+	while(messages && messages.length) {
+		message = messages.shift()
+
+		this._emitter.emit('message', message);
+
+		delete this.__pendingMessages[message.id];
 	}
 };
+
+Transport.prototype._handleError = function(error) {
+    for (var id in this.__pendingMessages) {
+		 this._emitter.emit('message:' + id, error);
+	}
+	this._emitter.emit('error');
+
+	this.__pendingMessages = {};
+};
+
+Transport.prototype._decodeData = function(data) {
+	return JSON.parse(data);
+}
 
 Transport.prototype._enqueue = function(message) {
 	this.__sendQueue.push(message);

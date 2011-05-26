@@ -15,7 +15,7 @@ module.exports = Client = function(options) {
         port : 4000,
         ssl  : false,
 
-        transport : 'longPolling'
+        transport : 'webSocket'
     }, options);
 
     this._events       = {};

@@ -1009,16 +1009,15 @@ Beseda.IO = function(options) {
 Beseda.Utils.inherits(Beseda.IO, EventEmitter);
 
 Beseda.IO.prototype.connect = function(host, port, ssl) {
-	host = host && host.length !== 0 ? host : this.__options.host;
-	port = !isNaN(port)              ? port : this.__options.port;
-	ssl  = ssl !== undefined         ? ssl  : this.__options.ssl;
-
-    this.__transport.connect(host, port, ssl);
+    this.__transport.connect(
+	    host || this.__options.host,
+	    port || this.__options.port,
+	    ssl  || this.__options.ssl
+    );
 };
 
 Beseda.IO.prototype.send = function(messages) {
-	messages =  [].concat(messages)
-    this.__transport.send(messages);
+	this.__transport.send([].concat(messages));
 };
 
 Beseda.IO.prototype.disconnect = function() {
@@ -1027,8 +1026,6 @@ Beseda.IO.prototype.disconnect = function() {
 
 
 Beseda.Transport = function() {
-    this._url          = null;
-    this._typeSuffix   = null;
     this._connectionID = null;
     this._emitter      = null;
 
@@ -1228,6 +1225,8 @@ Beseda.Transport.LongPolling = function() {
 
     this._typeSuffix = 'longPolling';
 
+	this._url = null;
+
     this._openRequest  = null;
     this._dataRequest  = null;
     this._sendRequest  = null;
@@ -1246,7 +1245,7 @@ Beseda.Transport.LongPolling = function() {
 Beseda.Utils.inherits(Beseda.Transport.LongPolling, Beseda.Transport);
 
 Beseda.Transport.LongPolling.isAvailable = function(options) {
-    return document.location.hostname !== options.host;
+    return document.location.hostname === options.host;
 };
 
 Beseda.Transport.LongPolling.prototype.__initClosuredHandlers = function() {
@@ -1266,6 +1265,7 @@ Beseda.Transport.LongPolling.prototype.__initClosuredHandlers = function() {
 };
 
 Beseda.Transport.LongPolling.prototype._initRequests = function() {
+	// TODO: Use only two requests: send and data
     this._openRequest  = new Beseda.Transport.LongPolling.Request('GET');
     this._dataRequest  = new Beseda.Transport.LongPolling.Request('GET');
     this._sendRequest  = new Beseda.Transport.LongPolling.Request('PUT');

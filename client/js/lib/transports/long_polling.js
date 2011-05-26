@@ -3,6 +3,8 @@ Beseda.Transport.LongPolling = function() {
 
     this._typeSuffix = 'longPolling';
 
+	this._url = null;
+
     this._openRequest  = null;
     this._dataRequest  = null;
     this._sendRequest  = null;
@@ -21,7 +23,7 @@ Beseda.Transport.LongPolling = function() {
 Beseda.Utils.inherits(Beseda.Transport.LongPolling, Beseda.Transport);
 
 Beseda.Transport.LongPolling.isAvailable = function(options) {
-    return document.location.hostname !== options.host;
+    return document.location.hostname === options.host;
 };
 
 Beseda.Transport.LongPolling.prototype.__initClosuredHandlers = function() {
@@ -41,6 +43,7 @@ Beseda.Transport.LongPolling.prototype.__initClosuredHandlers = function() {
 };
 
 Beseda.Transport.LongPolling.prototype._initRequests = function() {
+	// TODO: Use only two requests: send and data
     this._openRequest  = new Beseda.Transport.LongPolling.Request('GET');
     this._dataRequest  = new Beseda.Transport.LongPolling.Request('GET');
     this._sendRequest  = new Beseda.Transport.LongPolling.Request('PUT');
@@ -70,8 +73,8 @@ Beseda.Transport.LongPolling.prototype.connect = function(host, port, ssl) {
     this._openRequest.send(this._url + "/" + this._typeSuffix);
 };
 
-Beseda.Transport.LongPolling.prototype._handleOpen = function(data) {
-    var data = this._decodeData(data);
+Beseda.Transport.LongPolling.prototype._handleOpen = function(connectionData) {
+    var data = this._decodeData(connectionData);
 
 	this._isConnected = true;
 

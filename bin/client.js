@@ -57,6 +57,7 @@ cli.main(function(args, options) {
         });
 
         client.on('error', function(error) {
+	        throw new Error();
             cli.error('Client ' + this.clientId + " error: " + error);
         });
 
