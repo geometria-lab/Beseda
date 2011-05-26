@@ -31,16 +31,15 @@ Router.prototype.addRoute = function(route) {
 	return this;
 }
 
-Router.prototype.dispatch = function(request, response) {
+Router.prototype.dispatch = function(request, response, head) {
 	var result = false;
 	var parsedURL = Router.Utils.parseURL(request.url);
     for (var i = 0, l = this._routes.length; i < l; i++) {
-    		var route = this._routes[i];
+    	var route = this._routes[i];
 
-    		if (route.isValid(request, parsedURL)) {
-    			route.dispatch(request, response, parsedURL);
+    	if (route.isValid(request, parsedURL)) {
+    		route.dispatch(request, response, parsedURL, head);
 			result = true;
-
             break;
         }
     }
@@ -52,6 +51,7 @@ Router.Route = function(path, callback, options) {
 		method   : [],
 		protocol : []
 	}, options);
+
     this.__callback = callback;
 
     this.__pathHash = path.split('/');
@@ -62,10 +62,10 @@ Router.Route.prototype.isValid = function(request, parsedURL) {
 	var result = false;
 
     var method        = request.method == 'HEAD' ? 'GET' : request.method,
-        isValidMethod = this.__options.methods.length == 0 ||
-        				this.__options.methods.indexOf(method) !== -1;
+        isValidMethod = this.__options.method.length === 0 ||
+        				this.__options.method.indexOf(method) !== -1;
 
-	
+
 	if (isValidMethod) {
 		result = true;
 
@@ -93,7 +93,7 @@ Router.Route.prototype.isValid = function(request, parsedURL) {
     return result;
 };
 
-Router.Route.prototype.dispatch = function(request, response, parsedURL) {
+Router.Route.prototype.dispatch = function(request, response, parsedURL, head) {
 	var parsedPath = parsedURL.path;
 	var params = parsedURL.search;
 
@@ -108,7 +108,7 @@ Router.Route.prototype.dispatch = function(request, response, parsedURL) {
 		++i;
 	}
 
-	this.__callback(request, response, params);
+	this.__callback(request, response, params, head);
 }
 
 Router.Utils = {};
@@ -144,7 +144,8 @@ Router.Utils.sendFile = function(request, response, file, type) {
                     'Date'          : new(Date)().toUTCString(),
                     'Last-Modified' : new(Date)(stat.mtime).toUTCString(),
                     'Server'        : 'Beseda',
-                    'Cache-Control' : 'max-age=3600' };
+                    'Cache-Control' : 'max-age=3600'
+                };
 
             if (request.headers['if-none-match'] === headers['Etag'] &&
                 Date.parse(request.headers['if-modified-since']) >= mtime) {

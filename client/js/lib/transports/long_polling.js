@@ -11,8 +11,6 @@ Beseda.Transport.LongPolling = function() {
     this._sendSuffix = '';
     this._deleteSuffix = '';
 
-    this._initRequests();
-
     var self = this;
 
     this.__handleConnectionClosure = function(data) {
@@ -30,15 +28,6 @@ Beseda.Transport.LongPolling = function() {
     this.__handleSendClosure = function() {
         self._sendRequest.removeAllListeners('error');
     };
-    
-
-    this._connectionRequest.addListener('ready', this.__handleConnectionClosure);
-    this._connectionRequest.addListener('error', this.__handleErrorClosure);
-    
-    this._pollRequest.addListener('ready', this.__handleMessageClosure);
-    this._pollRequest.addListener('error', this.__handleErrorClosure);
-    
-    this._sendRequest.addListener('ready', this.__handleSendClosure);
 };
 
 Beseda.Utils.inherits(Beseda.Transport.LongPolling, Beseda.Transport);
@@ -55,6 +44,18 @@ Beseda.Transport.LongPolling.prototype._initRequests = function() {
 };
 
 Beseda.Transport.LongPolling.prototype.connect = function(host, port, ssl) {
+
+	this._initRequests();
+
+	this._connectionRequest.addListener('ready', this.__handleConnectionClosure);
+	this._connectionRequest.addListener('error', this.__handleErrorClosure);
+
+	this._pollRequest.addListener('ready', this.__handleMessageClosure);
+	this._pollRequest.addListener('error', this.__handleErrorClosure);
+
+	this._sendRequest.addListener('ready', this.__handleSendClosure);
+
+
     var protocol = ssl ? 'https' : 'http';
 
     this._url = protocol + '://' + host + ':' + port + '/beseda/io';
@@ -83,7 +84,7 @@ Beseda.Transport.LongPolling.prototype.send = function(data, ids) {
     }
 };
 
-Beseda.Transport.LongPolling.prototype.disconnect = function(data) {
+Beseda.Transport.LongPolling.prototype.disconnect = function() {
     this._disconnectRequest.send();
     this._connectionID = null;
 };
@@ -177,6 +178,7 @@ Beseda.Transport.LongPolling.Request.prototype.__requestStateHandler = function(
             this.emit('ready', request.responseText);
         } else {
             this.emit('error');
+	        this.__requestStateHandler = null;
         }
 
         request.onreadystatechange = null;

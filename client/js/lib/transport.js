@@ -9,7 +9,8 @@ Beseda.Transport = function() {
 
 Beseda.Transport._transports = {
     'longPolling'      : 'LongPolling',
-    'JSONPLongPolling' : 'JSONPLongPolling'
+    'JSONPLongPolling' : 'JSONPLongPolling',
+	'webSocket'        : 'WebSocket'
 };
 
 Beseda.Transport.getBestTransport = function(options) {

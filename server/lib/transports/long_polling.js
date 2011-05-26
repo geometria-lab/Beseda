@@ -47,6 +47,7 @@ LongPollingTransport._sendInvalidMessages = function(response) {
 }
 
 LongPollingTransport.prototype.createConnection = function(connectionId, request, response) {
+	//TODO: Move to connection class
 	this._sendApplyConnection(connectionId, request, response);
 
     this._connections[connectionId] = new this._connectionClass(this, connectionId);
@@ -56,15 +57,15 @@ LongPollingTransport.prototype.createConnection = function(connectionId, request
 
 LongPollingTransport.prototype._addRoutes = function() {
 	this.io.server.router.addRoute(new Router.Route(
-		'/beseda/io/longPolling/:id/:time', this._receive.bind(this), { methods : ['PUT'] }
+		'/beseda/io/longPolling/:id/:time', this._receive.bind(this), { method : ['PUT'] }
 	));
 	
 	this.io.server.router.addRoute(new Router.Route(
-		'/beseda/io/longPolling/:id/:time', this._destroy.bind(this), { methods : ['DELETE'] }
+		'/beseda/io/longPolling/:id/:time', this._destroy.bind(this), { method : ['DELETE'] }
 	));
 	
 	this.io.server.router.addRoute(new Router.Route(
-		'/beseda/io/longPolling/:id/:time', this._holdRequest.bind(this), { methods : ['GET'] }
+		'/beseda/io/longPolling/:id/:time', this._holdRequest.bind(this), { method : ['GET'] }
 	));
 }
 

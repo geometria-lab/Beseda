@@ -7,6 +7,7 @@ var ConnectionRequest     = require('./requests/connection.js'),
     UnsubscriptionRequest = require('./requests/unsubscription.js');
 
 var utils = require('./utils.js');
+var util = require('util');
 
 MessageRouter = module.exports = function(server) {
     this.server = server;
