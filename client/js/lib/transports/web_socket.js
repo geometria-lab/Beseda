@@ -4,11 +4,10 @@ Beseda.Transport.WebSocket = function() {
 	this._typeSuffix = 'webSocket';
 
 	this.__ws = null;
-	this.__handshaked = true;
 
-	this.__handleConnectClosure = null;
+	this.__handleOpenClosure = null;
 	this.__handleDataClosure = null;
-	this.__handleDisconnectClosure = null;
+	this.__handleCloseClosure = null;
 
 	this.__initClosuredHandlers();
 };
@@ -16,7 +15,7 @@ Beseda.Transport.WebSocket = function() {
 Beseda.Utils.inherits(Beseda.Transport.WebSocket, Beseda.Transport);
 
 Beseda.Transport.WebSocket.isAvailable = function(options) {
-	return !!window.WebSocket;
+	return !window.WebSocket;
 };
 
 Beseda.Transport.WebSocket.prototype.__initClosuredHandlers = function() {
@@ -36,7 +35,7 @@ Beseda.Transport.WebSocket.prototype.__initClosuredHandlers = function() {
 };
 
 Beseda.Transport.WebSocket.prototype.connect = function(host, port, ssl) {
-	if (!this.__ws) {
+	if (!this._isConnected) {
 		this.__ws = new WebSocket(
 			'ws' + (ssl ? 's' : '') + '://' +
 			host + (port ? ':' + port : '') +
@@ -51,28 +50,26 @@ Beseda.Transport.WebSocket.prototype.connect = function(host, port, ssl) {
 	}
 };
 
+Beseda.Transport.WebSocket.prototype.disconnect = function() {
+	this.__ws.close();
+	this._isConnected = false;
+};
+
 Beseda.Transport.WebSocket.prototype._doSend = function(data) {
 	this.__ws.send(data);
 };
 
-Beseda.Transport.WebSocket.prototype.disconnect = function() {
-	this._connectionID = null;
-
-	this.__ws.close();
-	this.__ws = null;
-};
-
 Beseda.Transport.WebSocket.prototype.__handleOpen = function(event) {
-	this.__signed = false;
+	this._isConnected = true;
 };
 
 Beseda.Transport.WebSocket.prototype.__handleData = function(event) {
 	var data = this._decodeData(event.data);
 
 	if (!this.__handshaked) {
-		Beseda.Transport.WebSocket._super._handleConnection.call(this, data.connectionId);
-
 		this.__handshaked = true;
+
+		Beseda.Transport.WebSocket._super._handleConnection.call(this, data.connectionId);
 	} else {
 		Beseda.Transport.WebSocket._super._handleMessages.call(this, data);
 	}

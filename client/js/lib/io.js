@@ -18,7 +18,8 @@ Beseda.IO.prototype.connect = function(host, port, ssl) {
 };
 
 Beseda.IO.prototype.send = function(messages) {
-    this.__transport.send([].concat(messages));
+	messages =  [].concat(messages)
+    this.__transport.send(messages);
 };
 
 Beseda.IO.prototype.disconnect = function() {

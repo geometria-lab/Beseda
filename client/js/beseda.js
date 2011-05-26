@@ -1017,7 +1017,8 @@ Beseda.IO.prototype.connect = function(host, port, ssl) {
 };
 
 Beseda.IO.prototype.send = function(messages) {
-    this.__transport.send([].concat(messages));
+	messages =  [].concat(messages)
+    this.__transport.send(messages);
 };
 
 Beseda.IO.prototype.disconnect = function() {
@@ -1030,6 +1031,8 @@ Beseda.Transport = function() {
     this._typeSuffix   = null;
     this._connectionID = null;
     this._emitter      = null;
+
+	this._isConnected  = false;
 
 	this._typeSuffix = null;
 
@@ -1068,11 +1071,16 @@ Beseda.Transport.prototype.connect = function(host, port, ssl) {
  * @param Array.<{ id: string }> messages
  */
 Beseda.Transport.prototype.send = function(messages) {
-    this._doSend(JSON.stringify(messages));
+	if (this._isConnected) {
+		var i = messages.length - 1;
+		while (i >= 0) {
+			this.__pendingMessages[messages[i].id] = true;
+			i--;
+		}
 
-	var i = messages.length - 1;
-	while (i >= 0) {
-		this.__pendingMessages[messages[i].id] = true;
+		this._doSend(JSON.stringify(messages));
+	} else {
+		this._enqueue(messages);
 	}
 };
 
@@ -1121,13 +1129,7 @@ Beseda.Transport.prototype._handleError = function(error) {
 };
 
 Beseda.Transport.prototype._decodeData = function(data) {
-	var result;
-
-	try {
-		result = JSON.parse(event.data);
-	} catch (error) {}
-
-	return result;
+	return JSON.parse(data);
 }
 
 Beseda.Transport.prototype._enqueue = function(data) {
@@ -1142,11 +1144,10 @@ Beseda.Transport.WebSocket = function() {
 	this._typeSuffix = 'webSocket';
 
 	this.__ws = null;
-	this.__handshaked = true;
 
-	this.__handleConnectClosure = null;
+	this.__handleOpenClosure = null;
 	this.__handleDataClosure = null;
-	this.__handleDisconnectClosure = null;
+	this.__handleCloseClosure = null;
 
 	this.__initClosuredHandlers();
 };
@@ -1154,7 +1155,7 @@ Beseda.Transport.WebSocket = function() {
 Beseda.Utils.inherits(Beseda.Transport.WebSocket, Beseda.Transport);
 
 Beseda.Transport.WebSocket.isAvailable = function(options) {
-	return !!window.WebSocket;
+	return !window.WebSocket;
 };
 
 Beseda.Transport.WebSocket.prototype.__initClosuredHandlers = function() {
@@ -1174,7 +1175,7 @@ Beseda.Transport.WebSocket.prototype.__initClosuredHandlers = function() {
 };
 
 Beseda.Transport.WebSocket.prototype.connect = function(host, port, ssl) {
-	if (!this.__ws) {
+	if (!this._isConnected) {
 		this.__ws = new WebSocket(
 			'ws' + (ssl ? 's' : '') + '://' +
 			host + (port ? ':' + port : '') +
@@ -1189,28 +1190,26 @@ Beseda.Transport.WebSocket.prototype.connect = function(host, port, ssl) {
 	}
 };
 
+Beseda.Transport.WebSocket.prototype.disconnect = function() {
+	this.__ws.close();
+	this._isConnected = false;
+};
+
 Beseda.Transport.WebSocket.prototype._doSend = function(data) {
 	this.__ws.send(data);
 };
 
-Beseda.Transport.WebSocket.prototype.disconnect = function() {
-	this._connectionID = null;
-
-	this.__ws.close();
-	this.__ws = null;
-};
-
 Beseda.Transport.WebSocket.prototype.__handleOpen = function(event) {
-	this.__signed = false;
+	this._isConnected = true;
 };
 
 Beseda.Transport.WebSocket.prototype.__handleData = function(event) {
 	var data = this._decodeData(event.data);
 
 	if (!this.__handshaked) {
-		Beseda.Transport.WebSocket._super._handleConnection.call(this, data.connectionId);
-
 		this.__handshaked = true;
+
+		Beseda.Transport.WebSocket._super._handleConnection.call(this, data.connectionId);
 	} else {
 		Beseda.Transport.WebSocket._super._handleMessages.call(this, data);
 	}
@@ -1229,135 +1228,116 @@ Beseda.Transport.LongPolling = function() {
 
     this._typeSuffix = 'longPolling';
 
-    this._connectionRequest = null;
-    this._pollRequest = null;
-    this._sendRequest = null;
-    this._disconnectRequest = null;
+    this._openRequest  = null;
+    this._dataRequest  = null;
+    this._sendRequest  = null;
+    this._closeRequest = null;
 
-    this._sendSuffix = '';
-    this._deleteSuffix = '';
+	this.__handleOpenClosure = null;
+	this.__handleDataClosure = null;
+	this.__handleCloseClosure = null;
 
-    var self = this;
+	this.__initClosuredHandlers();
 
-    this.__handleConnectionClosure = function(data) {
-        self._handleConnection(data);
-    };
-
-    this.__handleMessageClosure = function(data) {
-        self._handleMessage(data);
-    };
-
-    this.__handleErrorClosure = function() {
-        self._emitter.emit('error');
-    };
-    
-    this.__handleSendClosure = function() {
-        self._sendRequest.removeAllListeners('error');
-    };
+	this._initRequests();
+	this._initListeners();
 };
 
 Beseda.Utils.inherits(Beseda.Transport.LongPolling, Beseda.Transport);
 
 Beseda.Transport.LongPolling.isAvailable = function(options) {
-    return document.location.hostname === options.host;
+    return document.location.hostname !== options.host;
+};
+
+Beseda.Transport.LongPolling.prototype.__initClosuredHandlers = function() {
+	var self = this;
+
+    this.__handleOpenClosure = function(data) {
+        self._handleOpen(data);
+    };
+
+    this.__handleDataClosure = function(data) {
+        self._handleData(data);
+    };
+
+    this.__handleCloseClosure = function(data) {
+        self._handleError(data);
+    };
 };
 
 Beseda.Transport.LongPolling.prototype._initRequests = function() {
-    this._connectionRequest = new Beseda.Transport.LongPolling.Request('GET');
-    this._pollRequest       = new Beseda.Transport.LongPolling.Request('GET');
-    this._sendRequest       = new Beseda.Transport.LongPolling.Request('PUT');
-    this._disconnectRequest = new Beseda.Transport.LongPolling.Request('DELETE');
+    this._openRequest  = new Beseda.Transport.LongPolling.Request('GET');
+    this._dataRequest  = new Beseda.Transport.LongPolling.Request('GET');
+    this._sendRequest  = new Beseda.Transport.LongPolling.Request('PUT');
+    this._closeRequest = new Beseda.Transport.LongPolling.Request('DELETE');
+};
+
+Beseda.Transport.LongPolling.prototype._initListeners = function() {
+	this._openRequest.addListener('ready', this.__handleOpenClosure);
+	this._openRequest.addListener('error', this.__handleCloseClosure);
+
+	this._dataRequest.addListener('ready', this.__handleDataClosure);
+	this._dataRequest.addListener('error', this.__handleCloseClosure);
+}
+
+Beseda.Transport.LongPolling.prototype._initURLs = function(id) {
+	this._sendRequest.url =
+    this._dataRequest.url =
+    this._closeRequest.url =
+        this._url + "/" + this._typeSuffix + "/" + id;
 };
 
 Beseda.Transport.LongPolling.prototype.connect = function(host, port, ssl) {
+    this._url = 'http' + (ssl ? 's' : '') + '://' +
+	            host + (port ? ':' + port : '') +
+	            '/beseda/io';
 
-	this._initRequests();
-
-	this._connectionRequest.addListener('ready', this.__handleConnectionClosure);
-	this._connectionRequest.addListener('error', this.__handleErrorClosure);
-
-	this._pollRequest.addListener('ready', this.__handleMessageClosure);
-	this._pollRequest.addListener('error', this.__handleErrorClosure);
-
-	this._sendRequest.addListener('ready', this.__handleSendClosure);
-
-
-    var protocol = ssl ? 'https' : 'http';
-
-    this._url = protocol + '://' + host + ':' + port + '/beseda/io';
-
-    var connectUrl = this._url + "/" + this._typeSuffix;
-
-    this._connectionRequest.send(connectUrl);
+    this._openRequest.send(this._url + "/" + this._typeSuffix);
 };
 
-Beseda.Transport.LongPolling.prototype.send = function(data, ids) {
-    if (this._connectionID) {
-        this._sendRequest.data = data;
-        this._sendRequest.send();
-        
-        var self = this;
-        this._sendRequest.once('error', function(error){
-            var i = ids.length - 1;
-            while (i >= 0) {            
-                self._emitter.emit('message:' + ids[i], error);
-                
-                i--;
-            }
-        });
-    } else {
-        this._enqueue(data);
-    }
+Beseda.Transport.LongPolling.prototype._handleOpen = function(data) {
+    var data = this._decodeData(data);
+
+	this._isConnected = true;
+
+	this._initURLs(data.connectionId);
+
+    Beseda.Transport.LongPolling._super._handleConnection.call(this, data.connectionId);
+
+    this.__poll();
+};
+
+Beseda.Transport.LongPolling.prototype._doSend = function(data) {
+	this._sendRequest.data = data;
+    this._sendRequest.send();
 };
 
 Beseda.Transport.LongPolling.prototype.disconnect = function() {
-    this._disconnectRequest.send();
-    this._connectionID = null;
+    this._closeRequest.send();
+	this._isConnected = false;
 };
 
-Beseda.Transport.LongPolling.prototype._handleConnection = function(message) {
-    var data = this._parseMessage(message);
-    
-    var id = data.connectionId;
+Beseda.Transport.LongPolling.prototype._handleData = function(data) {
+    var data = this._decodeData(data);
 
-    if (id) { 
-        this._sendRequest.url = 
-        this._pollRequest.url =
-        this._disconnectRequest.url = 
-            this._url + "/" + this._typeSuffix + "/" + id;
-
-        this._sendRequest.url += this._sendSuffix;
-        this._disconnectRequest.url += this._deleteSuffix;
-
-        Beseda.Transport.LongPolling._super._handleConnection.call(this, id);
-
-        this.__poll();
-    }
-};
-
-Beseda.Transport.LongPolling.prototype._parseMessage = function(message) {
-    return JSON.parse(message);
-};
-
-Beseda.Transport.LongPolling.prototype._handleMessage = function(message) {
-    var data = this._parseMessage(message);
-
-    Beseda.Transport.LongPolling._super._handleMessage.call(this, data);
+    Beseda.Transport.LongPolling._super._handleMessages.call(this, data);
 
     this.__poll();
 };
 
 Beseda.Transport.LongPolling.prototype.__poll = function() {
-    if (this._connectionID) {
-        this._pollRequest.send();
+    if (this._isConnected) {
+        this._dataRequest.send();
     }
 };
+
+///////////////////////////////////////////////////////////////////////////////
 
 Beseda.Transport.LongPolling.Request = function(method) {
     Beseda.Transport.LongPolling.Request._super.constructor.call(this);
     
     this.url = null;
-    this.method = method || 'GET';
+    this.method = method;
     this.data = null;
 };
 
@@ -1370,8 +1350,9 @@ Beseda.Transport.LongPolling.Request.prototype.send = function(url) {
 
     var requestURL = this.url + '/' + (new Date().getTime());
 
-    if (request != null)
-        request.abort();
+    if (request) {
+	    request.abort();
+    }
 
     var request = !!+'\v1' ? new XMLHttpRequest() :
                              new ActiveXObject("Microsoft.XMLHTTP");
@@ -1418,8 +1399,6 @@ Beseda.Transport.JSONPLongPolling = function() {
     Beseda.Transport.JSONPLongPolling._super.constructor.call(this);
 
     this._typeSuffix = 'JSONPLongPolling';
-    this._sendSuffix = '/send';
-    this._deleteSuffix = '/destroy';
 };
 
 Beseda.Utils.inherits(Beseda.Transport.JSONPLongPolling, Beseda.Transport.LongPolling);
@@ -1429,16 +1408,26 @@ Beseda.Transport.JSONPLongPolling.isAvailable = function(options) {
 };
 
 Beseda.Transport.JSONPLongPolling.prototype._initRequests = function() {
-    this._connectionRequest = new Beseda.Transport.JSONPLongPolling.JSONPRequest();
-    this._pollRequest = new Beseda.Transport.JSONPLongPolling.JSONPRequest();
+    this._openRequest  = new Beseda.Transport.JSONPLongPolling.JSONPRequest();
+    this._dataRequest  = new Beseda.Transport.JSONPLongPolling.JSONPRequest();
     
-    this._sendRequest = new Beseda.Transport.JSONPLongPolling.JSONPRequest();
-    this._disconnectRequest = new Beseda.Transport.JSONPLongPolling.JSONPRequest();
+    this._sendRequest  = new Beseda.Transport.JSONPLongPolling.JSONPRequest();
+    this._closeRequest = new Beseda.Transport.JSONPLongPolling.JSONPRequest();
 };
 
-Beseda.Transport.JSONPLongPolling.prototype._parseMessage = function(message) {
-    return message;
+Beseda.Transport.JSONPLongPolling.prototype._initURLs = function(id) {
+	Beseda.Transport.JSONPLongPolling._super._initURLs.call(this, id);
+
+	this._sendRequest.url  += '/send';
+    this._closeRequest.url += '/destroy';
 };
+
+
+Beseda.Transport.JSONPLongPolling.prototype._decodeData = function(data) {
+    return data;
+};
+
+///////////////////////////////////////////////////////////////////////////////
 
 Beseda.Transport.JSONPLongPolling.JSONPRequest = function() {
     Beseda.Transport.JSONPLongPolling.JSONPRequest._super.constructor.call(this);

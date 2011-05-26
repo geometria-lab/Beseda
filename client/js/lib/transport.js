@@ -4,6 +4,8 @@ Beseda.Transport = function() {
     this._connectionID = null;
     this._emitter      = null;
 
+	this._isConnected  = false;
+
 	this._typeSuffix = null;
 
     this.__sendQueue = [];
@@ -41,11 +43,16 @@ Beseda.Transport.prototype.connect = function(host, port, ssl) {
  * @param Array.<{ id: string }> messages
  */
 Beseda.Transport.prototype.send = function(messages) {
-    this._doSend(JSON.stringify(messages));
+	if (this._isConnected) {
+		var i = messages.length - 1;
+		while (i >= 0) {
+			this.__pendingMessages[messages[i].id] = true;
+			i--;
+		}
 
-	var i = messages.length - 1;
-	while (i >= 0) {
-		this.__pendingMessages[messages[i].id] = true;
+		this._doSend(JSON.stringify(messages));
+	} else {
+		this._enqueue(messages);
 	}
 };
 
@@ -94,13 +101,7 @@ Beseda.Transport.prototype._handleError = function(error) {
 };
 
 Beseda.Transport.prototype._decodeData = function(data) {
-	var result;
-
-	try {
-		result = JSON.parse(event.data);
-	} catch (error) {}
-
-	return result;
+	return JSON.parse(data);
 }
 
 Beseda.Transport.prototype._enqueue = function(data) {
