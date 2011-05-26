@@ -24,9 +24,7 @@ var Beseda = function(options) {
     });
     
     this._io.on('error', function() {
-
-        self._status = Beseda._statuses.DISCONNECTED;
-	    self.__clear();
+	    self.__destroy();
 
         setTimeout(function(){
 	        self.connect();
@@ -37,7 +35,7 @@ var Beseda = function(options) {
     this.__handleConnectionClosure = function(connectionID) {
         self.clientId = connectionID;
 
-        var message = self._createMessage('/meta/connect', self.__firstMessage);
+        var message = self.__createMessage('/meta/connect', self.__firstMessage);
 
         self._io.send(message);
         self.__firstMessage = null;
@@ -131,7 +129,7 @@ Beseda.prototype.subscribe = function(channel, callback, additionalMessage) {
     var message = additionalMessage || {};
     message.subscription = channel;
 
-    message = this._sendMessage('/meta/subscribe', message);
+    message = this.__sendMessage('/meta/subscribe', message);
 
     this.once('subscribe:' + message.id, function(error) {
         if (!error) {
@@ -154,7 +152,7 @@ Beseda.prototype.unsubscribe = function(channel, callback, additionalMessage) {
     var message = additionalMessage || {};
     message.subscription = channel;
 
-    message = this._sendMessage('/meta/unsubscribe', message);
+    message = this.__sendMessage('/meta/unsubscribe', message);
 
     this.once('unsubscribe:' + message.id, function(error) {
         if (!error) {
@@ -174,7 +172,7 @@ Beseda.prototype.publish = function(channel, message, callback) {
         this.connect();
     }
 
-    message = this._sendMessage(channel, { data : message });
+    message = this.__sendMessage(channel, { data : message });
 
     if (callback) {
         this.once('message:' + message.id, callback);
@@ -199,7 +197,7 @@ Beseda.prototype.connect = function(host, port, ssl, message) {
 
     for (var key in this.__channels) {
 	    console.log(key);
-        this._sendMessage('/meta/subscribe', this.__channels[key]);
+        this.__sendMessage('/meta/subscribe', this.__channels[key]);
     }
 
     return this;
@@ -207,30 +205,29 @@ Beseda.prototype.connect = function(host, port, ssl, message) {
 
 Beseda.prototype.disconnect = function() {
     this._io.disconnect();
-	
-    this._status = Beseda._statuses.DISCONNECTED;
 
 	//TODO: Handle with it
 	this.__channels = [];
-	this.__clear();
+	this.__destroy();
+
+	this.emit('disconnect');
 };
-
-
 
 Beseda.prototype.applyConnection = function() {
     this._status = Beseda._statuses.CONNECTED;
-    this._flushMessageQueue();
+    this.__flushMessageQueue();
 };
 
-Beseda.prototype.__clear = function() {
-	this.clientId = null;
+Beseda.prototype.__destroy = function() {
+	self._status = Beseda._statuses.DISCONNECTED;
 
+	this.clientId = null;
 	this.__messageQueue = [];
 };
 
-Beseda.prototype._sendMessage = function(channel, message) {
+Beseda.prototype.__sendMessage = function(channel, message) {
     if (!this.isDisconnected()) {
-        message = this._createMessage(channel, message);
+        message = this.__createMessage(channel, message);
 
         if (this.isConnecting()) {
             this.__messageQueue.push(message);
@@ -242,7 +239,7 @@ Beseda.prototype._sendMessage = function(channel, message) {
     }
 };
 
-Beseda.prototype._createMessage = function(channel, message) {
+Beseda.prototype.__createMessage = function(channel, message) {
     message = message || {};
 
     message.id       = Beseda.Utils.uid();
@@ -252,18 +249,12 @@ Beseda.prototype._createMessage = function(channel, message) {
     return message;
 };
 
-Beseda.prototype._onDisconnect = function() {
-    this._status = Beseda._statuses.DISCONNECTED;
 
-    this.emit('disconnect');
-};
-
-Beseda.prototype._flushMessageQueue = function() {
+Beseda.prototype.__flushMessageQueue = function() {
     for (var i = 0; i < this.__messageQueue.length; i++) {
         this.__messageQueue[i].clientId = this.clientId;
     }
 
     this._io.send(this.__messageQueue);
-
     this.__messageQueue = [];
 };

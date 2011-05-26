@@ -4,7 +4,10 @@ Beseda.Transport = function() {
     this._connectionID = null;
     this._emitter      = null;
 
+	this._typeSuffix = null;
+
     this.__sendQueue = [];
+	this.__pendingMessages = {};
 };
 
 Beseda.Transport._transports = {
@@ -33,8 +36,21 @@ Beseda.Transport.prototype.connect = function(host, port, ssl) {
     throw Error('Abstract method calling.');
 };
 
-Beseda.Transport.prototype.send = function(data, ids) {
-    throw Error('Abstract method calling.');
+/**
+ *
+ * @param Array.<{ id: string }> messages
+ */
+Beseda.Transport.prototype.send = function(messages) {
+    this._doSend(JSON.stringify(messages));
+
+	var i = messages.length - 1;
+	while (i >= 0) {
+		this.__pendingMessages[messages[i].id] = true;
+	}
+};
+
+Beseda.Transport.prototype._doSend = function(data) {
+	throw Error('Abstract method calling.');
 };
 
 Beseda.Transport.prototype.disconnect = function() {
@@ -57,13 +73,35 @@ Beseda.Transport.prototype._handleConnection = function(id) {
     }
 };
 
-Beseda.Transport.prototype._handleMessage = function(data) {
-    if (data) {
-        while(data.length) {
-            this._emitter.emit('message', data.shift());
-        }
-    }
+Beseda.Transport.prototype._handleMessages = function(messages) {
+	var message;
+	while(messages && messages.length) {
+		message = messages.shift()
+
+		this._emitter.emit('message', message);
+
+		delete this.__pendingMessages[message.id];
+	}
 };
+
+Beseda.Transport.prototype._handleError = function(error) {
+    for (var id in this.__pendingMessages) {
+		 this._emitter.emit('message:' + id, error);
+	}
+	this._emitter.emit('error');
+
+	this.__pendingMessages = {};
+};
+
+Beseda.Transport.prototype._decodeData = function(data) {
+	var result;
+
+	try {
+		result = JSON.parse(event.data);
+	} catch (error) {}
+
+	return result;
+}
 
 Beseda.Transport.prototype._enqueue = function(data) {
     this.__sendQueue.push(data);

@@ -1,120 +1,86 @@
 Beseda.Transport.WebSocket = function() {
 	Beseda.Transport.WebSocket._super.constructor.call(this);
 
-	this.__ws = null;
 	this._typeSuffix = 'webSocket';
 
-	this.__signed = true;
-	this.__pendingIDs = [];
+	this.__ws = null;
+	this.__handshaked = true;
 
-	var self = this;
+	this.__handleConnectClosure = null;
+	this.__handleDataClosure = null;
+	this.__handleDisconnectClosure = null;
 
-	this.__handleConnectClosure = function(event) {
-		self.__handleConnect(event);
-	};
-
-	this.__handleMessageClosure = function(event) {
-		self.__handleMessage(event);
-	};
-
-	this.__handleErrorClosure = function(event) {
-		self.__handleError(event);
-	};
-
-	this.__handleDisconnectClosure = function(event) {
-		self.__handleDisconnect(event);
-	};
+	this.__initClosuredHandlers();
 };
 
 Beseda.Utils.inherits(Beseda.Transport.WebSocket, Beseda.Transport);
 
 Beseda.Transport.WebSocket.isAvailable = function(options) {
-	return false;//!!window.WebSocket;
+	return !!window.WebSocket;
+};
+
+Beseda.Transport.WebSocket.prototype.__initClosuredHandlers = function() {
+	var self = this;
+
+	this.__handleOpenClosure = function(event) {
+		self.__handleOpen(event);
+	};
+
+	this.__handleDataClosure = function(event) {
+		self.__handleData(event);
+	};
+
+	this.__handleCloseClosure = function(event) {
+		self.__handleClose(event);
+	};
 };
 
 Beseda.Transport.WebSocket.prototype.connect = function(host, port, ssl) {
+	if (!this.__ws) {
+		this.__ws = new WebSocket(
+			'ws' + (ssl ? 's' : '') + '://' +
+			host + (port ? ':' + port : '') +
+			'/beseda/io/' + this._typeSuffix + '/' +
+			(new Date().getTime())
+		);
 
-	this.__ws = new WebSocket(
-		'ws' + (ssl ? 's' : '') + '://' +
-		host + (port ? ':' + port : '') +
-		'/beseda/io/' + this._typeSuffix + '/' +
-		(new Date().getTime())
-	);
-
-	this.__ws.addEventListener('open', this.__handleConnectClosure);
-	this.__ws.addEventListener('message', this.__handleMessageClosure);
-	this.__ws.addEventListener('error', this.__handleErrorClosure);
-	this.__ws.addEventListener('close', this.__handleDisconnectClosure);
+		this.__ws.addEventListener('open',    this.__handleOpenClosure);
+		this.__ws.addEventListener('message', this.__handleDataClosure);
+		this.__ws.addEventListener('error',   this.__handleCloseClosure);
+		this.__ws.addEventListener('close',   this.__handleCloseClosure);
+	}
 };
 
-Beseda.Transport.WebSocket.prototype.send = function(data, ids) {
+Beseda.Transport.WebSocket.prototype._doSend = function(data) {
 	this.__ws.send(data);
-	this.__pendingIDs.concat(ids);
 };
 
 Beseda.Transport.WebSocket.prototype.disconnect = function() {
 	this._connectionID = null;
-	this.disconnect();
+
+	this.__ws.close();
+	this.__ws = null;
 };
 
-Beseda.Transport.WebSocket.prototype.__handleConnect = function(event) {
+Beseda.Transport.WebSocket.prototype.__handleOpen = function(event) {
 	this.__signed = false;
 };
 
-Beseda.Transport.WebSocket.prototype.__handleMessage = function(event) {
-	var data = event.data;
+Beseda.Transport.WebSocket.prototype.__handleData = function(event) {
+	var data = this._decodeData(event.data);
 
-	console.log(data);
+	if (!this.__handshaked) {
+		Beseda.Transport.WebSocket._super._handleConnection.call(this, data.connectionId);
 
-	try {
-		data = JSON.parse(event.data);
-	} catch (error) {}
-
-	if (!this.__signed) {
-		if (data) {
-			var id = data.connectionId;
-
-			Beseda.Transport.WebSocket._super._handleConnection.call(this, id);
-
-			this.__signed = true;
-		}
+		this.__handshaked = true;
 	} else {
-		if (data) {
-			var i = data.length - 1;
-			while (i >= 0) {
-				this.__pendingIDs.splice(this.__pendingIDs.indexOf(data[i].id), 1);
-				i--;
-			}
-
-			Beseda.Transport.WebSocket._super._handleMessage.call(this, data);
-		}
+		Beseda.Transport.WebSocket._super._handleMessages.call(this, data);
 	}
 };
 
-Beseda.Transport.WebSocket.prototype.__emitError = function(error) {
-	var i = this.__pendingIDs.length - 1;
-
-    while (i >= 0) {
-        self._emitter.emit('message:' + this.__pendingIDs[i], error);
-
-        i--;
-    }
-
-	this._emitter.emit('error');
-}
-
-Beseda.Transport.WebSocket.prototype.__handleError = function(event) {
-	this.__emitError(event);
-
-	this.__ws.close();
-	this.__ws = null;
-};
-
-Beseda.Transport.WebSocket.prototype.__handleDisconnect = function(event) {
-	this.__emitError(event);
-
-	this.__ws.close();
-	this.__ws = null;
+Beseda.Transport.WebSocket.prototype.__handleClose = function(event) {
+	this._handleError(event);
+	this.disconnect();
 };
 
 

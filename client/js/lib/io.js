@@ -18,14 +18,7 @@ Beseda.IO.prototype.connect = function(host, port, ssl) {
 };
 
 Beseda.IO.prototype.send = function(messages) {
-    var dataArray = [].concat(messages);
-
-    var ids = [];
-    for (var i = 0; i < dataArray.length; i++) {
-        ids.push(dataArray[i].id);
-    }
-
-    this.__transport.send(JSON.stringify(dataArray), ids);
+    this.__transport.send([].concat(messages));
 };
 
 Beseda.IO.prototype.disconnect = function() {
