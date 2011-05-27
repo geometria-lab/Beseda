@@ -1,0 +1,130 @@
+/**
+ * @constructor
+ */
+beseda.Transport = function() {
+    this._url          = null;
+    this._typeSuffix   = null;
+    this._connectionID = null;
+    this._emitter      = null;
+
+	this._isConnected  = false;
+
+	this._typeSuffix = null;
+
+    this.__sendQueue = [];
+	this.__pendingMessages = {};
+};
+
+beseda.Transport.__transports = {
+    'longPolling'      : 'LongPolling',
+    'JSONPLongPolling' : 'JSONPLongPolling',
+	'webSocket'        : 'WebSocket'
+};
+
+beseda.Transport.getBestTransport = function(options) {
+	var TransportClass;
+
+    for(var i = 0; i < options.transports.length; i++) {
+	    switch (options.transports[i]) {
+		    case 'longPolling':
+		        TransportClass = beseda.transport.LongPolling;
+		        break;
+
+		    case 'JSONPLongPolling':
+		        TransportClass = beseda.transport.JSONPLongPolling;
+			    break;
+
+		    case 'webSocket':
+		        TransportClass = beseda.transport.WebSocket;
+			    break;
+
+		    default:
+		         throw Error('Ivalid transport ' + options.transports[i]);
+	    }
+
+	    if (TransportClass.isAvailable(options)) {
+		    break;
+	    }
+    }
+
+	return new TransportClass();
+};
+
+beseda.Transport.prototype.connect = function(host, port, ssl) {
+    throw Error('Abstract method calling.');
+};
+
+
+beseda.Transport.prototype.send = function(messages) {
+	if (this._isConnected) {
+		var i = messages.length - 1;
+		while (i >= 0) {
+			this.__pendingMessages[messages[i].id] = true;
+			i--;
+		}
+
+		this._doSend(JSON.stringify(messages));
+	} else {
+		this._enqueue(messages);
+	}
+};
+
+beseda.Transport.prototype._doSend = function(data) {
+	throw Error('Abstract method calling.');
+};
+
+beseda.Transport.prototype.disconnect = function() {
+    throw Error('Abstract method calling.');
+};
+
+beseda.Transport.prototype.setEmitter = function(emitter) {
+    this._emitter = emitter;
+};
+
+beseda.Transport.prototype._handleConnection = function(id) {
+    this._connectionID = id;
+
+    if (this._emitter) {
+        this._emitter.emit('connect', this._connectionID);
+    }
+    
+    while(this.__sendQueue.length) {
+        this.send(this.__sendQueue.shift());
+    }
+};
+
+beseda.Transport.prototype._handleMessages = function(messages) {
+	var message;
+	while(messages && messages.length) {
+		message = messages.shift()
+
+		this._emitter.emit('message', message);
+
+		delete this.__pendingMessages[message.id];
+	}
+};
+
+beseda.Transport.prototype._handleError = function(error) {
+	var messages = [];
+    for (var id in this.__pendingMessages) {
+	    messages.push(this.__pendingMessages[id]);
+
+		this._emitter.emit('message:' + id, error);
+	}
+
+	if (messages.length) {
+		this._enqueue(messages);
+	}
+	
+	this._emitter.emit('error');
+	this.__pendingMessages = {};
+};
+
+beseda.Transport.prototype._decodeData = function(data) {
+	return JSON.parse(data);
+}
+
+beseda.Transport.prototype._enqueue = function(data) {
+    this.__sendQueue.push(data);
+};
+
