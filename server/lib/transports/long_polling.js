@@ -18,13 +18,13 @@ module.exports = LongPollingTransport = function(io) {
 
 util.inherits(LongPollingTransport, process.EventEmitter);
 
-LongPollingTransport.CHECK_INTERVAL = 1000;
+LongPollingTransport.CHECK_INTERVAL = 100;
 
 LongPollingTransport.ERROR_INVALID_MESSAGES_FORMAT = new Buffer('{ "error" : "Invalid messages format" }');
 LongPollingTransport.ERROR_INVALID_CONNECTION_ID = new Buffer('{ "error" : "Invalid connection id" }');
 
-LongPollingTransport.FRUSH_LOOP_COUNT = 50;
-LongPollingTransport.DESTROY_LOOP_COUNT = 60;
+LongPollingTransport.FRUSH_LOOP_COUNT = 500;
+LongPollingTransport.DESTROY_LOOP_COUNT = 600;
 
 LongPollingTransport.parseMessages = function(response, data) {
 	try {
