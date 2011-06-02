@@ -19,8 +19,9 @@
         "url"  : "git://github.com/geometria-lab/Beseda.git"
     },
     "dependencies" : {
-        "redis-node" : ">=0.4.0",
-        "cli"        : ">=0.3.3"
+        "redis-node"       : ">=0.4.0",
+        "cli"              : ">=0.3.3",
+        "websocket-client" : "*"
     },
     "engines" : [ "node >=0.4" ],
     "licenses" : [{
