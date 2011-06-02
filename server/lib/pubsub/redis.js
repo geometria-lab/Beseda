@@ -1,6 +1,5 @@
 var redis = require('redis-node');
-
-require('./../utils.js');
+var utils = require('./../utils.js');
 
 RedisPubSub = module.exports = function(options) {
     this.options = utils.merge({
