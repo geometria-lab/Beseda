@@ -2,6 +2,8 @@ var Channel = require('./channel.js');
 
 var utils = require('./utils.js');
 
+var util = require('util');
+
 module.exports = SubscriptionManager = function(server) {
     this._server = server;
 
@@ -32,7 +34,8 @@ SubscriptionManager.prototype.subscribe = function(session, channel) {
 }
 
 SubscriptionManager.prototype.hasSubscription = function(session, channel) {
-    return this._channelsToSessions[channel.name] && this._channelsToSessions[channel.name][session.id];
+    return this._channelsToSessions[channel.name] &&
+	       this._channelsToSessions[channel.name][session.id];
 }
 
 SubscriptionManager.prototype.isChannelHasSubscriptions = function(channel) {
@@ -69,10 +72,13 @@ SubscriptionManager.prototype.unsubscribeFromAll = function(session) {
 }
 
 SubscriptionManager.prototype._deliverMessages = function(channel, message) {
-    var count = 0;
+	var count = 0;
+
     for (var sessionId in this._channelsToSessions[channel]) {
-        this._channelsToSessions[channel][sessionId].send(message);
-        count++;
+		this._channelsToSessions[channel][sessionId].send(message);
+	    this._server.log('Publish to: ' + sessionId);
+
+	    count++
     }
 
     this._server.log('Receive new message from "' + channel.name + '" and deliver to ' + count + ' subscribers');

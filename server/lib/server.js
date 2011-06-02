@@ -4,6 +4,7 @@ var fs    = require('fs'),
     http  = require('http'),
     https = require('https');
 
+
 var IO                  = require('./io.js'),
     Router              = require('./router.js'),
     MessageRouter       = require('./message_router.js'),
@@ -24,7 +25,7 @@ Server = module.exports = function(options) {
         pubSub : 'memory',
         debug   : false,
 
-        transports : [ 'longPolling', 'JSONPLongPolling' ]
+        transports : [ 'webSocket', 'longPolling', 'JSONPLongPolling' ]
     };
 
     this.options = utils.merge(defaultOptions, options);
@@ -79,15 +80,20 @@ Server = module.exports = function(options) {
 
     // Add request listener with static before others
     var self = this;
-    var listeners = this.httpServer.listeners('request');
+    var requestListeners = this.httpServer.listeners('request');
     this.httpServer.removeAllListeners('request');
     this.httpServer.addListener('request', function(request, response) {
         if (!self.router.dispatch(request, response)) {
-            for (var i = 0; i < listeners.length; i++) {
-                listeners[i].call(this, request, response);
+            for (var i = 0; i < requestListeners.length; i++) {
+                requestListeners[i].call(this, request, response);
             }
         }
     });
+
+	//var upgradeListeners = this.httpServer.listeners('upgrade');
+	this.httpServer.addListener('upgrade', function(request, socket, head) {
+	    self.router.dispatch(request, socket, head);
+	});
 
     /**
      *  Setup subscription manager

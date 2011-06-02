@@ -9,7 +9,7 @@ Router = module.exports = function() {
 };
 
 Router.prototype.get = function(path, callback) {
-    var route = new Router.Route(path, callback, 'GET');
+    var route = new Router.Route(path, callback, { method: 'GET' });
 
     this.addRoute(route);
 
@@ -17,7 +17,8 @@ Router.prototype.get = function(path, callback) {
 };
 
 Router.prototype.post = function(path, callback) {
-    var route = new Router.Route(path, callback, 'POST');
+    var route = new Router.Route(path, callback, { method: 'POST' });
+
 
     this.addRoute(route);
 
@@ -30,24 +31,27 @@ Router.prototype.addRoute = function(route) {
 	return this;
 }
 
-Router.prototype.dispatch = function(request, response) {
+Router.prototype.dispatch = function(request, response, head) {
 	var result = false;
 	var parsedURL = Router.Utils.parseURL(request.url);
     for (var i = 0, l = this._routes.length; i < l; i++) {
-    		var route = this._routes[i];
+    	var route = this._routes[i];
 
-    		if (route.isValid(request, parsedURL)) {
-    			route.dispatch(request, response, parsedURL);
+    	if (route.isValid(request, parsedURL)) {
+    		route.dispatch(request, response, parsedURL, head);
 			result = true;
-
             break;
         }
     }
     return result;
 };
 
-Router.Route = function(path, callback, methods) {
-    this.__methods  = utils.ensureArray(methods);
+Router.Route = function(path, callback, options) {
+	this.__options = utils.merge({
+		method   : [],
+		protocol : []
+	}, options);
+
     this.__callback = callback;
 
     this.__pathHash = path.split('/');
@@ -58,10 +62,10 @@ Router.Route.prototype.isValid = function(request, parsedURL) {
 	var result = false;
 
     var method        = request.method == 'HEAD' ? 'GET' : request.method,
-        isValidMethod = this.__methods.length == 0 || 
-        					this.__methods.indexOf(method) !== -1;
+        isValidMethod = this.__options.method.length === 0 ||
+        				this.__options.method.indexOf(method) !== -1;
 
-	
+
 	if (isValidMethod) {
 		result = true;
 
@@ -89,7 +93,7 @@ Router.Route.prototype.isValid = function(request, parsedURL) {
     return result;
 };
 
-Router.Route.prototype.dispatch = function(request, response, parsedURL) {
+Router.Route.prototype.dispatch = function(request, response, parsedURL, head) {
 	var parsedPath = parsedURL.path;
 	var params = parsedURL.search;
 
@@ -104,7 +108,7 @@ Router.Route.prototype.dispatch = function(request, response, parsedURL) {
 		++i;
 	}
 
-	this.__callback(request, response, params);
+	this.__callback(request, response, params, head);
 }
 
 Router.Utils = {};
@@ -139,8 +143,9 @@ Router.Utils.sendFile = function(request, response, file, type) {
                     'Etag'          : JSON.stringify([stat.ino, stat.size, mtime].join('-')),
                     'Date'          : new(Date)().toUTCString(),
                     'Last-Modified' : new(Date)(stat.mtime).toUTCString(),
-                    'Server'         : 'Beseda',
-                    'Cache-Control'  : 'max-age=3600' };
+                    'Server'        : 'Beseda',
+                    'Cache-Control' : 'max-age=3600'
+                };
 
             if (request.headers['if-none-match'] === headers['Etag'] &&
                 Date.parse(request.headers['if-modified-since']) >= mtime) {
@@ -173,8 +178,8 @@ Router.Utils.parseURL = function(url) {
 	var pathAndSearch = url.substring(1).split('?');
 
 	var result = {
-		'path'	   : pathAndSearch[0].split('/'),
-		'search'	   : {}
+		'path'	 : pathAndSearch[0].split('/'),
+		'search' : {}
 	};
 
 	var search = pathAndSearch[1];
@@ -215,28 +220,3 @@ Router.Utils.parseURL = function(url) {
 
 	return result;
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

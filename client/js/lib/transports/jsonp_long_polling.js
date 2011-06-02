@@ -3,8 +3,6 @@ Beseda.Transport.JSONPLongPolling = function() {
     Beseda.Transport.JSONPLongPolling._super.constructor.call(this);
 
     this._typeSuffix = 'JSONPLongPolling';
-    this._sendSuffix = '/send';
-    this._deleteSuffix = '/destroy';
 };
 
 Beseda.Utils.inherits(Beseda.Transport.JSONPLongPolling, Beseda.Transport.LongPolling);
@@ -14,16 +12,26 @@ Beseda.Transport.JSONPLongPolling.isAvailable = function(options) {
 };
 
 Beseda.Transport.JSONPLongPolling.prototype._initRequests = function() {
-    this._connectionRequest = new Beseda.Transport.JSONPLongPolling.JSONPRequest();
-    this._pollRequest = new Beseda.Transport.JSONPLongPolling.JSONPRequest();
+    this._openRequest  = new Beseda.Transport.JSONPLongPolling.JSONPRequest();
+    this._dataRequest  = new Beseda.Transport.JSONPLongPolling.JSONPRequest();
     
-    this._sendRequest = new Beseda.Transport.JSONPLongPolling.JSONPRequest();
-    this._disconnectRequest = new Beseda.Transport.JSONPLongPolling.JSONPRequest();
+    this._sendRequest  = new Beseda.Transport.JSONPLongPolling.JSONPRequest();
+    this._closeRequest = new Beseda.Transport.JSONPLongPolling.JSONPRequest();
 };
 
-Beseda.Transport.JSONPLongPolling.prototype._parseMessage = function(message) {
-    return message;
+Beseda.Transport.JSONPLongPolling.prototype._initURLs = function(id) {
+	Beseda.Transport.JSONPLongPolling._super._initURLs.call(this, id);
+
+	this._sendRequest.url  += '/send';
+    this._closeRequest.url += '/destroy';
 };
+
+
+Beseda.Transport.JSONPLongPolling.prototype._decodeData = function(data) {
+    return data;
+};
+
+///////////////////////////////////////////////////////////////////////////////
 
 Beseda.Transport.JSONPLongPolling.JSONPRequest = function() {
     Beseda.Transport.JSONPLongPolling.JSONPRequest._super.constructor.call(this);

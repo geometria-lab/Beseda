@@ -10,7 +10,7 @@ module.exports = LongPollingTransport = function(io) {
 
     this._addRoutes();
 
-	this._connection = LongPollingTransport.Connection;
+	this._connectionClass = LongPollingTransport.Connection;
 
     this._flushInterval = setInterval(this._flushConnections.bind(this),
                                       LongPollingTransport.CHECK_INTERVAL);
@@ -18,13 +18,13 @@ module.exports = LongPollingTransport = function(io) {
 
 util.inherits(LongPollingTransport, process.EventEmitter);
 
-LongPollingTransport.CHECK_INTERVAL = 1000;
+LongPollingTransport.CHECK_INTERVAL = 100;
 
 LongPollingTransport.ERROR_INVALID_MESSAGES_FORMAT = new Buffer('{ "error" : "Invalid messages format" }');
 LongPollingTransport.ERROR_INVALID_CONNECTION_ID = new Buffer('{ "error" : "Invalid connection id" }');
 
-LongPollingTransport.FRUSH_LOOP_COUNT = 50;
-LongPollingTransport.DESTROY_LOOP_COUNT = 60;
+LongPollingTransport.FRUSH_LOOP_COUNT = 500;
+LongPollingTransport.DESTROY_LOOP_COUNT = 600;
 
 LongPollingTransport.parseMessages = function(response, data) {
 	try {
@@ -47,24 +47,25 @@ LongPollingTransport._sendInvalidMessages = function(response) {
 }
 
 LongPollingTransport.prototype.createConnection = function(connectionId, request, response) {
+	//TODO: Move to connection class
 	this._sendApplyConnection(connectionId, request, response);
 
-    this._connections[connectionId] = new this._connection(this, connectionId);
+    this._connections[connectionId] = new this._connectionClass(this, connectionId);
 
     return this._connections[connectionId];
 }
 
 LongPollingTransport.prototype._addRoutes = function() {
 	this.io.server.router.addRoute(new Router.Route(
-		'/beseda/io/longPolling/:id/:time', this._receive.bind(this), ['PUT']
+		'/beseda/io/longPolling/:id/:time', this._receive.bind(this), { method : ['PUT'] }
 	));
 	
 	this.io.server.router.addRoute(new Router.Route(
-		'/beseda/io/longPolling/:id/:time', this._destroy.bind(this), ['DELETE']
+		'/beseda/io/longPolling/:id/:time', this._destroy.bind(this), { method : ['DELETE'] }
 	));
 	
 	this.io.server.router.addRoute(new Router.Route(
-		'/beseda/io/longPolling/:id/:time', this._holdRequest.bind(this), ['GET']
+		'/beseda/io/longPolling/:id/:time', this._holdRequest.bind(this), { method : ['GET'] }
 	));
 }
 

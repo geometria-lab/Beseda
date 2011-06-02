@@ -182,7 +182,7 @@ if (!JSON) {
                 f(this.getUTCDate())      + 'T' +
                 f(this.getUTCHours())     + ':' +
                 f(this.getUTCMinutes())   + ':' +
-                f(this.getUTCSeconds())   + 'Z' : null;
+                f(this.getUTCSeconds())   + 'Z' : 'null';
         };
 
         String.prototype.toJSON      =
@@ -351,6 +351,12 @@ if (!JSON) {
 // If the JSON object does not yet have a stringify method, give it one.
 
     if (typeof JSON.stringify !== 'function') {
+	    /**
+	     *
+	     * @param {*} value
+	     * @param {function()=} replacer
+	     * @param {string=} space
+	     */
         JSON.stringify = function (value, replacer, space) {
 
 // The stringify method takes a value and an optional replacer, and an optional
@@ -398,6 +404,11 @@ if (!JSON) {
 // If the JSON object does not yet have a parse method, give it one.
 
     if (typeof JSON.parse !== 'function') {
+	    /**
+	     *
+	     * @param {string} text
+	     * @param {function()=} reviver
+	     */
         JSON.parse = function (text, reviver) {
 
 // The parse method takes a text and an optional reviver function, and returns
@@ -479,309 +490,330 @@ if (!JSON) {
     }
 }());
 
-EventEmitter = function() { };
+var beseda = {};
+beseda.utils = {};
+beseda.events = {};
+beseda.transport = {};
+beseda.transport.request = {};
 
-EventEmitter.defaultMaxListeners = 10;
-EventEmitter.isArray = Array.isArray || function(o) { return Object.prototype.toString.call(o) === '[object Array]'; };
+/**
+ * @constructor
+ */
+beseda.events.EventEmitter = function() { };
 
-EventEmitter.prototype.setMaxListeners = function(n) {
-  if (!this._events) this._events = {};
-  this._events.maxListeners = n;
+beseda.events.EventEmitter.defaultMaxListeners = 10;
+beseda.events.EventEmitter.isArray = Array.isArray || function(o) { return Object.prototype.toString.call(o) === '[object Array]'; };
+
+beseda.events.EventEmitter.prototype.setMaxListeners = function(n) {
+    if (!this._events) this._events = {};
+    this._events.maxListeners = n;
 };
 
-EventEmitter.prototype.emit = function(type) {
-  // If there is no 'error' event listener then throw.
-  if (type === 'error') {
-    if (!this._events || !this._events.error ||
-        (EventEmitter.isArray(this._events.error) && !this._events.error.length))
-    {
-      if (arguments[1] instanceof Error) {
-        throw arguments[1]; // Unhandled 'error' event
-      } else {
-        throw new Error("Uncaught, unspecified 'error' event.");
-      }
-      return false;
+/**
+ * 
+ * @param {string} type
+ * @param {... Object} var_args
+ */
+beseda.events.EventEmitter.prototype.emit = function(type, var_args) {
+    // If there is no 'error' event listener then throw.
+    if (type === 'error') {
+        if (!this._events || !this._events.error ||
+                (beseda.events.EventEmitter.isArray(this._events.error) && !this._events.error.length))
+        {
+            if (arguments[1] instanceof Error) {
+                throw arguments[1]; // Unhandled 'error' event
+            } else {
+                throw new Error("Uncaught, unspecified 'error' event.");
+            }
+        }
     }
-  }
 
-  if (!this._events) return false;
-  var handler = this._events[type];
-  if (!handler) return false;
+    if (!this._events) return false;
+    var handler = this._events[type];
+    if (!handler) return false;
 
-  if (typeof handler == 'function') {
-    switch (arguments.length) {
-      // fast cases
-      case 1:
-        handler.call(this);
-        break;
-      case 2:
-        handler.call(this, arguments[1]);
-        break;
-      case 3:
-        handler.call(this, arguments[1], arguments[2]);
-        break;
-      // slower
-      default:
+    if (typeof handler == 'function') {
+        switch (arguments.length) {
+            // fast cases
+            case 1:
+                handler.call(this);
+                break;
+            case 2:
+                handler.call(this, arguments[1]);
+                break;
+            case 3:
+                handler.call(this, arguments[1], arguments[2]);
+                break;
+            // slower
+            default:
+                var args = Array.prototype.slice.call(arguments, 1);
+                handler.apply(this, args);
+        }
+        return true;
+
+    } else if (beseda.events.EventEmitter.isArray(handler)) {
         var args = Array.prototype.slice.call(arguments, 1);
-        handler.apply(this, args);
+
+        var listeners = handler.slice();
+        for (var i = 0, l = listeners.length; i < l; i++) {
+            listeners[i].apply(this, args);
+        }
+        return true;
+
+    } else {
+        return false;
     }
-    return true;
-
-  } else if (EventEmitter.isArray(handler)) {
-    var args = Array.prototype.slice.call(arguments, 1);
-
-    var listeners = handler.slice();
-    for (var i = 0, l = listeners.length; i < l; i++) {
-      listeners[i].apply(this, args);
-    }
-    return true;
-
-  } else {
-    return false;
-  }
 };
 
 // EventEmitter is defined in src/node_events.cc
 // EventEmitter.prototype.emit() is also defined there.
-EventEmitter.prototype.addListener = function(type, listener) {
-  if ('function' !== typeof listener) {
-    throw new Error('addListener only takes instances of Function');
-  }
-
-  if (!this._events) this._events = {};
-
-  // To avoid recursion in the case that type == "newListeners"! Before
-  // adding it to the listeners, first emit "newListeners".
-  this.emit('newListener', type, listener);
-
-  if (!this._events[type]) {
-    // Optimize the case of one listener. Don't need the extra array object.
-    this._events[type] = listener;
-  } else if (EventEmitter.isArray(this._events[type])) {
-
-    // If we've already got an array, just append.
-    this._events[type].push(listener);
-
-    // Check for listener leak
-    if (!this._events[type].warned) {
-      var m;
-      if (this._events.maxListeners !== undefined) {
-        m = this._events.maxListeners;
-      } else {
-        m = EventEmitter.defaultMaxListeners;
-      }
-
-      if (m && m > 0 && this._events[type].length > m) {
-        this._events[type].warned = true;
-        console.error('(node) warning: possible EventEmitter memory ' +
-                      'leak detected. %d listeners added. ' +
-                      'Use emitter.setMaxListeners() to increase limit.',
-                      this._events[type].length);
-        console.trace();
-      }
-    }
-  } else {
-    // Adding the second element, need to change to array.
-    this._events[type] = [this._events[type], listener];
-  }
-
-  return this;
-};
-
-EventEmitter.prototype.on = EventEmitter.prototype.addListener;
-
-EventEmitter.prototype.once = function(type, listener) {
-  if ('function' !== typeof listener) {
-    throw new Error('.once only takes instances of Function');
-  }
-
-  var self = this;
-  function g() {
-    self.removeListener(type, g);
-    listener.apply(this, arguments);
-  };
-
-  g.listener = listener;
-  self.on(type, g);
-
-  return this;
-};
-
-EventEmitter.prototype.removeListener = function(type, listener) {
-  if ('function' !== typeof listener) {
-    throw new Error('removeListener only takes instances of Function');
-  }
-
-  // does not use listeners(), so no side effect of creating _events[type]
-  if (!this._events || !this._events[type]) return this;
-
-  var list = this._events[type];
-
-  if (EventEmitter.isArray(list)) {
-    var position = -1;
-    for (var i = 0, length = list.length; i < length; i++) {
-      if (list[i] === listener ||
-          (list[i].listener && list[i].listener === listener))
-      {
-        position = i;
-        break;
-      }
+beseda.events.EventEmitter.prototype.addListener = function(type, listener) {
+    if ('function' !== typeof listener) {
+        throw new Error('addListener only takes instances of Function');
     }
 
-    if (position < 0) return this;
-    list.splice(position, 1);
-    if (list.length == 0)
-      delete this._events[type];
-  } else if (list === listener ||
-             (list.listener && list.listener === listener))
-  {
-    delete this._events[type];
-  }
+    if (!this._events) this._events = {};
 
-  return this;
-};
+    // To avoid recursion in the case that type == "newListeners"! Before
+    // adding it to the listeners, first emit "newListeners".
+    this.emit('newListener', type, listener);
 
-EventEmitter.prototype.removeAllListeners = function(type) {
-  if (arguments.length === 0) {
-    this._events = {};
+    if (!this._events[type]) {
+        // Optimize the case of one listener. Don't need the extra array object.
+        this._events[type] = listener;
+    } else if (beseda.events.EventEmitter.isArray(this._events[type])) {
+
+        // If we've already got an array, just append.
+        this._events[type].push(listener);
+
+        // Check for listener leak
+        if (!this._events[type].warned) {
+            var m;
+            if (this._events.maxListeners !== undefined) {
+                m = this._events.maxListeners;
+            } else {
+                m = beseda.events.EventEmitter.defaultMaxListeners;
+            }
+
+            if (m && m > 0 && this._events[type].length > m) {
+                this._events[type].warned = true;
+                alert('(node) warning: possible EventEmitter memory ' +
+					  'leak detected. %d listeners added. ' +
+					  'Use emitter.setMaxListeners() to increase limit. ' +
+					  this._events[type].length);
+            }
+        }
+    } else {
+        // Adding the second element, need to change to array.
+        this._events[type] = [this._events[type], listener];
+    }
+
     return this;
-  }
-
-  // does not use listeners(), so no side effect of creating _events[type]
-  if (type && this._events && this._events[type]) this._events[type] = null;
-  return this;
 };
 
-EventEmitter.prototype.listeners = function(type) {
-  if (!this._events) this._events = {};
-  if (!this._events[type]) this._events[type] = [];
-  if (!EventEmitter.isArray(this._events[type])) {
-    this._events[type] = [this._events[type]];
-  }
-  return this._events[type];
+beseda.events.EventEmitter.prototype.on =
+	beseda.events.EventEmitter.prototype.addListener;
+
+beseda.events.EventEmitter.prototype.once = function(type, listener) {
+    if ('function' !== typeof listener) {
+        throw new Error('.once only takes instances of Function');
+    }
+
+    var self = this;
+    function g() {
+        self.removeListener(type, g);
+        listener.apply(this, arguments);
+    };
+
+    g.listener = listener;
+    self.on(type, g);
+
+    return this;
 };
 
-var Beseda = function(options) {
-    Beseda._super.constructor.call(this);
+beseda.events.EventEmitter.prototype.removeListener = function(type, listener) {
+    if ('function' !== typeof listener) {
+        throw new Error('removeListener only takes instances of Function');
+    }
 
-    options = Beseda.Utils.mergeObjects({
+    // does not use listeners(), so no side effect of creating _events[type]
+    if (!this._events || !this._events[type]) return this;
+
+    var list = this._events[type];
+
+    if (beseda.events.EventEmitter.isArray(list)) {
+        var position = -1;
+        for (var i = 0, length = list.length; i < length; i++) {
+            if (list[i] === listener ||
+                    (list[i].listener && list[i].listener === listener))
+            {
+                position = i;
+                break;
+            }
+        }
+
+        if (position < 0) return this;
+        list.splice(position, 1);
+        if (list.length == 0)
+            delete this._events[type];
+    } else if (list === listener ||
+                         (list.listener && list.listener === listener))
+    {
+        delete this._events[type];
+    }
+
+    return this;
+};
+
+beseda.events.EventEmitter.prototype.removeAllListeners = function(type) {
+    if (arguments.length === 0) {
+        this._events = {};
+        return this;
+    }
+
+    // does not use listeners(), so no side effect of creating _events[type]
+    if (type && this._events && this._events[type]) this._events[type] = null;
+    return this;
+};
+
+beseda.events.EventEmitter.prototype.listeners = function(type) {
+    if (!this._events) this._events = {};
+    if (!this._events[type]) this._events[type] = [];
+    if (!beseda.events.EventEmitter.isArray(this._events[type])) {
+        this._events[type] = [this._events[type]];
+    }
+    return this._events[type];
+};
+
+beseda.utils.cloneObject = function(object) {
+	return beseda.utils.mergeObjects({}, object);
+};
+
+beseda.utils.mergeObjects = function(object, extend) {
+	for (var p in extend) {
+		try {
+			if (extend[p].constructor == Object) {
+				object[p] = beseda.utils.mergeObjects(object[p], extend[p]);
+			} else {
+				object[p] = extend[p];
+			}
+		} catch (e) {
+			object[p] = extend[p];
+		}
+	}
+
+	return object;
+};
+
+
+beseda.utils.inherits = function(Class, Parent) {
+	/** @constructor */
+	var Link = function() {};
+	Link.prototype = Parent.prototype;
+
+	Class.prototype = new Link();
+	Class.prototype.constructor = Class;
+};
+
+beseda.utils.log = function(message) {
+	if (window.console) {
+		window.console.log(message);
+	}
+};
+
+beseda.utils.__base64chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'.split('');
+beseda.utils.__base64charsLength = beseda.utils.__base64chars.length;
+
+/**
+ * @param {number=} length
+ */
+beseda.utils.uid = function(length) {
+	length = length || 10;
+
+	for (var i = 0, id = []; i < length; i++) {
+		id[i] = beseda.utils.__base64chars[0 | Math.random() * beseda.utils.__base64charsLength];
+	}
+
+	return id.join('');
+};
+
+
+
+/**
+ * @constructor
+ * @extends {beseda.events.EventEmitter}
+ */
+beseda.Client = function(options) {
+    beseda.events.EventEmitter.prototype.constructor.call(this);
+
+    this.__options = beseda.utils.mergeObjects({
         host : document.location.hostname,
         port : 4000,
         ssl  : false,
 
-        transports : [ 'longPolling', 'JSONPLongPolling' ]
+        transports : [ 'webSocket', 'longPolling', 'JSONPLongPolling' ]
     }, options);
 
-    this._status = Beseda._statuses.DISCONNECTED;
-    this._messageQueue = [];
+	this._io = null;
 
-    this.router   = new Beseda.Router(this);
+    this.__status = beseda.Client.__statuses.DISCONNECTED;
+    this.__messageQueue = [];
+	this.__channels = [];
+
+    this.router   = new beseda.Router(this);
     this.clientId = null;
-    this.__channels = [];
 
-    this._io = new Beseda.IO(options);
+	this._init();
+};
+
+beseda.utils.inherits(beseda.Client, beseda.events.EventEmitter);
+
+beseda.Client.__statuses = {
+    DISCONNECTED : 0,
+    CONNECTING   : 1,
+    CONNECTED    : 2
+};
+
+beseda.Client.prototype._init = function() {
+	this._io = new beseda.IO(this.__options);
 
     var self = this;
-    this._io.on('message', function(message) {
+    this._io.addListener('message', function(message) {
         self.router.dispatch(message);
     });
-    
-    this._io.on('error', function() {
-         self._status = Beseda._statuses.DISCONNECTED;
-        setTimeout(function(){ self.connect(); }, 5000)
+
+    this._io.addListener('error', function() {
+	    self.__destroy();
+
+        setTimeout(function(){
+	        self.connect();
+        }, 5000)
     });
 
     this.__firstMessage = null;
     this.__handleConnectionClosure = function(connectionID) {
         self.clientId = connectionID;
 
-        var message = self._createMessage('/meta/connect', self.__firstMessage);
+        var message = self.__createMessage('/meta/connect', self.__firstMessage);
 
         self._io.send(message);
         self.__firstMessage = null;
     };
 };
 
-Beseda._statuses = {
-    DISCONNECTED : 0,
-    CONNECTING   : 1,
-    CONNECTED    : 2
+beseda.Client.prototype.isConnected = function() {
+    return this.__status == beseda.Client.__statuses.CONNECTED;
 };
 
-Beseda.__lastMessageID = 0;
-
-Beseda.Utils = {
-    cloneObject : function(object) {
-        return this.mergeObjects({}, object);
-    },
-
-    mergeObjects : function(object, extend) {
-        for (var p in extend) {
-            try {
-                if (extend[p].constructor == Object) {
-                    object[p] = this.mergeObjects(object[p], extend[p]);
-                } else {
-                    object[p] = extend[p];
-                }
-            } catch (e) {
-                object[p] = extend[p];
-            }
-        }
-
-        return object;
-    }, 
-
-    inherits : function(Class, Parent) {
-        var Link = function() {};
-        Link.prototype = Parent.prototype;
-
-        Class.prototype = new Link();
-        Class.prototype.constructor = Class;
-        Class._super = Class.prototype._super = Parent.prototype;
-
-        Link = null;
-    },
-
-    log : function(message) {
-        if ('console' in window && 'log' in console) {
-            console.log(message);
-        }
-    },
-
-    __base64chars : null,
-    __base64charsLength : null,
-
-    uid : function(length) {
-        length = length || 10;
-
-        if (!this.__base64chars) {
-            this.__base64chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'.split('');
-            this.__base64charsLength = this.__base64chars.length;
-        }
-
-        for (var i = 0, id = []; i < length; i++) {
-            id[i] = this.__base64chars[0 | Math.random() * this.__base64charsLength];
-        }
-
-        return id.join('');
-    }
+beseda.Client.prototype.isDisconnected = function() {
+    return this.__status == beseda.Client.__statuses.DISCONNECTED;
 };
 
-Beseda.Utils.inherits(Beseda, EventEmitter);
-
-Beseda.prototype.isConnected = function() {
-    return this._status == Beseda._statuses.CONNECTED;
+beseda.Client.prototype.isConnecting = function() {
+    return this.__status == beseda.Client.__statuses.CONNECTING;
 };
 
-Beseda.prototype.isDisconnected = function() {
-    return this._status == Beseda._statuses.DISCONNECTED;
-};
-
-Beseda.prototype.isConnecting = function() {
-    return this._status == Beseda._statuses.CONNECTING;
-};
-
-Beseda.prototype.subscribe = function(channel, callback, additionalMessage) {
+beseda.Client.prototype.subscribe = function(channel, callback, additionalMessage) {
     if (this.isDisconnected()) {
         this.connect();
     }
@@ -789,22 +821,21 @@ Beseda.prototype.subscribe = function(channel, callback, additionalMessage) {
     var message = additionalMessage || {};
     message.subscription = channel;
 
-    message = this._sendMessage('/meta/subscribe', message);
+    message = this.__sendMessage('/meta/subscribe', message);
 
+	var self = this;
     this.once('subscribe:' + message.id, function(error) {
         if (!error) {
-            this.__channels[channel] = message;
+	        self.__channels[channel] = message;
         }
     });
 
     if (callback) {
         this.once('subscribe:' + message.id, callback);
     }
-
-    return this;
 };
 
-Beseda.prototype.unsubscribe = function(channel, callback, additionalMessage) {
+beseda.Client.prototype.unsubscribe = function(channel, callback, additionalMessage) {
     if (this.isDisconnected()) {
         this.connect();
     }
@@ -812,79 +843,88 @@ Beseda.prototype.unsubscribe = function(channel, callback, additionalMessage) {
     var message = additionalMessage || {};
     message.subscription = channel;
 
-    message = this._sendMessage('/meta/unsubscribe', message);
+    message = this.__sendMessage('/meta/unsubscribe', message);
 
+	var self = this;
     this.once('unsubscribe:' + message.id, function(error) {
         if (!error) {
-            delete this.__channels[channel];
+            delete self.__channels[channel];
         }
     });
 
     if (callback) {
         this.once('unsubscribe:' + message.id, callback);
     }
-
-    return this;
 };
 
-Beseda.prototype.publish = function(channel, message, callback) {
+
+beseda.Client.prototype.publish = function(channel, message, callback) {
     if (this.isDisconnected()) {
         this.connect();
     }
 
-    message = this._sendMessage(channel, { data : message });
+    message = this.__sendMessage(channel, { data : message });
 
     if (callback) {
-        this.once('message:' + message.id, callback);
+        this.once('publish:' + message.id, callback);
     }
-
-    return this;
 };
 
-Beseda.prototype.connect = function(callback, additionalMessage) {
-    if (this.isConnected()) {
-        return false;
+/**
+ *
+ * @param {string=}  host
+ * @param {number=} port
+ * @param {boolean=} ssl
+ * @param {Object=} message
+ */
+beseda.Client.prototype.connect = function(host, port, ssl, message) {
+	//TODO: Do somethinng when connecting
+    if (!this.isConnected()) {
+		this.__status = beseda.Client.__statuses.CONNECTING;
+		this.__firstMessage = message;
+
+	    //TODO: Nothing happen if another connet listener appear
+		if (!this._io.listeners('connect').length) {
+			this._io.on('connect', this.__handleConnectionClosure);
+		}
+
+		this._io.connect(host, port, ssl);
+
+	    //TODO: Move to another method
+		for (var key in this.__channels) {
+			this.__sendMessage('/meta/subscribe', this.__channels[key]);
+		}
     }
-
-    this._status = Beseda._statuses.CONNECTING;
-    this.__firstMessage = additionalMessage;
-
-    if (!this._io.listeners('connect').length) {
-        this._io.on('connect', this.__handleConnectionClosure);
-    }
-
-    this._io.connect();
-
-    for (var key in this.__channels) {
-        this._sendMessage('/meta/subscribe', this.__channels[key]);
-    }
-
-    return this;
 };
 
-Beseda.prototype.disconnect = function() {
+beseda.Client.prototype.disconnect = function() {
     this._io.disconnect();
 
-    this.clientId = null;
-    this.__channels = [];
+	//TODO: Handle with it
+	this.__channels = [];
+	this.__destroy();
 
-    this._status = Beseda._statuses.DISCONNECTED;
-
-    return this;
+	this.emit('disconnect');
 };
 
-Beseda.prototype.applyConnection = function() {
-    this._status = Beseda._statuses.CONNECTED;
-
-    this._flushMessageQueue();
+beseda.Client.prototype.applyConnection = function() {
+    this.__status = beseda.Client.__statuses.CONNECTED;
+    this.__flushMessageQueue();
 };
 
-Beseda.prototype._sendMessage = function(channel, message) {
+beseda.Client.prototype.__destroy = function() {
+	this.__status = beseda.Client.__statuses.DISCONNECTED;
+
+	this.clientId = null;
+	this.__messageQueue = [];
+};
+
+beseda.Client.prototype.__sendMessage = function(channel, message) {
     if (!this.isDisconnected()) {
-        message = this._createMessage(channel, message);
+        message = this.__createMessage(channel, message);
 
         if (this.isConnecting()) {
-            this._messageQueue.push(message);
+            this.__messageQueue.push(message);
         } else {
             this._io.send(message);
         }
@@ -893,48 +933,50 @@ Beseda.prototype._sendMessage = function(channel, message) {
     }
 };
 
-Beseda.prototype._createMessage = function(channel, message) {
+beseda.Client.prototype.__createMessage = function(channel, message) {
     message = message || {};
 
-    message.id       = Beseda.Utils.uid();
+    message.id       = beseda.utils.uid();
     message.channel  = channel;
     message.clientId = this.clientId;
 
     return message;
 };
 
-Beseda.prototype._onDisconnect = function() {
-    this._status = Beseda._statuses.DISCONNECTED;
 
-    this.emit('disconnect');
-};
-
-Beseda.prototype._flushMessageQueue = function() {
-    for (var i = 0; i < this._messageQueue.length; i++) {
-        this._messageQueue[i].clientId = this.clientId;
+beseda.Client.prototype.__flushMessageQueue = function() {
+    for (var i = 0; i < this.__messageQueue.length; i++) {
+        this.__messageQueue[i].clientId = this.clientId;
     }
 
-    this._io.send(this._messageQueue);
-
-    this._messageQueue = [];
+    this._io.send(this.__messageQueue);
+    this.__messageQueue = [];
 };
 
-Beseda.Router = function(client) {
-    this.client = client;
+var Beseda = beseda.Client;
+
+/**
+ * @constructor
+ */
+beseda.Router = function(client) {
+    this.__client = client;
 };
 
-Beseda.Router.prototype.dispatch = function(message) {
-    if (message.channel == undefined || 
-        message.clientId == undefined || 
+/**
+ * @param {{ channel: string, data: string, id: string, error: string, successful: boolean, clientId: string }} message
+ */
+beseda.Router.prototype.dispatch = function(message) {
+    if (message.channel == undefined ||
+        message.clientId == undefined ||
         message.id == undefined) {
 
-        this.client.emit('error', 'Beseda receive incorrect message', message);
+        this.__client.emit('error', 'Beseda receive incorrect message', message);
     } else {
         if (message.channel.indexOf('/meta/') == 0) {
             var metaChannel = message.channel.substr(6);
 
             if (!metaChannel in ['connect', 'error', 'subscribe', 'unsubscribe']) {
-                this.client.emit('error', 'Unsupported meta channel ' + message.channel, message);
+                this.__client.emit('error', 'Unsupported meta channel ' + message.channel, message);
             } else {
                 this['_' + metaChannel].call(this, message);
             }
@@ -946,133 +988,187 @@ Beseda.Router.prototype.dispatch = function(message) {
     }
 };
 
-Beseda.Router.prototype._connect = function(message) {
+/**
+ * @param {{ channel: string, data: string, id: string, error: string, successful: boolean }} message
+ */
+beseda.Router.prototype._connect = function(message) {
     if (message.successful) {
-        this.client.applyConnection();
-        this.client.emit('connect', message);
+        this.__client.applyConnection();
+        this.__client.emit('connect', message);
     } else {
-        this.client.disconnect();
-        this.client.emit('error', 'Beseda connection request declined', message);
+        this.__client.disconnect();
+        this.__client.emit('error', 'Beseda connection request declined', message);
     }
 };
 
-Beseda.Router.prototype._error = function(message) {
-    this.client.emit('error', message.data, message);
+/**
+ * @param {{ channel: string, data: string, id: string, error: string, successful: boolean }} message
+ */
+beseda.Router.prototype._error = function(message) {
+    this.__client.emit('error', message.data, message);
 };
 
-Beseda.Router.prototype._subscribe = function(message) {
+/**
+ * @param {{ channel: string, data: string, id: string, error: string, success: boolean }} message
+ */
+beseda.Router.prototype._subscribe = function(message) {
     if (!message.successful) {
-        this.client.emit('error', message.error, message);
+        this.__client.emit('error', message.error, message);
     }
 
-    this.client.emit('subscribe', message.error, message);
-    this.client.emit('subscribe:' + message.id, message.error, message);
+    this.__client.emit('subscribe', message.error, message);
+    this.__client.emit('subscribe:' + message.id, message.error, message);
 };
 
-Beseda.Router.prototype._unsubscribe = function(message) {
+/**
+ * @param {{ channel: string, data: string, id: string, error: string, successful: boolean }} message
+ */
+beseda.Router.prototype._unsubscribe = function(message) {
     if (!message.successful) {
-        this.client.emit('error', message.error, message);
+        this.__client.emit('error', message.error, message);
     }
 
-    this.client.emit('unsubscribe', message.error, message);
-    this.client.emit('unsubscribe:' + message.id, message.error, message);
+    this.__client.emit('unsubscribe', message.error, message);
+    this.__client.emit('unsubscribe:' + message.id, message.error, message);
 };
 
-Beseda.Router.prototype._publish = function(message) {
+/**
+ * @param {{ channel: string, data: string, id: string, error: string, successful: boolean }} message
+ */
+beseda.Router.prototype._publish = function(message) {
     if (!message.successful) {
-        this.client.emit('error', message.error, message);
+        this.__client.emit('error', message.error, message);
     }
 
-    this.client.emit('message:' + message.id, message.error, message);
-    this.client.emit('publish', message.error, message);
+    this.__client.emit('publish:' + message.id, message.error, message);
+    this.__client.emit('publish', message.error, message);
 };
 
-Beseda.Router.prototype._message = function(message) {
-    this.client.emit('message:' + message.channel, message.data, message);
-    this.client.emit('message', message.channel, message.data, message);
+/**
+ * @param {{ channel: string, data: string, id: string, error: string, successful: boolean }} message
+ */
+beseda.Router.prototype._message = function(message) {
+    this.__client.emit('message:' + message.channel, message.data, message);
+    this.__client.emit('message', message.channel, message.data, message);
 };
 
 
-Beseda.IO = function(options) {
-    Beseda.IO._super.constructor.call(this);
+/**
+ * @constructor
+ * @extends beseda.events.EventEmitter
+ */
+beseda.IO = function(options) {
+    beseda.events.EventEmitter.prototype.constructor.call(this);
 
     this.__options = options;
 
-    this.__transport = Beseda.Transport.getBestTransport(options);
+    this.__transport = beseda.Transport.getBestTransport(options);
     this.__transport.setEmitter(this);
 };
 
-Beseda.Utils.inherits(Beseda.IO, EventEmitter);
+beseda.utils.inherits(beseda.IO, beseda.events.EventEmitter);
 
-Beseda.IO.prototype.connect = function() {
-    this.__transport.connect(this.__options.host,
-                             this.__options.port,
-                             this.__options.ssl);
+beseda.IO.prototype.connect = function(host, port, ssl) {
+    this.__transport.connect(
+	    host || this.__options.host,
+	    port || this.__options.port,
+	    ssl  || this.__options.ssl
+    );
 };
 
-Beseda.IO.prototype.send = function(messages) {
-    var dataArray = [].concat(messages);
-
-    var ids = [];
-    for (var i = 0; i < dataArray.length; i++) {
-        ids.push(dataArray[i].id);
-    }
-
-    this.__transport.send(JSON.stringify(dataArray), ids);
+beseda.IO.prototype.send = function(messages) {
+	this.__transport.send([].concat(messages));
 };
 
-Beseda.IO.prototype.disconnect = function() {
+beseda.IO.prototype.disconnect = function() {
     this.__transport.disconnect();
 };
 
 
-Beseda.Transport = function() {
+/**
+ * @constructor
+ */
+beseda.Transport = function() {
     this._url          = null;
     this._typeSuffix   = null;
     this._connectionID = null;
     this._emitter      = null;
 
+	this._isConnected  = false;
+
+	this._typeSuffix = null;
+
     this.__sendQueue = [];
+	this.__pendingMessages = {};
 };
 
-Beseda.Transport._transports = {
+beseda.Transport.__transports = {
     'longPolling'      : 'LongPolling',
-    'JSONPLongPolling' : 'JSONPLongPolling'
+    'JSONPLongPolling' : 'JSONPLongPolling',
+	'webSocket'        : 'WebSocket'
 };
 
-Beseda.Transport.getBestTransport = function(options) {
+beseda.Transport.getBestTransport = function(options) {
+	var TransportClass;
+
     for(var i = 0; i < options.transports.length; i++) {
+	    switch (options.transports[i]) {
+		    case 'longPolling':
+		        TransportClass = beseda.transport.LongPolling;
+		        break;
 
-        var transportName = Beseda.Transport._transports[options.transports[i]];
-        var transport = Beseda.Transport[transportName];
-        
-        if (transport) {
-            if (transport.isAvailable(options)) {
-                return new transport();
-            }
-        } else {
-            throw Error('Ivalid transport ' + options.transports[i]);
-        }
+		    case 'JSONPLongPolling':
+		        TransportClass = beseda.transport.JSONPLongPolling;
+			    break;
+
+		    case 'webSocket':
+		        TransportClass = beseda.transport.WebSocket;
+			    break;
+
+		    default:
+		         throw Error('Ivalid transport ' + options.transports[i]);
+	    }
+
+	    if (TransportClass.isAvailable(options)) {
+		    break;
+	    }
     }
+
+	return new TransportClass();
 };
 
-Beseda.Transport.prototype.connect = function(host, port, ssl) {
+beseda.Transport.prototype.connect = function(host, port, ssl) {
     throw Error('Abstract method calling.');
 };
 
-Beseda.Transport.prototype.send = function(data, ids) {
+
+beseda.Transport.prototype.send = function(messages) {
+	if (this._isConnected) {
+		var i = messages.length - 1;
+		while (i >= 0) {
+			this.__pendingMessages[messages[i].id] = true;
+			i--;
+		}
+
+		this._doSend(JSON.stringify(messages));
+	} else {
+		this._enqueue(messages);
+	}
+};
+
+beseda.Transport.prototype._doSend = function(data) {
+	throw Error('Abstract method calling.');
+};
+
+beseda.Transport.prototype.disconnect = function() {
     throw Error('Abstract method calling.');
 };
 
-Beseda.Transport.prototype.disconnect = function() {
-    throw Error('Abstract method calling.');
-};
-
-Beseda.Transport.prototype.setEmitter = function(emitter) {
+beseda.Transport.prototype.setEmitter = function(emitter) {
     this._emitter = emitter;
 };
 
-Beseda.Transport.prototype._handleConnection = function(id) {
+beseda.Transport.prototype._handleConnection = function(id) {
     this._connectionID = id;
 
     if (this._emitter) {
@@ -1084,168 +1180,311 @@ Beseda.Transport.prototype._handleConnection = function(id) {
     }
 };
 
-Beseda.Transport.prototype._handleMessage = function(data) {
-    if (data) {
-        while(data.length) {
-            this._emitter.emit('message', data.shift());
-        }
-    }
+beseda.Transport.prototype._handleMessages = function(messages) {
+	var message;
+	while(messages && messages.length) {
+		message = messages.shift()
+
+		this._emitter.emit('message', message);
+
+		delete this.__pendingMessages[message.id];
+	}
 };
 
-Beseda.Transport.prototype._enqueue = function(data) {
+beseda.Transport.prototype._handleError = function(error) {
+	var messages = [];
+    for (var id in this.__pendingMessages) {
+	    messages.push(this.__pendingMessages[id]);
+
+		this._emitter.emit('message:' + id, error);
+	}
+
+	if (messages.length) {
+		this._enqueue(messages);
+	}
+	
+	this._emitter.emit('error');
+	this.__pendingMessages = {};
+};
+
+beseda.Transport.prototype._decodeData = function(data) {
+	return JSON.parse(data);
+}
+
+beseda.Transport.prototype._enqueue = function(data) {
     this.__sendQueue.push(data);
 };
 
 
 
-Beseda.Transport.LongPolling = function() {
-    Beseda.Transport.LongPolling._super.constructor.call(this);
+/**
+ * @constructor
+ * @extends beseda.Transport
+ */
+beseda.transport.LongPolling = function() {
+    beseda.Transport.prototype.constructor.call(this);
 
     this._typeSuffix = 'longPolling';
 
-    this._connectionRequest = null;
-    this._pollRequest = null;
-    this._sendRequest = null;
-    this._disconnectRequest = null;
+	this._url = null;
 
-    this._sendSuffix = '';
-    this._deleteSuffix = '';
+    this._openRequest  = null;
+    this._dataRequest  = null;
+    this._sendRequest  = null;
+    this._closeRequest = null;
 
-    this._initRequests();
+	this.__handleOpenClosure = null;
+	this.__handleDataClosure = null;
+	this.__handleCloseClosure = null;
 
-    var self = this;
+	this.__initClosuredHandlers();
 
-    this.__handleConnectionClosure = function(data) {
-        self._handleConnection(data);
-    };
-
-    this.__handleMessageClosure = function(data) {
-        self._handleMessage(data);
-    };
-
-    this.__handleErrorClosure = function() {
-        self._emitter.emit('error');
-    };
-    
-    this.__handleSendClosure = function() {
-        self._sendRequest.removeAllListeners('error');
-    };
-    
-
-    this._connectionRequest.addListener('ready', this.__handleConnectionClosure);
-    this._connectionRequest.addListener('error', this.__handleErrorClosure);
-    
-    this._pollRequest.addListener('ready', this.__handleMessageClosure);
-    this._pollRequest.addListener('error', this.__handleErrorClosure);
-    
-    this._sendRequest.addListener('ready', this.__handleSendClosure);
+	this._initRequests();
+	this._initListeners();
 };
 
-Beseda.Utils.inherits(Beseda.Transport.LongPolling, Beseda.Transport);
+beseda.utils.inherits(beseda.transport.LongPolling, beseda.Transport);
 
-Beseda.Transport.LongPolling.isAvailable = function(options) {
+beseda.transport.LongPolling.isAvailable = function(options) {
     return document.location.hostname === options.host;
 };
 
-Beseda.Transport.LongPolling.prototype._initRequests = function() {
-    this._connectionRequest = new Beseda.Transport.LongPolling.Request('GET');
-    this._pollRequest       = new Beseda.Transport.LongPolling.Request('GET');
-    this._sendRequest       = new Beseda.Transport.LongPolling.Request('PUT');
-    this._disconnectRequest = new Beseda.Transport.LongPolling.Request('DELETE');
+beseda.transport.LongPolling.prototype.__initClosuredHandlers = function() {
+	var self = this;
+
+    this.__handleOpenClosure = function(data) {
+        self._handleOpen(data);
+    };
+
+    this.__handleDataClosure = function(data) {
+        self._handleData(data);
+    };
+
+    this.__handleCloseClosure = function(data) {
+        self._handleError(data);
+    };
 };
 
-Beseda.Transport.LongPolling.prototype.connect = function(host, port, ssl) {
-    var protocol = ssl ? 'https' : 'http';
-
-    this._url = protocol + '://' + host + ':' + port + '/beseda/io';
-
-    var connectUrl = this._url + "/" + this._typeSuffix;
-
-    this._connectionRequest.send(connectUrl);
+beseda.transport.LongPolling.prototype._initRequests = function() {
+	// TODO: Use only two requests: send and data
+    this._openRequest  = new beseda.transport.request.XHRRequest('GET');
+    this._dataRequest  = new beseda.transport.request.XHRRequest('GET');
+    this._sendRequest  = new beseda.transport.request.XHRRequest('PUT');
+    this._closeRequest = new beseda.transport.request.XHRRequest('DELETE');
 };
 
-Beseda.Transport.LongPolling.prototype.send = function(data, ids) {
-    if (this._connectionID) {
-        this._sendRequest.data = data;
-        this._sendRequest.send();
-        
-        var self = this;
-        this._sendRequest.once('error', function(error){
-            var i = ids.length - 1;
-            while (i >= 0) {            
-                self._emitter.emit('message:' + ids[i], error);
-                
-                i--;
-            }
-        });
-    } else {
-        this._enqueue(data);
-    }
+beseda.transport.LongPolling.prototype._initListeners = function() {
+	this._openRequest.addListener('ready', this.__handleOpenClosure);
+	this._openRequest.addListener('error', this.__handleCloseClosure);
+
+	this._dataRequest.addListener('ready', this.__handleDataClosure);
+	this._dataRequest.addListener('error', this.__handleCloseClosure);
+}
+
+beseda.transport.LongPolling.prototype._initURLs = function(id) {
+	this._sendRequest.url =
+    this._dataRequest.url =
+    this._closeRequest.url =
+        this._url + "/" + this._typeSuffix + "/" + id;
 };
 
-Beseda.Transport.LongPolling.prototype.disconnect = function(data) {
-    this._disconnectRequest.send();
-    this._connectionID = null;
+beseda.transport.LongPolling.prototype.connect = function(host, port, ssl) {
+    this._url = 'http' + (ssl ? 's' : '') + '://' +
+	            host + (port ? ':' + port : '') +
+	            '/beseda/io';
+
+    this._openRequest.send(this._url + "/" + this._typeSuffix);
 };
 
-Beseda.Transport.LongPolling.prototype._handleConnection = function(message) {
-    var data = this._parseMessage(message);
-    
-    var id = data.connectionId;
+beseda.transport.LongPolling.prototype._handleOpen = function(connectionData) {
+	/**
+	 * @type {{ connectionId: string }}
+	 */
+    var data = this._decodeData(connectionData);
 
-    if (id) { 
-        this._sendRequest.url = 
-        this._pollRequest.url =
-        this._disconnectRequest.url = 
-            this._url + "/" + this._typeSuffix + "/" + id;
+	this._isConnected = true;
 
-        this._sendRequest.url += this._sendSuffix;
-        this._disconnectRequest.url += this._deleteSuffix;
+	this._initURLs(data.connectionId);
 
-        Beseda.Transport.LongPolling._super._handleConnection.call(this, id);
-
-        this.__poll();
-    }
-};
-
-Beseda.Transport.LongPolling.prototype._parseMessage = function(message) {
-    return JSON.parse(message);
-};
-
-Beseda.Transport.LongPolling.prototype._handleMessage = function(message) {
-    var data = this._parseMessage(message);
-
-    Beseda.Transport.LongPolling._super._handleMessage.call(this, data);
+    beseda.Transport.prototype._handleConnection.call(this, data.connectionId);
 
     this.__poll();
 };
 
-Beseda.Transport.LongPolling.prototype.__poll = function() {
-    if (this._connectionID) {
-        this._pollRequest.send();
+beseda.transport.LongPolling.prototype._doSend = function(data) {
+	this._sendRequest.data = data;
+    this._sendRequest.send();
+};
+
+beseda.transport.LongPolling.prototype.disconnect = function() {
+    this._closeRequest.send();
+	this._isConnected = false;
+};
+
+beseda.transport.LongPolling.prototype._handleData = function(data) {
+    beseda.Transport.prototype._handleMessages.call(this, this._decodeData(data));
+
+    this.__poll();
+};
+
+beseda.transport.LongPolling.prototype.__poll = function() {
+    if (this._isConnected) {
+        this._dataRequest.send();
     }
 };
 
-Beseda.Transport.LongPolling.Request = function(method) {
-    Beseda.Transport.LongPolling.Request._super.constructor.call(this);
+/**
+ * @constructor
+ * @extends beseda.transport.LongPolling
+ */
+beseda.transport.JSONPLongPolling = function() {
+    beseda.transport.LongPolling.prototype.constructor.call(this);
+
+    this._typeSuffix = 'JSONPLongPolling';
+};
+
+beseda.utils.inherits(beseda.transport.JSONPLongPolling, beseda.transport.LongPolling);
+
+beseda.transport.JSONPLongPolling.isAvailable = function(options) {
+    return true;
+};
+
+beseda.transport.JSONPLongPolling.prototype._initRequests = function() {
+    this._openRequest  = new beseda.transport.request.JSONPRequest();
+    this._dataRequest  = new beseda.transport.request.JSONPRequest();
     
+    this._sendRequest  = new beseda.transport.request.JSONPRequest();
+    this._closeRequest = new beseda.transport.request.JSONPRequest();
+};
+
+beseda.transport.JSONPLongPolling.prototype._initURLs = function(id) {
+	beseda.transport.LongPolling.prototype._initURLs.call(this, id);
+
+	this._sendRequest.url  += '/send';
+    this._closeRequest.url += '/destroy';
+};
+
+beseda.transport.JSONPLongPolling.prototype._decodeData = function(data) {
+    return data;
+};
+
+
+/**
+ * @constructor
+ * @extends beseda.Transport
+ */
+beseda.transport.WebSocket = function() {
+	beseda.Transport.prototype.constructor.call(this);
+
+	this._typeSuffix = 'webSocket';
+
+	this.__ws = null;
+
+	this.__handleOpenClosure = null;
+	this.__handleDataClosure = null;
+	this.__handleCloseClosure = null;
+
+	this.__initClosuredHandlers();
+};
+
+beseda.utils.inherits(beseda.transport.WebSocket, beseda.Transport);
+
+beseda.transport.WebSocket.isAvailable = function(options) {
+	return  !!window.WebSocket;
+};
+
+beseda.transport.WebSocket.prototype.__initClosuredHandlers = function() {
+	var self = this;
+
+	this.__handleOpenClosure = function(event) {
+		self.__handleOpen(event);
+	};
+
+	this.__handleDataClosure = function(event) {
+		self.__handleData(event);
+	};
+
+	this.__handleCloseClosure = function(event) {
+		self.__handleClose(event);
+	};
+};
+
+beseda.transport.WebSocket.prototype.connect = function(host, port, ssl) {
+	if (!this._isConnected) {
+		this.__ws = new WebSocket(
+			'ws' + (ssl ? 's' : '') + '://' +
+			host + (port ? ':' + port : '') +
+			'/beseda/io/' + this._typeSuffix + '/' +
+			(new Date().getTime())
+		);
+
+		this.__ws.addEventListener('open',    this.__handleOpenClosure, false);
+		this.__ws.addEventListener('message', this.__handleDataClosure, false);
+		this.__ws.addEventListener('error',   this.__handleCloseClosure, false);
+		this.__ws.addEventListener('close',   this.__handleCloseClosure, false);
+	}
+};
+
+beseda.transport.WebSocket.prototype.disconnect = function() {
+	this.__ws['close']();
+	this._isConnected = false;
+};
+
+beseda.transport.WebSocket.prototype._doSend = function(data) {
+	this.__ws['send'](data);
+};
+
+beseda.transport.WebSocket.prototype.__handleOpen = function(event) {
+	this._isConnected = true;
+};
+
+beseda.transport.WebSocket.prototype.__handleData = function(event) {
+	/**
+	 * @type {{ connectionId: string }}
+	 */
+	var data = this._decodeData(event.data);
+
+	if (!this.__handshaked) {
+		this.__handshaked = true;
+
+		beseda.Transport.prototype._handleConnection.call(this, data.connectionId);
+	} else {
+		beseda.Transport.prototype._handleMessages.call(this, data);
+	}
+};
+
+beseda.transport.WebSocket.prototype.__handleClose = function(event) {
+	this._handleError(event);
+	this.disconnect();
+};
+
+
+
+
+/**
+ * @constructor
+ * @extends beseda.events.EventEmitter
+ */
+beseda.transport.request.XHRRequest = function(method) {
+    beseda.events.EventEmitter.prototype.constructor.call(this);
+
     this.url = null;
-    this.method = method || 'GET';
+    this.method = method;
     this.data = null;
 };
 
-Beseda.Utils.inherits(Beseda.Transport.LongPolling.Request, EventEmitter);
+beseda.utils.inherits(beseda.transport.request.XHRRequest, beseda.events.EventEmitter);
 
-Beseda.Transport.LongPolling.Request.prototype.send = function(url) {
+/**
+ *
+ * @param {string=} url
+ */
+beseda.transport.request.XHRRequest.prototype.send = function(url) {
     if (url) {
         this.url = url;
     }
 
     var requestURL = this.url + '/' + (new Date().getTime());
-
-    if (request != null)
-        request.abort();
-
     var request = !!+'\v1' ? new XMLHttpRequest() :
                              new ActiveXObject("Microsoft.XMLHTTP");
 
@@ -1255,7 +1494,7 @@ Beseda.Transport.LongPolling.Request.prototype.send = function(url) {
     };
 
     if (this.method === 'GET' && this.data) {
-        requestURL += 
+        requestURL +=
             (requestURL.indexOf('?') === -1 ? '?' : '&') + this.data;
     }
 
@@ -1265,13 +1504,13 @@ Beseda.Transport.LongPolling.Request.prototype.send = function(url) {
     if (this.method !== 'GET') {
         sendData = this.data;
         request.setRequestHeader
-            ('Content-Type', 'application/x-www-form-urlencoded');
+	        ('Content-Type', 'application/x-www-form-urlencoded');
     }
 
     request.send(sendData);
 };
 
-Beseda.Transport.LongPolling.Request.prototype.__requestStateHandler = function(request) {
+beseda.transport.request.XHRRequest.prototype.__requestStateHandler = function(request) {
     if (request.readyState === 4) {
         if (request.status === 200) {
             this.emit('ready', request.responseText);
@@ -1281,101 +1520,79 @@ Beseda.Transport.LongPolling.Request.prototype.__requestStateHandler = function(
 
         request.onreadystatechange = null;
         request.abort();
+	    request = null;
     }
 };
 
 
+/**
+ * @constructor
+ * @extends beseda.events.EventEmitter
+ */
+beseda.transport.request.JSONPRequest = function() {
+    beseda.events.EventEmitter.prototype.constructor.call(this);
 
-Beseda.Transport.JSONPLongPolling = function() {
-    Beseda.Transport.JSONPLongPolling._super.constructor.call(this);
-
-    this._typeSuffix = 'JSONPLongPolling';
-    this._sendSuffix = '/send';
-    this._deleteSuffix = '/destroy';
-};
-
-Beseda.Utils.inherits(Beseda.Transport.JSONPLongPolling, Beseda.Transport.LongPolling);
-
-Beseda.Transport.JSONPLongPolling.isAvailable = function(options) {
-    return true;
-};
-
-Beseda.Transport.JSONPLongPolling.prototype._initRequests = function() {
-    this._connectionRequest = new Beseda.Transport.JSONPLongPolling.JSONPRequest();
-    this._pollRequest = new Beseda.Transport.JSONPLongPolling.JSONPRequest();
-    
-    this._sendRequest = new Beseda.Transport.JSONPLongPolling.JSONPRequest();
-    this._disconnectRequest = new Beseda.Transport.JSONPLongPolling.JSONPRequest();
-};
-
-Beseda.Transport.JSONPLongPolling.prototype._parseMessage = function(message) {
-    return message;
-};
-
-Beseda.Transport.JSONPLongPolling.JSONPRequest = function() {
-    Beseda.Transport.JSONPLongPolling.JSONPRequest._super.constructor.call(this);
-    
     this.url = null;
     this.data = '';
 
-    this.__id = ++Beseda.Transport.JSONPLongPolling.JSONPRequest.__lastID;
+    this.__id = ++beseda.transport.request.JSONPRequest.__lastID;
     this.__requestIndex = 0;
-    this.__scripts = {};
-    
-    Beseda.Transport.JSONPLongPolling.JSONPRequest.__callbacks[this.__id] = {};
 };
 
-Beseda.Utils.inherits(Beseda.Transport.JSONPLongPolling.JSONPRequest, EventEmitter);
+beseda.utils.inherits(beseda.transport.request.JSONPRequest, beseda.events.EventEmitter);
 
-Beseda.Transport.JSONPLongPolling.JSONPRequest.__callbacks = [];
-Beseda.Transport.JSONPLongPolling.JSONPRequest.__lastID = 0;
+beseda.transport.request.JSONPRequest.__callbacks = {};
+beseda.transport.request.JSONPRequest.__lastID = 0;
 
-Beseda.Transport.JSONPLongPolling.JSONPRequest.prototype.send = function(url) {
+beseda.transport.request.JSONPRequest.ERROR_TIMEOUT = 15000;
+
+/**
+ *
+ * @param {string=} url
+ */
+beseda.transport.request.JSONPRequest.prototype.send = function(url) {
     if (url) {
         this.url = url;
     }
 
-    var timeout = (function(index, self){
-        return setTimeout(function() {
-            document.body.removeChild(document.getElementById('request_' + self.__id + '_' + index));
-            delete self.__scripts[index];
+	var script = document.createElement('script');
+	script.id = 'request_' + this.__id + '_' + this.__requestIndex;
 
-            self.emit('error');
-        }, 15000);
-    })(this.__requestIndex, this);
-    
-    (function(index, self, timeout){
-        Beseda.Transport.JSONPLongPolling.JSONPRequest.__callbacks[self.__id][index] = function(data) {
-            clearTimeout(timeout);
+    var requestURL = this.url + '/' + (new Date().getTime()) +
+        '?callback=beseda.transport.request.JSONPRequest.__callbacks["' +
+            script.id + '"]&messages=' + this.data;
 
-            document.body.removeChild(document.getElementById('request_' + self.__id + '_' + index));
-            delete self.__scripts[index];
+	script.src = requestURL;
 
-            self.emit('ready', data);
-        };
-    })(this.__requestIndex, this, timeout);
+	///////////////////////////////////////////////////////////////////////////
 
-    var requestURL = this.url + '/' + (new Date().getTime());
+	var self = this;
+	var timeout = setTimeout(function() {
+		clearTimeout(timeout);
 
-    requestURL += (requestURL.indexOf('?') === -1 ? '?' : '&') + 
-        'callback=Beseda.Transport.JSONPLongPolling.JSONPRequest.__callbacks[' + 
-            this.__id + '][' + this.__requestIndex + 
-        ']&' + new Date().getTime() + '&messages=' + this.data;
+		document.body.removeChild(script);
 
-    this.__scripts[this.__requestIndex] = document.createElement('script');
-    this.__scripts[this.__requestIndex].src = requestURL;
-    this.__scripts[this.__requestIndex].id = 'request_' + this.__id + '_' + this.__requestIndex;
-    
-    document.body.appendChild(this.__scripts[this.__requestIndex]);
+		delete beseda.transport.request.JSONPRequest.__callbacks[script.id];
 
+		self.emit('error');
+	}, beseda.transport.request.JSONPRequest.ERROR_TIMEOUT);
+
+	beseda.transport.request.JSONPRequest.__callbacks[script.id] = function(data) {
+		clearTimeout(timeout);
+
+		document.body.removeChild(script);
+
+		delete beseda.transport.request.JSONPRequest.__callbacks[script.id];
+
+		self.emit('ready', data);
+	};
+
+	///////////////////////////////////////////////////////////////////////////
+
+    document.body.appendChild(script);
+
+	this.__requestIndex++;
     this.data = null;
-    this.__requestIndex++;
-};
-
-Beseda.Transport.JSONPLongPolling.FormRequest = function() {
-    Beseda.Transport.JSONPLongPolling.JSONPRequest._super.constructor.call(this);
-    
-    this.url = null;
 };
 
 

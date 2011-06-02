@@ -9,21 +9,16 @@ Beseda.IO = function(options) {
 
 Beseda.Utils.inherits(Beseda.IO, EventEmitter);
 
-Beseda.IO.prototype.connect = function() {
-    this.__transport.connect(this.__options.host,
-                             this.__options.port,
-                             this.__options.ssl);
+Beseda.IO.prototype.connect = function(host, port, ssl) {
+    this.__transport.connect(
+	    host || this.__options.host,
+	    port || this.__options.port,
+	    ssl  || this.__options.ssl
+    );
 };
 
 Beseda.IO.prototype.send = function(messages) {
-    var dataArray = [].concat(messages);
-
-    var ids = [];
-    for (var i = 0; i < dataArray.length; i++) {
-        ids.push(dataArray[i].id);
-    }
-
-    this.__transport.send(JSON.stringify(dataArray), ids);
+	this.__transport.send([].concat(messages));
 };
 
 Beseda.IO.prototype.disconnect = function() {

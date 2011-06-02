@@ -1,38 +1,38 @@
-var beseda = new Beseda();
+var connection = new Beseda();
 
-beseda.on('connect', function(message) {
-    Beseda.Utils.log('Beseda connected with clientId=' + message.clientId);
+connection.on('connect', function(message) {
+    beseda.utils.log('Beseda connected with clientId=' + message.clientId);
 });
 
-beseda.on('disconnect', function() {
-    Beseda.Utils.log('Beseda disconnected');
+connection.on('disconnect', function() {
+    beseda.utils.log('Beseda disconnected');
 });
 
-beseda.on('subscribe', function(error, message) {
+connection.on('subscribe', function(error, message) {
     if (!error) {
-        Beseda.Utils.log('Beseda subscribed to ' + message.subscription.toString());
+        beseda.utils.log('Beseda subscribed to ' + message.subscription.toString());
     }
 });
 
-beseda.on('unsubscribe', function(error, message) {
+connection.on('unsubscribe', function(error, message) {
     if (!error) {
-        Beseda.Utils.log('Beseda unsubscribed from ' + message.subscription.toString());
+        beseda.utils.log('Beseda unsubscribed from ' + message.subscription.toString());
     }
 });
 
-beseda.on('publish', function(error, message) {
+connection.on('publish', function(error, message) {
     if (!error) {
-        Beseda.Utils.log('Beseda published message to ' + message.channel);
+        beseda.utils.log('Beseda published message to ' + message.channel);
     }
 })
 
-beseda.on('error', function(error, message) {
-    Beseda.Utils.log('Beseda error: ' + error);
+connection.on('error', function(error, message) {
+    beseda.utils.log('Beseda error: ' + error);
 });
 
-beseda.on('message', function(channel, message, fullMessage) {
+connection.on('message', function(channel, message, fullMessage) {
     $('#messages').prepend('<li><span class="channel">' + channel + '</span><span class="date">' + (new Date()).toString() + '</span><pre class="message">' + JSON.stringify(fullMessage) + '</pre></li>');
-    Beseda.Utils.log('Beseda received message from ' +  channel);
+    beseda.utils.log('Beseda received message from ' +  channel);
 });
 
 $(document).delegate('#post', 'submit', function(event) {
@@ -43,8 +43,8 @@ $(document).delegate('#post', 'submit', function(event) {
     $('#post .channel, #post .message').val('');
 
     if (channel.length && message.length) {
-        beseda.publish(channel, message);
-        Beseda.Utils.log('Beseda send publish request to ' + channel);
+        connection.publish(channel, message);
+        beseda.utils.log('Beseda send publish request to ' + channel);
     }
 
     return false;
@@ -57,12 +57,12 @@ $(document).delegate('#subscribe', 'submit', function(event) {
     $('#subscribe .channel').val('');
 
     if (channel.length) {
-        beseda.subscribe(channel, function(error) {
+        connection.subscribe(channel, function(error) {
             if (!error) {
                 $('#subscriptions').append('<li class="' + channel.replace('/', '_____') + '">' + channel + '</li>');
             }
         });
-        Beseda.Utils.log('Beseda send subscribe request to ' + channel);
+        beseda.utils.log('Beseda send subscribe request to ' + channel);
     }
 
     return false;
@@ -75,16 +75,14 @@ $(document).delegate('#unsubscribe', 'submit', function(event) {
     $('#unsubscribe .channel').val('');
 
     if (channel.length) {
-        beseda.unsubscribe(channel, function(error) {
+        connection.unsubscribe(channel, function(error) {
             if (!error) {
                 $('#subscriptions .' + channel.replace('/', '_____')).remove();
             }
         });
 
-        Beseda.Utils.log('Beseda send unsubscribe request to ' + channel);
+        beseda.utils.log('Beseda send unsubscribe request to ' + channel);
     }
 
     return false;
 });
-
-

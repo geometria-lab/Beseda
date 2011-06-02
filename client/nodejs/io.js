@@ -22,14 +22,7 @@ IO.prototype.connect = function() {
 };
 
 IO.prototype.send = function(messages) {
-    messages = utils.ensureArray(messages);
-
-    var ids = [];
-    for (var i = 0; i < messages.length; i++) {
-        ids.push(messages[i].id);
-    }
-
-	this.__transport.send(JSON.stringify(messages), ids);
+	this.__transport.send([].concat(messages));
 };
 
 IO.prototype.disconnect = function() {

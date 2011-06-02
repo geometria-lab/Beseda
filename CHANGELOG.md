@@ -3,8 +3,9 @@ Changelog
 
 Version 0.0.5
 ---
-Unreleased
+May 26, 2011
 
+* Websocket transport
 * JS client: cleanup logs and add error message to error callback as first argument
 * Fix PHP publisher
 * Session must known subscribed channels for fast destroy
@@ -12,6 +13,8 @@ Unreleased
 * Use own router for serve static in example
 * Connection ID and Message ID must be a unique hash
 * Refactor Session and Channel: needs SubscriptionManager
+* Refactor client's transports
+* Fix reconnect bugs
 
 Version 0.0.4
 ---
@@ -31,6 +34,7 @@ May 23, 2011
 * Disconnection request
 * Fixed memory leaks
 * Lot of optimization
+* Router parameters
 
 Version 0.0.3
 ---
