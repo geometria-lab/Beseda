@@ -2,7 +2,7 @@ Beseda
 ============
 
 Beseda is fast, well designed and featured [Node.js](http://nodejs.org) Pub/Sub server.
-Beseda offers server-side and client-side crossbrowser API for realtime messaging.
+Beseda offers multiple platform API to develop realtime web applications.
 
 Features
 ---
@@ -19,17 +19,13 @@ Features
     * Subscribing
 * Horizontal scaling (depends on Pub/Sub engine)
 * Monitor (coming soon)
-* Server-side clients:
-    * PHP
+* Clients:
+    * Browser
     * Node.js
+    * Console
+    * PHP (only redis publisher yet)
     * Ruby (coming soon)
     * Python (coming soon)
-* Browsers client. Works well:
-	* Google Chrome 5 and newer
-	* Firefox 2 and newer
-    * Safari 4 and newer. iPhone and iPad versions too
-    * Internet Explorer 6 and newer
-	* Opera 8 and newer
 
 Get started!
 ---
@@ -93,20 +89,6 @@ Get started!
 Documentation
 ---
 
-### Server configuration
-
-Coming soon.
-
-### Browser client
-
-Coming soon.
-
-### PHP client
-
-Coming soon.
-
-### Monitor
-
 Coming soon.
 
 Contributors
@@ -118,8 +100,8 @@ Contributors
 Inspired
 ---
 * [Socket.IO](http://socket.io)
-* [Push-it](http://github.com/aaronblohowiak/Push-It)
 * [Juggernaut](http://github.com/maccman/juggernaut)
+* [Push-it](http://github.com/aaronblohowiak/Push-It)
 
 License
 ---
