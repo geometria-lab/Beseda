@@ -2,8 +2,6 @@ var util = require('util');
 
 var utils = require('./../../server/lib/utils.js');
 
-require('v8-profiler');
-
 var Router = require('./router.js'),
     IO     = require('./io.js');
 
