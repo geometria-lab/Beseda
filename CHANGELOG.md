@@ -1,6 +1,13 @@
 Changelog
 ======
 
+Version 0.0.6
+---
+June 2, 2011
+
+* Publisher for Server
+* Polling loop interval
+
 Version 0.0.5
 ---
 May 26, 2011
