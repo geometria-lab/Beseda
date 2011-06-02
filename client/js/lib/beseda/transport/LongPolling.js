@@ -27,7 +27,7 @@ beseda.transport.LongPolling = function() {
 beseda.utils.inherits(beseda.transport.LongPolling, beseda.Transport);
 
 beseda.transport.LongPolling.isAvailable = function(options) {
-    return document.location.hostname === options.host;
+    return document.location.hostname === options.host && (document.location.port || 80) == options.port;
 };
 
 beseda.transport.LongPolling.prototype.__initClosuredHandlers = function() {

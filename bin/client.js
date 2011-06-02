@@ -2,9 +2,8 @@
 
 // TODO: Refactor this shit
 
-var util = require('util');
-
-var cli  = require('./../vendor/cli');
+var util = require('util'),
+    cli  = require('cli');
 
 var Client = require('./../client/nodejs');
 
@@ -57,7 +56,6 @@ cli.main(function(args, options) {
         });
 
         client.on('error', function(error) {
-	        throw new Error();
             cli.error('Client ' + this.clientId + " error: " + error);
         });
 
