@@ -118,12 +118,23 @@ Server = module.exports = function(options) {
         this.pubSub = this.options.pubSub;
     }
 
+	this._publishClientId = utils.uid();
+
     if (this._isHTTPServerOpened()) {
         this._logBesedaStarted();
     }
 };
 
 util.inherits(Server, process.EventEmitter);
+
+Server.prototype.publish = function(channel, message) {
+	this.pubSub.publish(channel, {
+        id       : utils.uid(),
+        channel  : channel,
+        clientId : this._publishClientId,
+        data     : message
+	});
+};
 
 Server.prototype.listen = function(port, host) {
     if (this._isHTTPServerOpened()) {
