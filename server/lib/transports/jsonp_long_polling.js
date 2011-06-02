@@ -7,7 +7,7 @@ var Router               = require('./../router.js'),
 var JSONPLongPollingTransport = module.exports = function(io) {
 	LongPollingTransport.call(this, io);
 
-	this._connection = JSONPLongPollingTransport.Connection;
+	this._connectionClass = JSONPLongPollingTransport.Connection;
 }
 
 util.inherits(JSONPLongPollingTransport, LongPollingTransport);
@@ -29,14 +29,14 @@ JSONPLongPollingTransport.prototype._addRoutes = function() {
 	);
 	
     this.io.server.router.get(
-    		'/beseda/io/JSONPLongPolling/:id/send/:time', 
-    		this._receive.bind(this)
-    	);
+		'/beseda/io/JSONPLongPolling/:id/send/:time',
+		this._receive.bind(this)
+	);
     	
     this.io.server.router.get(
-    		'/beseda/io/JSONPLongPolling/:id/destroy/:time', 
-    		this._destroy.bind(this)
-    	);
+		'/beseda/io/JSONPLongPolling/:id/destroy/:time',
+		this._destroy.bind(this)
+	);
 }
 
 JSONPLongPollingTransport.prototype._sendApplyConnection = function(connectionId, request, response) {
