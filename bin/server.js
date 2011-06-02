@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-var cli  = require('./../vendor/cli'),
+var cli  = require('cli'),
     util = require('util');
 
 var Beseda = require('./../server');

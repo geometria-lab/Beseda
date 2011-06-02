@@ -182,7 +182,7 @@ if (!JSON) {
                 f(this.getUTCDate())      + 'T' +
                 f(this.getUTCHours())     + ':' +
                 f(this.getUTCMinutes())   + ':' +
-                f(this.getUTCSeconds())   + 'Z' : null;
+                f(this.getUTCSeconds())   + 'Z' : 'null';
         };
 
         String.prototype.toJSON      =
@@ -351,6 +351,12 @@ if (!JSON) {
 // If the JSON object does not yet have a stringify method, give it one.
 
     if (typeof JSON.stringify !== 'function') {
+	    /**
+	     *
+	     * @param {*} value
+	     * @param {function()=} replacer
+	     * @param {string=} space
+	     */
         JSON.stringify = function (value, replacer, space) {
 
 // The stringify method takes a value and an optional replacer, and an optional
@@ -398,6 +404,11 @@ if (!JSON) {
 // If the JSON object does not yet have a parse method, give it one.
 
     if (typeof JSON.parse !== 'function') {
+	    /**
+	     *
+	     * @param {string} text
+	     * @param {function()=} reviver
+	     */
         JSON.parse = function (text, reviver) {
 
 // The parse method takes a text and an optional reviver function, and returns
