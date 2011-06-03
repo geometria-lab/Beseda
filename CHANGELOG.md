@@ -1,6 +1,12 @@
 Changelog
 ======
 
+Version 0.0.8
+---
+June 3, 2011
+
+* Fix some crazy transpots bugs
+
 Version 0.0.7
 ---
 June 2, 2011
@@ -8,7 +14,6 @@ June 2, 2011
 * Refactor browser client
 * Compress browser client by Google Closure Compiler
 * Fix long polling transport validation
-* Fix transpots bugs
 
 Version 0.0.6
 ---
