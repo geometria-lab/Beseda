@@ -52,10 +52,6 @@ LongPollingTransport.prototype.createConnection = function(connectionId, request
 
     this._connections[connectionId] = new this._connectionClass(this, connectionId);
 
-	util.log(connectionId);
-	util.log(this._connections[connectionId]);
-
-
 	return this._connections[connectionId];
 }
 
