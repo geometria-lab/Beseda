@@ -1518,7 +1518,6 @@ beseda.transport.request.XHRRequest.prototype.__requestStateHandler = function(r
             this.emit('error');
         }
 
-        request.onreadystatechange = null;
         request.abort();
 	    request = null;
     }
