@@ -6,6 +6,7 @@ Version 0.0.8
 June 3, 2011
 
 * Fix some crazy transpots bugs
+* Fix reconnect options bug
 
 Version 0.0.7
 ---
