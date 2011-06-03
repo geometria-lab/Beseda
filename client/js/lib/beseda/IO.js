@@ -14,10 +14,14 @@ beseda.IO = function(options) {
 beseda.utils.inherits(beseda.IO, beseda.events.EventEmitter);
 
 beseda.IO.prototype.connect = function(host, port, ssl) {
+	if (host !== undefined) this.__options.host = host;
+	if (port !== undefined) this.__options.port = port;
+	if (ssl  !== undefined) this.__options.ssl = ssl;
+
     this.__transport.connect(
-	    host || this.__options.host,
-	    port || this.__options.port,
-	    ssl  || this.__options.ssl
+	    this.__options.host,
+	    this.__options.port,
+	    this.__options.ssl
     );
 };
 
