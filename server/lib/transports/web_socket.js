@@ -140,7 +140,13 @@ WebSocketTransport.Connection.prototype.send = function(data) {
 };
 
 WebSocketTransport.Connection.prototype.__rawSend = function(data) {
-	this.__connection.write('\u0000', 'binary');
-	this.__connection.write(JSON.stringify(data), 'utf-8');
-	this.__connection.write('\uffff', 'binary');
+	try {
+		this.__connection.write('\u0000', 'binary');
+		this.__connection.write(JSON.stringify(data), 'utf-8');
+		this.__connection.write('\uffff', 'binary');
+	} catch (e) {
+		// TODO: Rework!
+		this.__transport.emit('disconnect', this.id);
+		delete this.__transport._connections[this.id];
+	}
 };
