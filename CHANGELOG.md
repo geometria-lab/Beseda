@@ -8,6 +8,7 @@ June 2, 2011
 * Refactor browser client
 * Compress browser client by Google Closure Compiler
 * Fix long polling transport validation
+* Fix transpots bugs
 
 Version 0.0.6
 ---
