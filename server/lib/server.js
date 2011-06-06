@@ -61,6 +61,8 @@ Server = module.exports = function(options) {
         // Use server from options
         this.httpServer = this.options.server;
     }
+	this._httpServerHost = defaultOptions.server.host;
+	this._httpServerPort = defaultOptions.server.port;
 
     /**
      *  Setup Routers
@@ -121,8 +123,18 @@ Server = module.exports = function(options) {
     }
 
 	this._publishClientId = utils.uid();
-
-	this._cluster = cluster(this.httpServer);
+	
+	if (this.options.cluster) {
+		if (this._isHTTPServerOpened()) {
+			throw new Error('You can\'t pass already listend http server with enabled cluster');
+		}
+		if (this.options.pubSub == 'memory') {
+			throw new Error('You can\'t use memory pub/sub engine with enabled cluster');
+		}
+		this._cluster = cluster(this.httpServer);
+	} else {
+		this._cluster = null;
+	}
 
     if (this._isHTTPServerOpened()) {
         this._logBesedaStarted();
@@ -145,13 +157,13 @@ Server.prototype.listen = function(port, host) {
         throw new Error('HTTP server already listen');
     }
 
-    host = host || this.options.host;
-    port = port || this.options.port;
+    this._httpServerHost = host || this.options.server.host;
+    this._httpServerPort = port || this.options.server.port;
 
     try {
-        this._cluster.listen(port, host);
+        (this._cluster || this.httpServer).listen(this._httpServerPort, this._httpServerHost);
     } catch (e) {
-        throw new Error('Cant start beseda on ' + host + ':' + port + ': ' + e);
+        throw new Error('Cant start beseda on ' + this._httpServerHost + ':' + this._httpServerPort + ': ' + e);
     }
 
     this._logBesedaStarted();
@@ -180,15 +192,19 @@ Server.prototype._isHTTPServerOpened = function() {
 };
 
 Server.prototype._logBesedaStarted = function() {
-	if (this._cluster.isMaster) {
-	try {
-    var serverAddress = this.httpServer.address();
+	if (this._cluster && this._cluster.isWorker) {
+		return false;
+	}
 
-    (this.options.debug ? util : console).log('Beseda started on ' +
-                                              serverAddress.address +
-                                              ':' + serverAddress.port);
+	var host, port;
+	try {
+    	var serverAddress = this.httpServer.address();
+		host = serverAddress.address;
+		port = serverAddress.port;
 	} catch (e) {
-		(this.options.debug ? util : console).log('Beseda started');
+		host = this._httpServerHost;
+		port = this._httpServerPort;
 	}
-	}
+
+	(this.options.debug ? util : console).log('Beseda started on ' + host + ':' + port);
 };

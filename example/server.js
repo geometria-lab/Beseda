@@ -20,5 +20,5 @@ var server = http.createServer(function(request, response) {
 });
 //server.listen(4000);
 
-var beseda = new Beseda({ server : server });
+var beseda = new Beseda({ server : server, cluster : true, pubSub : 'redis' });
 beseda.listen(4000);
