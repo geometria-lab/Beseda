@@ -157,7 +157,7 @@ Server.prototype.listen = function(port, host) {
         throw new Error('HTTP server already listen');
     }
 
-    this._httpServerHost = host || this.options.server.host;
+    this._httpServerHost = host || this.options.server.host || '0.0.0.0';
     this._httpServerPort = port || this.options.server.port;
 
     try {
