@@ -18,7 +18,7 @@ MessageRouter.prototype.dispatch = function(connectionId, message) {
         message.clientId === undefined || 
         message.id       === undefined) {
         
-        this.server.io.send(connectionId, {
+        return this.server.io.send(connectionId, {
             channel : '/meta/error',
             data    : 'channel, clientId or id not present'
         });

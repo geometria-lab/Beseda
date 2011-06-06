@@ -6,6 +6,7 @@ Version 0.0.9
 Unreleased
 
 * Fix listen
+* Return form dispatch if invalid message format
 
 Version 0.0.8
 ---
