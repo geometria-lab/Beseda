@@ -1,9 +1,9 @@
-var fs    = require('fs'),
-    path  = require('path'),
-    util  = require('util'),
-    http  = require('http'),
-    https = require('https');
-
+var fs      = require('fs'),
+    path    = require('path'),
+    util    = require('util'),
+    http    = require('http'),
+    https   = require('https'),
+	cluster = require('cluster');
 
 var IO                  = require('./io.js'),
     Router              = require('./router.js'),
@@ -25,7 +25,9 @@ Server = module.exports = function(options) {
         pubSub : 'memory',
         debug   : false,
 
-        transports : [ 'webSocket', 'longPolling', 'JSONPLongPolling' ]
+        transports : [ 'webSocket', 'longPolling', 'JSONPLongPolling' ],
+
+		cluster : false,
     };
 
     this.options = utils.merge(defaultOptions, options);
@@ -120,6 +122,8 @@ Server = module.exports = function(options) {
 
 	this._publishClientId = utils.uid();
 
+	this._cluster = cluster(this.httpServer);
+
     if (this._isHTTPServerOpened()) {
         this._logBesedaStarted();
     }
@@ -145,7 +149,7 @@ Server.prototype.listen = function(port, host) {
     port = port || this.options.port;
 
     try {
-        this.httpServer.listen(port, host);
+        this._cluster.listen(port, host);
     } catch (e) {
         throw new Error('Cant start beseda on ' + host + ':' + port + ': ' + e);
     }
@@ -176,9 +180,15 @@ Server.prototype._isHTTPServerOpened = function() {
 };
 
 Server.prototype._logBesedaStarted = function() {
+	if (this._cluster.isMaster) {
+	try {
     var serverAddress = this.httpServer.address();
 
     (this.options.debug ? util : console).log('Beseda started on ' +
                                               serverAddress.address +
                                               ':' + serverAddress.port);
+	} catch (e) {
+		(this.options.debug ? util : console).log('Beseda started');
+	}
+	}
 };

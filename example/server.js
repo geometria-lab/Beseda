@@ -18,6 +18,7 @@ var server = http.createServer(function(request, response) {
         Router.Utils.send(response, 404);
     }
 });
-server.listen(4000);
+//server.listen(4000);
 
 var beseda = new Beseda({ server : server });
+beseda.listen(4000);
