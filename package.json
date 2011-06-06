@@ -21,7 +21,8 @@
     "dependencies" : {
         "redis-node"       : ">=0.4.0",
         "cli"              : ">=0.3.3",
-        "websocket-client" : "*"
+        "websocket-client" : "*",
+		"narrow"           : "*"
     },
     "engines" : [ "node >=0.4" ],
     "licenses" : [{

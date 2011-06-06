@@ -1,4 +1,5 @@
-var util = require('util');
+var util   = require('util'),
+    Narrow = require('narrow');
 
 var Router = require('./../router.js');
 
@@ -12,13 +13,18 @@ module.exports = LongPollingTransport = function(io) {
 
 	this._connectionClass = LongPollingTransport.Connection;
 
+	this._narrow = new Narrow(LongPollingTransport.ASYNC_CHECK_LIMIT,
+                              this._flushConnection);
+
     this._flushInterval = setInterval(this._flushConnections.bind(this),
                                       LongPollingTransport.CHECK_INTERVAL);
 }
 
 util.inherits(LongPollingTransport, process.EventEmitter);
 
-LongPollingTransport.CHECK_INTERVAL = 100;
+LongPollingTransport.CHECK_INTERVAL = 500;
+
+LongPollingTransport.ASYNC_CHECK_LIMIT = 10;
 
 LongPollingTransport.ERROR_INVALID_MESSAGES_FORMAT = new Buffer('{ "error" : "Invalid messages format" }');
 LongPollingTransport.ERROR_INVALID_CONNECTION_ID = new Buffer('{ "error" : "Invalid connection id" }');
@@ -94,9 +100,13 @@ LongPollingTransport.prototype._receive = function(request, response, params) {
     this._connections[params.id].receive(request, response, params);
 }
 
+LongPollingTransport.prototype._flushConnection = function(connection, doneCallback) {
+	doneCallback(null, connection.waitOrFlush());
+}
+
 LongPollingTransport.prototype._flushConnections = function() {
 	for (var id in this._connections) {
-		this._connections[id].waitOrFlush();
+		this._narrow.push(this._connections[id]);
 	}
 }
 
