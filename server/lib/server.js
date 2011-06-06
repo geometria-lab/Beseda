@@ -141,8 +141,8 @@ Server.prototype.listen = function(port, host) {
         throw new Error('HTTP server already listen');
     }
 
-    host = host || this.options.host;
-    port = port || this.options.port;
+    host = host || this.options.server.host || '0.0.0.0';
+    port = port || this.options.server.port;
 
     try {
         this.httpServer.listen(port, host);
