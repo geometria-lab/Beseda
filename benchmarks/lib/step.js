@@ -12,9 +12,11 @@ var Step = module.exports = function(transport, index, options) {
     this.transport = transport;
     this.options   = options;
 
-    this._semaphore = new Semaphore(this.transport.benchmark,
-                                    this.transport.benchmark.name + ':transports:' + this.transport.name + ':steps:semaphore',
-                                    this.transport.benchmark.options.node);
+    var semaphoreName = this.transport.benchmark.name + ':transports:' + this.transport.name + ':steps:semaphore';
+
+    this._semaphore = new Semaphore(semaphoreName,
+                                    this.transport.benchmark.createRedisClient(),
+                                    this.transport.benchmark.createRedisClient());
 
     this._besedaClients = [];
     this._besedaChannelName = '/' + this.transport.benchmark.name + '/' + this.transport.name;
@@ -26,7 +28,7 @@ var Step = module.exports = function(transport, index, options) {
 util.inherits(Step, process.EventEmitter);
 
 Step.prototype.run = function() {
-    this._semaphore.start();
+    this._semaphore.start(this.transport.benchmark.options.node);
 
     for (var j = 0; j < this.options.subscribe; j++) {
         var beseda = new BesedaClient({
@@ -77,7 +79,7 @@ Step.prototype._handleMessage = function(channel, message) {
 Step.prototype._publish = function() {
     console.log('Всех дождался отправляю сообщение: ' + this.transport.benchmark.cluster.pid);
 
-    this._semaphore.start();
+    this._semaphore.start(this.transport.benchmark.options.node);
 
     this._readyTimeout = setTimeout(this._semaphore.reach.bind(this._semaphore, this._ready.bind(this)),
                                     this.transport.options.receiveMessageTimeLimit);

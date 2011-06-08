@@ -19,9 +19,9 @@ var Benchmark = module.exports = function(name, options) {
     this.transports = [];
     this.currentTransport = 0;
 
-    this._semaphore = new Semaphore(this,
-                                    this.name + ':semaphore',
-                                    this.options.node);
+    this._semaphore = new Semaphore(this.name + ':semaphore',
+                                    this.createRedisClient(),
+                                    this.createRedisClient());
 };
 
 Benchmark.prototype.createRedisClient = function() {
@@ -50,7 +50,7 @@ Benchmark.prototype.run = function() {
         this.transports.push(transport);
     }
 
-    this._semaphore.start();
+    this._semaphore.start(this.options.node);
 
     this._runTransports();
 };
