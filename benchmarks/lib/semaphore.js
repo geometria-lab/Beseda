@@ -14,6 +14,8 @@ var Semaphore = module.exports = function(keyName, subscribeRedis, publishRedis)
 Semaphore.prototype.start = function(count) {
     this._count = count;
     this._isReached = false;
+    this.subscribeRedis.unsubscribe();
+
     this.subscribeRedis.subscribe(this.keyName);
 };
 
@@ -32,7 +34,7 @@ Semaphore.prototype._decrement = function(channel, message) {
     this._count--;
 
     if (this._count === 0) {
-        this.subscribeRedis.unsubscribe(this.keyName);
+        this.subscribeRedis.unsubscribe();
         this._callback();
     }
 };

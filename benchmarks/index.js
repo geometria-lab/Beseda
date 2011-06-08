@@ -5,4 +5,6 @@ var fs            = require('fs'),
 var Benchmark = require('./lib/benchmark.js');
 
 var benchmark = new Benchmark('test', options);
-benchmark.run();
+benchmark.run(function(b) {
+    b.saveResults();
+});

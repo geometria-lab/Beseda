@@ -12,22 +12,28 @@ var Step = module.exports = function(transport, index, options) {
     this.transport = transport;
     this.options   = options;
 
-    var semaphoreName = this.transport.benchmark.name + ':transports:' + this.transport.name + ':steps:semaphore';
+    var benchmark = this.transport.benchmark;
 
-    this._semaphore = new Semaphore(semaphoreName,
-                                    this.transport.benchmark.createRedisClient(),
-                                    this.transport.benchmark.createRedisClient());
+    this._semaphore = new Semaphore(benchmark.name + ':transports:' + this.transport.name + ':steps:semaphore',
+                                    benchmark.createRedisClient(),
+                                    benchmark.redis);
 
     this._besedaClients = [];
-    this._besedaChannelName = '/' + this.transport.benchmark.name + '/' + this.transport.name;
+    this._besedaChannelName = '/' + benchmark.name + '/' + this.transport.name;
 
     this._receivedMessages = 0;
     this._readyTimeout = null;
+
+    this._averageTime = null;
+
+    this._redisKeyTime  = benchmark.name + ':transports:' + this.transport.name + ':steps:' + this.index + ':time';
+    this._redisKeyCount = benchmark.name + ':transports:' + this.transport.name + ':steps:' + this.index + ':count';
 };
 
 util.inherits(Step, process.EventEmitter);
 
 Step.prototype.run = function() {
+    this._averageTime = null;
     this._semaphore.start(this.transport.benchmark.options.node);
 
     for (var j = 0; j < this.options.subscribe; j++) {
@@ -49,24 +55,32 @@ Step.prototype.run = function() {
 
         beseda.on('message', this._handleMessage.bind(this));
         beseda.on('error', function(error, message) {
-            console.log(error);
-            console.log(util.inspect(message));
-            this.transport.benchmark.clusterProcess.close();
-            process.exit();
+            console.log('Beseda error: ' + error);
+            //console.dir(message);
+            //this.transport.benchmark.cluster.close();
+            //process.exit();
         }.bind(this));
 
         this._besedaClients.push(beseda);
     }
 };
 
+Step.prototype.getResults = function() {
+    if (this._averageTime === null) {
+        throw new Error('Step not ready!');
+    }
+
+    return this._averageTime;
+}
+
 Step.prototype._handleMessage = function(channel, message) {
     this._receivedMessages++;
 
     var time = Date.now() - parseInt(message);
 
-    var benchmark = this.transport.benchmark;
-    benchmark.redis.incrby(benchmark.name + ':transports:' + this.transport.name + ':steps:' + this.index + ':time', time);
-    benchmark.redis.incr(benchmark.name + ':transports:' + this.transport.name + ':steps:' + this.index + ':count');
+    var redis = this.transport.benchmark.redis;
+    redis.incrby(this._redisKeyTime, time);
+    redis.incr(this._redisKeyCount);
 
     if (this._receivedMessages == this.options.subscribe) {
         console.log('Получил все сообщения жду остальных: ' + this.transport.benchmark.cluster.pid);
@@ -94,7 +108,7 @@ Step.prototype._publish = function() {
 };
 
 Step.prototype._ready = function() {
-    console.log('Всех дождался закрываю клиентов и говорю рэди: ' + this.transport.benchmark.cluster.pid);
+    console.log('Всех дождался закрываю клиентов: ' + this.transport.benchmark.cluster.pid);
 
     for (var i = this._besedaClients.length - 1; i >= 0; i--) {
         this._besedaClients[i].disconnect();
@@ -102,5 +116,18 @@ Step.prototype._ready = function() {
         delete this._besedaClients[i];
     }
 
-    this.emit('ready');
+    var benchmark = this.transport.benchmark;
+
+    this._semaphore.start(benchmark.options.node);
+
+    benchmark.redis.mget([this._redisKeyTime, this._redisKeyCount], function(error, replies) {
+        console.log('Получаю результаты и говорю реди: ' + this.transport.benchmark.cluster.pid);
+        this._semaphore.reach(function() {
+            this._averageTime = replies[0] / replies[1];
+            this.emit('ready');
+            if (benchmark.isMaster) {
+                benchmark.redis.del([this._redisKeyTime, this._redisKeyCount]);
+            }
+        }.bind(this));
+    }.bind(this));
 }
