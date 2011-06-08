@@ -71,7 +71,7 @@ Transport.prototype._handleConnection = function(id) {
 Transport.prototype._handleMessages = function(messages) {
 	var message;
 	while(messages && messages.length) {
-		message = messages.shift()
+		message = messages.shift();
 
 		this._emitter.emit('message', message);
 
@@ -83,7 +83,7 @@ Transport.prototype._handleError = function(error) {
     for (var id in this.__pendingMessages) {
 		 this._emitter.emit('message:' + id, error);
 	}
-	this._emitter.emit('error');
+	this._emitter.emit('error', error);
 
 	this.__pendingMessages = {};
 };

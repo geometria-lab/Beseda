@@ -76,10 +76,9 @@ SubscriptionManager.prototype._deliverMessages = function(channel, message) {
 
     for (var sessionId in this._channelsToSessions[channel]) {
 		this._channelsToSessions[channel][sessionId].send(message);
-	    this._server.log('Publish to: ' + sessionId);
 
 	    count++
     }
 
-    this._server.log('Receive new message from "' + channel.name + '" and deliver to ' + count + ' subscribers');
+    this._server.log('Receive new message from "' + channel + '" and deliver to ' + count + ' subscribers');
 }

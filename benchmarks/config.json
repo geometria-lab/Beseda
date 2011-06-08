@@ -1,0 +1,17 @@
+{
+    "redis" : {
+        "host" : "127.0.0.1",
+        "port" : 6379
+    },
+
+    "node" : 2,
+
+    "transports" : {
+        "longPolling" : {
+            "host"    : "127.0.0.1",
+            "port"    : 4000,
+            "steps"   : [ { "subscribe" : 10  } ],
+            "receiveMessageTimeLimit" : 60000
+        }
+    }
+}
