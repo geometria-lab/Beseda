@@ -1,4 +1,4 @@
-var redis = require('redis-node');
+var redis = require('redis');
 
 var Transport = require('./transport.js'),
     Semaphore = require('./semaphore.js');
@@ -69,7 +69,7 @@ Benchmark.prototype._runTransports = function() {
 
 Benchmark.prototype._saveResults = function() {
     if (!this.cluster.isMaster) {
-        return;
+        return this.clusterProcess.stop();
     }
 
     console.log('Все сделал. Выхожу');

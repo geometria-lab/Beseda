@@ -5,6 +5,7 @@ Version 0.0.9
 ---
 Unreleased
 
+* Benchmarks suite
 * Fix listen
 * Return form dispatch if invalid message format
 
