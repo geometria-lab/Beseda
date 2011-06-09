@@ -7,9 +7,13 @@ var Benchmark = module.exports = function(name, options) {
     this.name = name;
     this.options = options;
 
+    if (this.options.node < 1) {
+        this.options.node = 1;
+    }
+
     var workers = this.options.node - 1;
     if (workers < 1) {
-        workers = 1
+        workers = 1;
     }
     this.cluster = require('cluster')().set('workers', workers);
 
@@ -42,11 +46,9 @@ Benchmark.prototype.run = function(readyCallback) {
             var step = transportOptions.steps[i];
 
             if (this.cluster.isMaster) {
-                step.subscribe = step.subscribe - Math.floor(step.subscribe / this.options.node) * (this.options.node - 1);
-                step.publish = step.publish - Math.floor(step.publish / this.options.node) * (this.options.node - 1);
+                step.nodeSubscribers = step.subscribers - Math.floor(step.subscribers / this.options.node) * (this.options.node - 1);
             } else {
-                step.subscribe = Math.ceil(step.subscribe / this.options.node);
-                step.publish = Math.ceil(step.publish / this.options.node);
+                step.nodeSubscribers = Math.ceil(step.subscribers / this.options.node);
             }
         }
 

@@ -24,7 +24,7 @@ var Step = module.exports = function(transport, index, options) {
     this._receivedMessages = 0;
     this._readyTimeout = null;
 
-    this._averageTime = null;
+    this._results = null;
 
     this._redisKeyTime  = benchmark.name + ':transports:' + this.transport.name + ':steps:' + this.index + ':time';
     this._redisKeyCount = benchmark.name + ':transports:' + this.transport.name + ':steps:' + this.index + ':count';
@@ -33,10 +33,10 @@ var Step = module.exports = function(transport, index, options) {
 util.inherits(Step, process.EventEmitter);
 
 Step.prototype.run = function() {
-    this._averageTime = null;
+    this._result = null;
     this._semaphore.start(this.transport.benchmark.options.node);
 
-    for (var j = 0; j < this.options.subscribe; j++) {
+    for (var j = 0; j < this.options.nodeSubscribers; j++) {
         var beseda = new BesedaClient({
             host      : this.transport.options.host,
             port      : this.transport.options.port,
@@ -47,7 +47,7 @@ Step.prototype.run = function() {
         beseda.subscribe(this._besedaChannelName, function(error) {
             subscribedClients++;
 
-            if (subscribedClients == this.options.subscribe) {
+            if (subscribedClients == this.options.nodeSubscribers) {
                 console.log('Всех подписал жду: ' + this.transport.benchmark.cluster.pid);
                 this._semaphore.reach(this._publish.bind(this));
             }
@@ -66,11 +66,11 @@ Step.prototype.run = function() {
 };
 
 Step.prototype.getResults = function() {
-    if (this._averageTime === null) {
-        throw new Error('Step not ready!');
+    if (this._results === null) {
+        throw new Error('Run berfore');
     }
 
-    return this._averageTime;
+    return this._results;
 }
 
 Step.prototype._handleMessage = function(channel, message) {
@@ -82,7 +82,7 @@ Step.prototype._handleMessage = function(channel, message) {
     redis.incrby(this._redisKeyTime, time);
     redis.incr(this._redisKeyCount);
 
-    if (this._receivedMessages == this.options.subscribe) {
+    if (this._receivedMessages == this.options.nodeSubscribers) {
         console.log('Получил все сообщения жду остальных: ' + this.transport.benchmark.cluster.pid);
 
         clearTimeout(this._readyTimeout);
@@ -123,7 +123,12 @@ Step.prototype._ready = function() {
     benchmark.redis.mget([this._redisKeyTime, this._redisKeyCount], function(error, replies) {
         console.log('Получаю результаты и говорю реди: ' + this.transport.benchmark.cluster.pid);
         this._semaphore.reach(function() {
-            this._averageTime = replies[0] / replies[1];
+            this._results = {
+                published   : 1,
+                time        : parseInt(replies[0]),
+                received    : parseInt(replies[1]),
+                subscribers : this.options.subscribers
+            };
             this.emit('ready');
             if (benchmark.isMaster) {
                 benchmark.redis.del([this._redisKeyTime, this._redisKeyCount]);
