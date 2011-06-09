@@ -11,6 +11,7 @@ var Transport = module.exports = function(benchmark, name, options) {
     this.options   = options;
 
     this._semaphore = new Semaphore(this.benchmark.name + ':transports:' + this.name + ':semaphore',
+                                    this.benchmark.options.node,
                                     this.benchmark.createRedisClient(),
                                     this.benchmark.redis);
 
@@ -25,8 +26,6 @@ var Transport = module.exports = function(benchmark, name, options) {
 util.inherits(Transport, process.EventEmitter);
 
 Transport.prototype.run = function() {
-    this._semaphore.start(this.benchmark.options.node);
-
     this._runSteps();
 };
 

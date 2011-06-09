@@ -14,9 +14,20 @@ var Step = module.exports = function(transport, index, options) {
 
     var benchmark = this.transport.benchmark;
 
-    this._semaphore = new Semaphore(benchmark.name + ':transports:' + this.transport.name + ':steps:semaphore',
-                                    benchmark.createRedisClient(),
-                                    benchmark.redis);
+    this._subscribeSemaphore = new Semaphore(benchmark.name + ':transports:' + this.transport.name + ':steps:semaphore:subscribe',
+                                             benchmark.options.node,
+                                             benchmark.createRedisClient(),
+                                             benchmark.redis);
+
+    this._receivedSemaphore = new Semaphore(benchmark.name + ':transports:' + this.transport.name + ':steps:semaphore:received',
+                                            benchmark.options.node,
+                                            benchmark.createRedisClient(),
+                                            benchmark.redis);
+
+    this._resultsSemaphore = new Semaphore(benchmark.name + ':transports:' + this.transport.name + ':steps:semaphore:results',
+                                           benchmark.options.node,
+                                           benchmark.createRedisClient(),
+                                           benchmark.redis);
 
     this._besedaClients = [];
     this._besedaChannelName = '/' + benchmark.name + '/' + this.transport.name;
@@ -34,7 +45,6 @@ util.inherits(Step, process.EventEmitter);
 
 Step.prototype.run = function() {
     this._result = null;
-    this._semaphore.start(this.transport.benchmark.options.node);
 
     for (var j = 0; j < this.options.nodeSubscribers; j++) {
         var beseda = new BesedaClient({
@@ -49,7 +59,7 @@ Step.prototype.run = function() {
 
             if (subscribedClients == this.options.nodeSubscribers) {
                 console.log('Всех подписал жду: ' + this.transport.benchmark.cluster.pid);
-                this._semaphore.reach(this._publish.bind(this));
+                this._subscribeSemaphore.reach(this._publish.bind(this));
             }
         }.bind(this));
 
@@ -71,9 +81,10 @@ Step.prototype.getResults = function() {
     }
 
     return this._results;
-}
+};
 
 Step.prototype._handleMessage = function(channel, message) {
+    //console.log(this.transport.benchmark.cluster.pid + ': ' + message);
     this._receivedMessages++;
 
     var time = Date.now() - parseInt(message);
@@ -86,16 +97,14 @@ Step.prototype._handleMessage = function(channel, message) {
         console.log('Получил все сообщения жду остальных: ' + this.transport.benchmark.cluster.pid);
 
         clearTimeout(this._readyTimeout);
-        this._semaphore.reach(this._ready.bind(this));
+        this._receivedSemaphore.reach(this._ready.bind(this));
     }
 };
 
 Step.prototype._publish = function() {
     console.log('Всех дождался отправляю сообщение: ' + this.transport.benchmark.cluster.pid);
 
-    this._semaphore.start(this.transport.benchmark.options.node);
-
-    this._readyTimeout = setTimeout(this._semaphore.reach.bind(this._semaphore, this._ready.bind(this)),
+    this._readyTimeout = setTimeout(this._receivedSemaphore.reach.bind(this._receivedSemaphore, this._ready.bind(this)),
                                     this.transport.options.receiveMessageTimeLimit);
 
     var beseda = new BesedaClient({
@@ -104,7 +113,11 @@ Step.prototype._publish = function() {
         transport : this.transport.name
     });
 
-    beseda.publish(this._besedaChannelName, Date.now());
+    for (var i = 0; i < this.options.nodePublish; i++) {
+        setTimeout(function(){
+            beseda.publish(this._besedaChannelName, Date.now());
+        }.bind(this), Math.round(Math.random() * this.options.nodePublishTime));
+    }
 };
 
 Step.prototype._ready = function() {
@@ -118,21 +131,26 @@ Step.prototype._ready = function() {
 
     var benchmark = this.transport.benchmark;
 
-    this._semaphore.start(benchmark.options.node);
-
     benchmark.redis.mget([this._redisKeyTime, this._redisKeyCount], function(error, replies) {
         console.log('Получаю результаты и говорю реди: ' + this.transport.benchmark.cluster.pid);
-        this._semaphore.reach(function() {
+        this._resultsSemaphore.reach(function() {
+            var fullTime = replies[0] ? parseInt(replies[0]) : this.transport.options.receiveMessageTimeLimit;
+            var received = replies[1] ? parseInt(replies[1]) : 0;
+
             this._results = {
-                published   : 1,
-                time        : parseInt(replies[0]),
-                received    : parseInt(replies[1]),
-                subscribers : this.options.subscribers
+                subscribers : this.options.subscribers,
+                published   : this.options.publish,
+                received    : parseInt(replies[1] || 0),
+                lost        : (this.options.subscribers * this.options.publish) - parseInt(replies[1] || 0),
+                fullTime    : fullTime,
+                averageTime : received ? fullTime / received : fullTime
             };
+
             this.emit('ready');
-            if (benchmark.isMaster) {
+
+            if (benchmark.cluster.isMaster) {
                 benchmark.redis.del([this._redisKeyTime, this._redisKeyCount]);
             }
         }.bind(this));
     }.bind(this));
-}
+};

@@ -23,6 +23,7 @@ var Benchmark = module.exports = function(name, options) {
     this.currentTransport = 0;
 
     this._semaphore = new Semaphore(this.name + ':semaphore',
+                                    this.options.node,
                                     this.createRedisClient(),
                                     this.redis);
 
@@ -45,18 +46,14 @@ Benchmark.prototype.run = function(readyCallback) {
         for (var i = 0; i < transportOptions.steps.length; i++) {
             var step = transportOptions.steps[i];
 
-            if (this.cluster.isMaster) {
-                step.nodeSubscribers = step.subscribers - Math.floor(step.subscribers / this.options.node) * (this.options.node - 1);
-            } else {
-                step.nodeSubscribers = Math.ceil(step.subscribers / this.options.node);
-            }
+            step.nodeSubscribers = this._devideByNode(step.subscribers);
+            step.nodePublish     = this._devideByNode(step.publish);
+            step.nodePublishTime = this._devideByNode(step.publishTime);
         }
 
         var transport = new Transport(this, name, transportOptions);
         this.transports.push(transport);
     }
-
-    this._semaphore.start(this.options.node);
 
     this._runTransports();
 };
@@ -74,6 +71,14 @@ Benchmark.prototype.saveResults = function() {
     }
     console.log('Сохраняю результаты');
     console.dir(this._results);
+}
+
+Benchmark.prototype._devideByNode = function(count) {
+    if (this.cluster.isMaster) {
+        return count - Math.floor(count / this.options.node) * (this.options.node - 1);
+    } else {
+        return Math.floor(count / this.options.node);
+    }
 }
 
 Benchmark.prototype._runTransports = function() {

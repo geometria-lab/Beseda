@@ -1,22 +1,17 @@
-var Semaphore = module.exports = function(keyName, subscribeRedis, publishRedis) {
+var Semaphore = module.exports = function(keyName, count, subscribeRedis, publishRedis) {
+    this.keyName = keyName;
+    this.count   = count;
+    this._currentCount = count;
+
     this.subscribeRedis = subscribeRedis;
     this.subscribeRedis.on('message', this._decrement.bind(this));
+    this.subscribeRedis.subscribe(this.keyName);
+
     this.publishRedis = publishRedis;
 
-    this.keyName = keyName;
-
-    this._count = null;
     this._callback = null;
 
     this._isReached = false;
-};
-
-Semaphore.prototype.start = function(count) {
-    this._count = count;
-    this._isReached = false;
-    this.subscribeRedis.unsubscribe();
-
-    this.subscribeRedis.subscribe(this.keyName);
 };
 
 Semaphore.prototype.reach = function(callback) {
@@ -24,16 +19,16 @@ Semaphore.prototype.reach = function(callback) {
         throw new Error('Semaphore already reached!');
     }
 
+    this._isReached = true;
+
     this._callback = callback;
     this.publishRedis.publish(this.keyName, 1);
-
-    this._isReached = true;
 };
 
 Semaphore.prototype._decrement = function(channel, message) {
-    this._count--;
+    this._currentCount--;
 
-    if (this._count === 0) {
+    if (this._currentCount === 0) {
         this.subscribeRedis.unsubscribe();
         this._callback();
     }
