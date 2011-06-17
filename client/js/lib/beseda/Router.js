@@ -1,14 +1,14 @@
 /**
  * @constructor
  */
-beseda.Router = function(client) {
+BesedaPackage.Router = function(client) {
     this.__client = client;
 };
 
 /**
  * @param {{ channel: string, data: string, id: string, error: string, successful: boolean, clientId: string }} message
  */
-beseda.Router.prototype.dispatch = function(message) {
+BesedaPackage.Router.prototype.dispatch = function(message) {
     if (message.channel == undefined ||
         message.clientId == undefined ||
         message.id == undefined) {
@@ -34,7 +34,7 @@ beseda.Router.prototype.dispatch = function(message) {
 /**
  * @param {{ channel: string, data: string, id: string, error: string, successful: boolean }} message
  */
-beseda.Router.prototype._connect = function(message) {
+BesedaPackage.Router.prototype._connect = function(message) {
     if (message.successful) {
         this.__client.applyConnection();
         this.__client.emit('connect', message);
@@ -47,14 +47,14 @@ beseda.Router.prototype._connect = function(message) {
 /**
  * @param {{ channel: string, data: string, id: string, error: string, successful: boolean }} message
  */
-beseda.Router.prototype._error = function(message) {
+BesedaPackage.Router.prototype._error = function(message) {
     this.__client.emit('error', message.data, message);
 };
 
 /**
  * @param {{ channel: string, data: string, id: string, error: string, success: boolean }} message
  */
-beseda.Router.prototype._subscribe = function(message) {
+BesedaPackage.Router.prototype._subscribe = function(message) {
     if (!message.successful) {
         this.__client.emit('error', message.error, message);
     }
@@ -66,7 +66,7 @@ beseda.Router.prototype._subscribe = function(message) {
 /**
  * @param {{ channel: string, data: string, id: string, error: string, successful: boolean }} message
  */
-beseda.Router.prototype._unsubscribe = function(message) {
+BesedaPackage.Router.prototype._unsubscribe = function(message) {
     if (!message.successful) {
         this.__client.emit('error', message.error, message);
     }
@@ -78,7 +78,7 @@ beseda.Router.prototype._unsubscribe = function(message) {
 /**
  * @param {{ channel: string, data: string, id: string, error: string, successful: boolean }} message
  */
-beseda.Router.prototype._publish = function(message) {
+BesedaPackage.Router.prototype._publish = function(message) {
     if (!message.successful) {
         this.__client.emit('error', message.error, message);
     }
@@ -90,7 +90,7 @@ beseda.Router.prototype._publish = function(message) {
 /**
  * @param {{ channel: string, data: string, id: string, error: string, successful: boolean }} message
  */
-beseda.Router.prototype._message = function(message) {
+BesedaPackage.Router.prototype._message = function(message) {
     this.__client.emit('message:' + message.channel, message.data, message);
     this.__client.emit('message', message.channel, message.data, message);
 };

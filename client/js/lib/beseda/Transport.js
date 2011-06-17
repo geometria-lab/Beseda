@@ -1,7 +1,7 @@
 /**
  * @constructor
  */
-beseda.Transport = function() {
+BesedaPackage.Transport = function() {
     this._url          = null;
     this._typeSuffix   = null;
     this._connectionID = null;
@@ -15,27 +15,27 @@ beseda.Transport = function() {
 	this.__pendingMessages = {};
 };
 
-beseda.Transport.__transports = {
+BesedaPackage.Transport.__transports = {
     'longPolling'      : 'LongPolling',
     'JSONPLongPolling' : 'JSONPLongPolling',
 	'webSocket'        : 'WebSocket'
 };
 
-beseda.Transport.getBestTransport = function(options) {
+BesedaPackage.Transport.getBestTransport = function(options) {
 	var TransportClass;
 
     for(var i = 0; i < options.transports.length; i++) {
 	    switch (options.transports[i]) {
 		    case 'longPolling':
-		        TransportClass = beseda.transport.LongPolling;
+		        TransportClass = BesedaPackage.transport.LongPolling;
 		        break;
 
 		    case 'JSONPLongPolling':
-		        TransportClass = beseda.transport.JSONPLongPolling;
+		        TransportClass = BesedaPackage.transport.JSONPLongPolling;
 			    break;
 
 		    case 'webSocket':
-		        TransportClass = beseda.transport.WebSocket;
+		        TransportClass = BesedaPackage.transport.WebSocket;
 			    break;
 
 		    default:
@@ -50,12 +50,12 @@ beseda.Transport.getBestTransport = function(options) {
 	return new TransportClass();
 };
 
-beseda.Transport.prototype.connect = function(host, port, ssl) {
+BesedaPackage.Transport.prototype.connect = function(host, port, ssl) {
     throw Error('Abstract method calling.');
 };
 
 
-beseda.Transport.prototype.send = function(messages) {
+BesedaPackage.Transport.prototype.send = function(messages) {
 	if (this._isConnected) {
 		var i = messages.length - 1;
 		while (i >= 0) {
@@ -69,19 +69,19 @@ beseda.Transport.prototype.send = function(messages) {
 	}
 };
 
-beseda.Transport.prototype._doSend = function(data) {
+BesedaPackage.Transport.prototype._doSend = function(data) {
 	throw Error('Abstract method calling.');
 };
 
-beseda.Transport.prototype.disconnect = function() {
+BesedaPackage.Transport.prototype.disconnect = function() {
     throw Error('Abstract method calling.');
 };
 
-beseda.Transport.prototype.setEmitter = function(emitter) {
+BesedaPackage.Transport.prototype.setEmitter = function(emitter) {
     this._emitter = emitter;
 };
 
-beseda.Transport.prototype._handleConnection = function(id) {
+BesedaPackage.Transport.prototype._handleConnection = function(id) {
     this._connectionID = id;
 
     if (this._emitter) {
@@ -93,7 +93,7 @@ beseda.Transport.prototype._handleConnection = function(id) {
     }
 };
 
-beseda.Transport.prototype._handleMessages = function(messages) {
+BesedaPackage.Transport.prototype._handleMessages = function(messages) {
 	var message;
 	while(messages && messages.length) {
 		message = messages.shift()
@@ -104,7 +104,7 @@ beseda.Transport.prototype._handleMessages = function(messages) {
 	}
 };
 
-beseda.Transport.prototype._handleError = function(error) {
+BesedaPackage.Transport.prototype._handleError = function(error) {
 	var messages = [];
     for (var id in this.__pendingMessages) {
 	    messages.push(this.__pendingMessages[id]);
@@ -120,11 +120,11 @@ beseda.Transport.prototype._handleError = function(error) {
 	this.__pendingMessages = {};
 };
 
-beseda.Transport.prototype._decodeData = function(data) {
+BesedaPackage.Transport.prototype._decodeData = function(data) {
 	return JSON.parse(data);
 }
 
-beseda.Transport.prototype._enqueue = function(data) {
+BesedaPackage.Transport.prototype._enqueue = function(data) {
     this.__sendQueue.push(data);
 };
 
