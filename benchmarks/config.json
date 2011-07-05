@@ -10,7 +10,7 @@
         "longPolling" : {
             "host"    : "127.0.0.1",
             "port"    : 4000,
-            "steps"   : [ { "subscribers" : 100, "publish": 5, "publishTime" : 300 } ],
+            "steps"   : [ { "subscribers" : 20, "publish": 2, "publishTime" : 300 } ],
             "receiveMessageTimeLimit" : 120000
         }
     }

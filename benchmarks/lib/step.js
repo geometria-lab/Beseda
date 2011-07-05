@@ -65,10 +65,7 @@ Step.prototype.run = function() {
 
         beseda.on('message', this._handleMessage.bind(this));
         beseda.on('error', function(error, message) {
-            console.log('Beseda error: ' + error);
-            //console.dir(message);
-            //this.transport.benchmark.cluster.close();
-            //process.exit();
+            console.log('Beseda client error: ' + error);
         }.bind(this));
 
         this._besedaClients.push(beseda);
@@ -84,7 +81,6 @@ Step.prototype.getResults = function() {
 };
 
 Step.prototype._handleMessage = function(channel, message) {
-    //console.log(this.transport.benchmark.cluster.pid + ': ' + message);
     this._receivedMessages++;
 
     var time = Date.now() - parseInt(message);
@@ -140,8 +136,8 @@ Step.prototype._ready = function() {
             this._results = {
                 subscribers : this.options.subscribers,
                 published   : this.options.publish,
-                received    : parseInt(replies[1] || 0),
-                lost        : (this.options.subscribers * this.options.publish) - parseInt(replies[1] || 0),
+                received    : received,
+                lost        : (this.options.subscribers * this.options.publish) - received,
                 fullTime    : fullTime,
                 averageTime : received ? fullTime / received : fullTime
             };
