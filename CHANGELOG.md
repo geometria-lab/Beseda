@@ -3,10 +3,10 @@ Changelog
 
 Version 0.0.9
 ---
-Unreleased
+July 20, 2011
 
 * Fix listen
-* Return form dispatch if invalid message format
+* Return from dispatch if invalid message format
 
 Version 0.0.8
 ---
