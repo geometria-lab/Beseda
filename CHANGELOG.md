@@ -7,6 +7,7 @@ July 20, 2011
 
 * Fix listen
 * Return from dispatch if invalid message format
+* http.Server.address() sometimes throws exception
 
 Version 0.0.8
 ---
