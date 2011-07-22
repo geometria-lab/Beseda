@@ -7,6 +7,8 @@ RedisPubSub = module.exports = function(options) {
         port    : 6379,
         options : {}
     }, options);
+	
+	console.log(options.host);
 
     this.clientPublish   = redis.createClient(this.options.port, this.options.host, this.options.options);
     this.clientSubscribe = redis.createClient(this.options.port, this.options.host, this.options.options);
@@ -16,7 +18,9 @@ RedisPubSub = module.exports = function(options) {
 }
 
 RedisPubSub.prototype.subscribe = function(channel, callback) {
+	console.log(channel);
     this.clientSubscribe.subscribeTo(channel, function(channel, message) {
+	    console.log("connected " + channel);
         callback(channel, JSON.parse(message));
     });
 }
