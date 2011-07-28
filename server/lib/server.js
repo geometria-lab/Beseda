@@ -117,6 +117,7 @@ Server = module.exports = function(options) {
         // Use PubSub from options
         this.pubSub = this.options.pubSub;
     }
+	this.pubSub.setSubscriptionManager(this.subscriptionManager);
 
 	this._publishClientId = utils.uid();
 

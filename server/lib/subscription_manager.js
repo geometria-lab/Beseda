@@ -9,8 +9,6 @@ module.exports = SubscriptionManager = function(server) {
 
     this._channelsToSessions = {};
     this._sessionsToChannels = {};
-
-    this._deliverMessagesClosure = this._deliverMessages.bind(this);
 }
 
 SubscriptionManager.prototype.subscribe = function(session, channel) {
@@ -22,7 +20,7 @@ SubscriptionManager.prototype.subscribe = function(session, channel) {
     if (!this._channelsToSessions[channel.name]) {
         this._channelsToSessions[channel.name] = {};
 
-        this._server.pubSub.subscribe(channel.name, this._deliverMessagesClosure);
+        this._server.pubSub.subscribe(channel.name);
     }
     this._channelsToSessions[channel.name][session.id] = session;
 
@@ -71,7 +69,7 @@ SubscriptionManager.prototype.unsubscribeFromAll = function(session) {
     }
 }
 
-SubscriptionManager.prototype._deliverMessages = function(channel, message) {
+SubscriptionManager.prototype.deliverMessage = function(channel, message) {
 	var count = 0;
 
     for (var sessionId in this._channelsToSessions[channel]) {
