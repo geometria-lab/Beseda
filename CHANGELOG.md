@@ -1,6 +1,12 @@
 Changelog
 ======
 
+Version 0.0.10
+---
+July 28, 2011
+
+* Fix redis options
+
 Version 0.0.9
 ---
 July 20, 2011
