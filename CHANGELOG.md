@@ -5,7 +5,9 @@ Version 0.0.10
 ---
 July 28, 2011
 
-* Fix redis options
+* Fix pubSub option
+* Refactor redis and memory pubSub
+* Change redis pubSub from 'redis-node' to 'redis' package 
 
 Version 0.0.9
 ---
