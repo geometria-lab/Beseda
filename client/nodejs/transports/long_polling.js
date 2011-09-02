@@ -65,6 +65,7 @@ LongPollingTransport.prototype._doSend = function(data) {
 	             '/' + Date.now()
 	});
 	
+	sendRequest.on('error', this.__handleErrorClosure);
 	sendRequest.send(data);
 };
 
