@@ -20,4 +20,4 @@ var server = http.createServer(function(request, response) {
 });
 server.listen(4000);
 
-var beseda = new Beseda({ server : server, debug: !true });
+var beseda = new Beseda({ server : server });

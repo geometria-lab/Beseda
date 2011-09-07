@@ -1,17 +1,19 @@
 var util = require('util');
 var hookio = require('hook.io');
 
-var BesedaClient = require('./../client/nodejs');
+var BesedaClient = require('./../../client/nodejs');
 
-var Step = function(options) {
+var StepThreat = function(options) {
 	hookio.Hook.call(this);
 
 	this.__clents = [];
 	this.__masterName = '';
+	this.__transport = '';
 
 	if (options) {
-		this.__makeClients(options.clientsCount);
+		this.__transport = options.transport;
 		this.__masterName = options.masterName;
+		this.__makeClients(options.clientsCount);
 
 		this.on('hook::ready', this.__handleReady.bind(this));
 
@@ -20,15 +22,15 @@ var Step = function(options) {
 	}
 };
 
-util.inherits(Step, hookio.Hook);
+util.inherits(StepThreat, hookio.Hook);
 
-Step.prototype.__makeClients = function(count) {
+StepThreat.prototype.__makeClients = function(count) {
 	for (var i = 0; i < count; i++) {
-		this.__clents.push(new BesedaClient({ transport: 'longPolling' }));
+		this.__clents.push(new BesedaClient({ transport: this.__transport }));
 	}
 };
 
-Step.prototype.__handleReady = function() {
+StepThreat.prototype.__handleReady = function() {
 	var self = this;
 
 	for (var i = 0; i < this.__clents.length; i++) {
@@ -42,7 +44,7 @@ Step.prototype.__handleReady = function() {
 	}
 };
 
-Step.prototype.__handleWait = function() {
+StepThreat.prototype.__handleWait = function() {
 	var self = this;
 
 	for (var i = 0; i < this.__clents.length; i++) {
@@ -57,7 +59,7 @@ Step.prototype.__handleWait = function() {
 	}
 };
 
-Step.prototype.__handleKill = function() {
+StepThreat.prototype.__handleKill = function() {
 	var self = this;
 
 	for (var i = 0; i < this.__clents.length; i++) {
@@ -69,4 +71,4 @@ Step.prototype.__handleKill = function() {
 	this.__clents = [];
 };
 
-module.exports.Step = Step;
+module.exports.StepThreat = StepThreat;

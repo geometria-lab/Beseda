@@ -1,10 +1,33 @@
 {
-	"node" : 2,
-
-    "transports" : {
-        "longPolling" : {
-            "steps"   : [ 
-	            { "subscribers" : 20, "publish": 2, "publishTime" : 300 }
+    "benchmarks" : {
+        "Long Polling" : {
+	        "defaults" : { "transport" : "longPolling", "publish": 2 },
+            "steps" : [
+	            { "subscribers" : 10 },
+	            { "subscribers" : 20 },
+	            { "subscribers" : 30 },
+	            { "subscribers" : 40 },
+	            { "subscribers" : 50 },
+	            { "subscribers" : 60 },
+	            { "subscribers" : 70 },
+	            { "subscribers" : 80 },
+	            { "subscribers" : 90 },
+	            { "subscribers" : 100 }
+            ]
+        },
+        "Web Sokets" : {
+	        "defaults" : { "transport" : "webSocket", "publish": 2 },
+            "steps" : [
+	            { "subscribers" : 10 },
+	            { "subscribers" : 20 },
+	            { "subscribers" : 30 },
+	            { "subscribers" : 40 },
+	            { "subscribers" : 50 },
+	            { "subscribers" : 60 },
+	            { "subscribers" : 70 },
+	            { "subscribers" : 80 },
+	            { "subscribers" : 90 },
+	            { "subscribers" : 100 }
             ]
         }
     }

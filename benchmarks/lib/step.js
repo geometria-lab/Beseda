@@ -1,152 +1,145 @@
+var events = require('events');
 var util = require('util');
 
-var BesedaClient = require('./../../client/nodejs'),
-    Semaphore    = require('./semaphore.js');
+var StepThreat = require('./step_threat').StepThreat;
+var BesedaClient = require('./../../client/nodejs');
 
-// TODO: Publish 5 times for average
+var Step = function(options, defaults) {
+	events.EventEmitter.call(this);
 
-var Step = module.exports = function(transport, index, options) {
-    process.EventEmitter.call(this);
+	this.__subscribersCount = options.subscribers || defaults.subscribers;
+	this.__publishCount = options.publish || defaults.publish;
+	this.__transport = options.transport || defaults.transport;
 
-    this.index     = index;
-    this.transport = transport;
-    this.options   = options;
+	this.__connectionCount = 0;
+	this.__messageCount = 0;
+	this.__errorCount = 0;
 
-    var benchmark = this.transport.benchmark;
+	this.__threadCount = 2;
 
-    this._subscribeSemaphore = new Semaphore(benchmark.name + ':transports:' + this.transport.name + ':steps:semaphore:subscribe',
-                                             benchmark.options.node,
-                                             benchmark.createRedisClient(),
-                                             benchmark.redis);
+	this.__averageTime = 0;
 
-    this._receivedSemaphore = new Semaphore(benchmark.name + ':transports:' + this.transport.name + ':steps:semaphore:received',
-                                            benchmark.options.node,
-                                            benchmark.createRedisClient(),
-                                            benchmark.redis);
-
-    this._resultsSemaphore = new Semaphore(benchmark.name + ':transports:' + this.transport.name + ':steps:semaphore:results',
-                                           benchmark.options.node,
-                                           benchmark.createRedisClient(),
-                                           benchmark.redis);
-
-    this._besedaClients = [];
-    this._besedaChannelName = '/' + benchmark.name + '/' + this.transport.name;
-
-    this._receivedMessages = 0;
-    this._readyTimeout = null;
-
-    this._results = null;
-
-    this._redisKeyTime  = benchmark.name + ':transports:' + this.transport.name + ':steps:' + this.index + ':time';
-    this._redisKeyCount = benchmark.name + ':transports:' + this.transport.name + ':steps:' + this.index + ':count';
+	this.__result = null;
+	this.__options = options;
 };
 
-util.inherits(Step, process.EventEmitter);
-
-Step.prototype.run = function() {
-    this._result = null;
-
-    for (var j = 0; j < this.options.nodeSubscribers; j++) {
-        var beseda = new BesedaClient({
-            host      : this.transport.options.host,
-            port      : this.transport.options.port,
-            transport : this.transport.name
-        });
-
-        var subscribedClients = 0;
-        beseda.subscribe(this._besedaChannelName, function(error) {
-            subscribedClients++;
-
-            if (subscribedClients == this.options.nodeSubscribers) {
-                console.log('Всех подписал жду: ' + this.transport.benchmark.cluster.pid);
-                this._subscribeSemaphore.reach(this._publish.bind(this));
-            }
-        }.bind(this));
-
-        beseda.on('message', this._handleMessage.bind(this));
-        beseda.on('error', function(error, message) {
-            console.log('Beseda client error: ' + error);
-        }.bind(this));
-
-        this._besedaClients.push(beseda);
-    }
-};
+util.inherits(Step, events.EventEmitter);
 
 Step.prototype.getResults = function() {
-    if (this._results === null) {
-        throw new Error('Run berfore');
-    }
-
-    return this._results;
+	return this.__result;
 };
 
-Step.prototype._handleMessage = function(channel, message) {
-    this._receivedMessages++;
-
-    var time = Date.now() - parseInt(message);
-
-    var redis = this.transport.benchmark.redis;
-    redis.incrby(this._redisKeyTime, time);
-    redis.incr(this._redisKeyCount);
-
-    if (this._receivedMessages == this.options.nodeSubscribers) {
-        console.log('Получил все сообщения жду остальных: ' + this.transport.benchmark.cluster.pid);
-
-        clearTimeout(this._readyTimeout);
-        this._receivedSemaphore.reach(this._ready.bind(this));
-    }
+Step.prototype.getOptions = function() {
+	return this.__options;
 };
 
-Step.prototype._publish = function() {
-    console.log('Всех дождался отправляю сообщение: ' + this.transport.benchmark.cluster.pid);
+Step.prototype.run = function() {
+	this.__step = new StepThreat();
+	this.__step.name = Math.random().toString().substr(3);
+	
+	this.__step.on('hook::ready', this.__handleReadyToRun.bind(this));
 
-    this._readyTimeout = setTimeout(this._receivedSemaphore.reach.bind(this._receivedSemaphore, this._ready.bind(this)),
-                                    this.transport.options.receiveMessageTimeLimit);
+	this.__step.on('*::subscribed', this.__handleSubscribe.bind(this));
+	this.__step.on('*::message', this.__handleMessage.bind(this));
 
-    var beseda = new BesedaClient({
-        host      : this.transport.options.host,
-        port      : this.transport.options.port,
-        transport : this.transport.name
-    });
+	this.__step.on('*::subscribeError', this.__handleSubscribeError.bind(this));
+	this.__step.on('*::messageError', this.__handleMessageError.bind(this));
 
-    for (var i = 0; i < this.options.nodePublish; i++) {
-        setTimeout(function(){
-            beseda.publish(this._besedaChannelName, Date.now());
-        }.bind(this), Math.round(Math.random() * this.options.nodePublishTime));
-    }
+	this.__step.start();
 };
 
-Step.prototype._ready = function() {
-    console.log('Всех дождался закрываю клиентов: ' + this.transport.benchmark.cluster.pid);
+Step.prototype.__startPublish = function() {
+	var self = this;
+	var client = new BesedaClient({'transport': this.__transport});
 
-    for (var i = this._besedaClients.length - 1; i >= 0; i--) {
-        this._besedaClients[i].disconnect();
-        this._besedaClients[i].removeAllListeners('message');
-        delete this._besedaClients[i];
-    }
+	var i = 0;
 
-    var benchmark = this.transport.benchmark;
+	function publish() {
+		client.publish('/hello' + self.__step.name, Date.now().toString(), function() {
+			if (++i < self.__publishCount) {
+				setTimeout(publish, 100);
+			} else {
+				client.disconnect();
+				setTimeout(self.__handleFinish.bind(self), 5000);
+			}
+		});
+	}
 
-    benchmark.redis.mget([this._redisKeyTime, this._redisKeyCount], function(error, replies) {
-        console.log('Получаю результаты и говорю реди: ' + this.transport.benchmark.cluster.pid);
-        this._resultsSemaphore.reach(function() {
-            var fullTime = replies[0] ? parseInt(replies[0]) : this.transport.options.receiveMessageTimeLimit;
-            var received = replies[1] ? parseInt(replies[1]) : 0;
+	setTimeout(publish, 1000);
 
-            this._results = {
-                subscribers : this.options.subscribers,
-                published   : this.options.publish,
-                received    : received,
-                lost        : (this.options.subscribers * this.options.publish) - received,
-                fullTime    : fullTime,
-                averageTime : received ? fullTime / received : fullTime
-            };
-
-            this.emit('ready');
-
-            if (benchmark.cluster.isMaster) {
-                benchmark.redis.del([this._redisKeyTime, this._redisKeyCount]);
-            }
-        }.bind(this));
-    }.bind(this));
+	client.on('error', function() {
+		client.disconnect();
+		setTimeout(self.__handleFinish.bind(self), 5000);
+	})
 };
+
+Step.prototype.__checkEveryoneSubscribed = function() {
+	if (this.__errorCount + this.__connectionCount === this.__subscribersCount) {
+		this.__step.emit('wait');
+		this.__startPublish();
+	}
+}
+
+Step.prototype.__handleReadyToRun = function() {
+	var restCount = this.__subscribersCount;
+	var threatSubscribersCount = Math.ceil(this.__subscribersCount / this.__threadCount);
+
+	var threats = [];
+	var type = __dirname + '/step_threat';
+	while (restCount > threatSubscribersCount) {
+		threats.push({
+			'type': type,
+			'clientsCount': threatSubscribersCount,
+			'masterName': this.__step.name,
+			'transport': this.__transport
+		});
+
+		restCount -= threatSubscribersCount;
+	}
+
+	threats.push({
+		'type': type,
+		'clientsCount': restCount,
+		'masterName': this.__step.name,
+		'transport': this.__transport
+	});
+
+	this.__step.spawn(threats);
+};
+
+Step.prototype.__handleSubscribe = function() {
+	this.__connectionCount++;
+	this.__checkEveryoneSubscribed();
+};
+
+Step.prototype.__handleMessage = function(message) {
+	this.__messageCount++;
+	this.__averageTime = ((this.__messageCount - 1) * this.__averageTime + Date.now() - message) / this.__messageCount;
+};
+
+Step.prototype.__handleSubscribeError = function() {
+	this.__errorCount++;
+	this.__checkEveryoneSubscribed();
+};
+
+Step.prototype.__handleMessageError = function() {
+	this.__errorCount++;
+};
+
+Step.prototype.__handleFinish = function() {
+	this.__step.emit('kill');
+
+	this.__result = {
+		'errors': this.__errorCount,
+		'messages': this.__messageCount,
+		'lost': (this.__subscribersCount * this.__publishCount - this.__messageCount),
+		'time': Math.round(this.__averageTime)
+	};
+
+	console.log(this.__result);
+	
+	this.emit('finish');
+};
+
+
+module.exports = Step;
