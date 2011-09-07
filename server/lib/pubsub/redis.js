@@ -7,8 +7,6 @@ RedisPubSub = module.exports = function(options) {
         port    : 6379,
         options : {}
     }, options);
-	
-	console.log(options.host);
 
     this.clientPublish   = redis.createClient(this.options.port, this.options.host, this.options.options);
     this.clientSubscribe = redis.createClient(this.options.port, this.options.host, this.options.options);
