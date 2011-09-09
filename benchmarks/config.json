@@ -9,7 +9,12 @@
 	            { "subscribers" : 8 },
 	            { "subscribers" : 16 },
 	            { "subscribers" : 32 },
-	            { "subscribers" : 64 }
+	            { "subscribers" : 128 },
+	            { "subscribers" : 256 },
+	            { "subscribers" : 512 },
+	            { "subscribers" : 1024 },
+	            { "subscribers" : 2048 },
+	            { "subscribers" : 4096 }
             ]
         }
     }

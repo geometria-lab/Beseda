@@ -355,8 +355,6 @@ Hook.prototype.spawn = function (hooks, callback) {
   types = {};
   
   if (typeof hookio.forever === 'undefined') {
-
-	  console.log(require('../../../forever/lib/forever.js'))
     //
     // Attempt to `require('forever')` and if it is available
     // then spawn all 

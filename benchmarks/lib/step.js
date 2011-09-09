@@ -74,9 +74,6 @@ Step.prototype.__startPublish = function() {
 	}
 
 	this.__client.once('error', function() {
-		console.log('error ' + self.__subscribersCount);
-		console.log('disconnect ' + self.__subscribersCount);
-
 		setTimeout(self.__handleFinish.bind(self), 1000);
 	});
 
@@ -141,8 +138,6 @@ Step.prototype.__handleMessageError = function() {
 };
 
 Step.prototype.__handleFinish = function() {
-	console.log('finish');
-	
 	this.__step.emit('kill');
 
 	this.__client.removeAllListeners('error');
@@ -163,8 +158,6 @@ Step.prototype.__handleFinish = function() {
 
 	var i = 0
 	for (var name in this.__step.children) {
-		console.log(this.__step.children);
-		
 		this.__step.children[name].monitor.once('exit', function() {
 			i++;
 
