@@ -3,5 +3,5 @@
 .project
 .settings
 v8.log
-node_modules
+
 npm-debug.log
