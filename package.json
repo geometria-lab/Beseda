@@ -23,7 +23,7 @@
         "cli"              : ">=0.3.3",
         "websocket-client" : "*"
     },
-    "engines" : [ "node >=0.4" ],
+    "engines" : [ "node >=0.4.11" ],
     "licenses" : [{
         "type" : "BSD",
         "url"  : "http://www.opensource.org/licenses/bsd-license.php"
