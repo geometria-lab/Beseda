@@ -88,6 +88,10 @@ Transport.prototype._handleError = function(error) {
 	this.__pendingMessages = {};
 };
 
+Transport.prototype._handleDisconnect = function() {
+    this._emitter.emit('disconnect');
+};
+
 Transport.prototype._decodeData = function(data) {
 	return JSON.parse(data);
 }

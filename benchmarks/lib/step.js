@@ -21,9 +21,13 @@ var Step = function(options, defaults) {
 
 	this.__result = null;
 	this.__options = options;
+
+	this.__client = null;
 };
 
 util.inherits(Step, events.EventEmitter);
+
+Step.LAST_ID = 0;
 
 Step.prototype.getResults = function() {
 	return this.__result;
@@ -35,7 +39,7 @@ Step.prototype.getOptions = function() {
 
 Step.prototype.run = function() {
 	this.__step = new StepThreat();
-	this.__step.name = Math.random().toString().substr(3);
+	this.__step.name = Date.now().toString() + Step.LAST_ID++;
 	
 	this.__step.on('hook::ready', this.__handleReadyToRun.bind(this));
 
@@ -49,28 +53,34 @@ Step.prototype.run = function() {
 };
 
 Step.prototype.__startPublish = function() {
-	var self = this;
-	var client = new BesedaClient({'transport': this.__transport});
+	this.__client = new BesedaClient({'transport': this.__transport});
 
+	var self = this;
 	var i = 0;
 
 	function publish() {
-		client.publish('/hello' + self.__step.name, Date.now().toString(), function() {
-			if (++i < self.__publishCount) {
-				setTimeout(publish, 100);
-			} else {
-				client.disconnect();
-				setTimeout(self.__handleFinish.bind(self), 5000);
+		self.__client.publish(
+			'/hello' + self.__step.name, Date.now().toString(),
+			function() {
+				i++;
+
+				if (i < self.__publishCount) {
+					publish();
+				} else {
+					setTimeout(self.__handleFinish.bind(self), 20000);
+				}
 			}
-		});
+		);
 	}
 
-	setTimeout(publish, 1000);
+	this.__client.once('error', function() {
+		console.log('error ' + self.__subscribersCount);
+		console.log('disconnect ' + self.__subscribersCount);
 
-	client.on('error', function() {
-		client.disconnect();
-		setTimeout(self.__handleFinish.bind(self), 5000);
-	})
+		setTimeout(self.__handleFinish.bind(self), 1000);
+	});
+
+	publish();
 };
 
 Step.prototype.__checkEveryoneSubscribed = function() {
@@ -91,6 +101,7 @@ Step.prototype.__handleReadyToRun = function() {
 			'type': type,
 			'clientsCount': threatSubscribersCount,
 			'masterName': this.__step.name,
+			'name': Date.now().toString() + Step.LAST_ID++,
 			'transport': this.__transport
 		});
 
@@ -101,6 +112,7 @@ Step.prototype.__handleReadyToRun = function() {
 		'type': type,
 		'clientsCount': restCount,
 		'masterName': this.__step.name,
+		'name': Date.now().toString() + Step.LAST_ID++,
 		'transport': this.__transport
 	});
 
@@ -110,6 +122,8 @@ Step.prototype.__handleReadyToRun = function() {
 Step.prototype.__handleSubscribe = function() {
 	this.__connectionCount++;
 	this.__checkEveryoneSubscribed();
+
+
 };
 
 Step.prototype.__handleMessage = function(message) {
@@ -127,19 +141,42 @@ Step.prototype.__handleMessageError = function() {
 };
 
 Step.prototype.__handleFinish = function() {
+	console.log('finish');
+	
 	this.__step.emit('kill');
+
+	this.__client.removeAllListeners('error');
+	this.__client.disconnect();
 
 	this.__result = {
 		'errors': this.__errorCount,
 		'messages': this.__messageCount,
-		'lost': (this.__subscribersCount * this.__publishCount - this.__messageCount),
+		'lost': this.__subscribersCount * this.__publishCount - this.__messageCount,
 		'time': Math.round(this.__averageTime)
 	};
 
 	console.log(this.__result);
-	
-	this.emit('finish');
+
+	this.__client.disconnect();
+
+	var self = this;
+
+	var i = 0
+	for (var name in this.__step.children) {
+		this.__step.children[name].monitor.once('exit', function() {
+			i++;
+
+			if (i === self.__threadCount) {
+				self.emit('finish');
+			}
+		});
+
+		this.__step.once(name + '::suicide', this.__handleSuicide.bind(this));
+	}
 };
 
+Step.prototype.__handleSuicide = function(name) {
+	this.__step.children[name].monitor.stop();
+};
 
 module.exports = Step;

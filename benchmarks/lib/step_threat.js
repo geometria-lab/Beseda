@@ -10,15 +10,17 @@ var StepThreat = function(options) {
 	this.__masterName = '';
 	this.__transport = '';
 
+	this.__isBlocked = false;
+
 	if (options) {
 		this.__transport = options.transport;
 		this.__masterName = options.masterName;
 		this.__makeClients(options.clientsCount);
 
-		this.on('hook::ready', this.__handleReady.bind(this));
+		this.once('hook::ready', this.__handleReady.bind(this));
 
-		this.on(options.masterName + '::wait', this.__handleWait.bind(this));
-		this.on(options.masterName + '::kill', this.__handleKill.bind(this));
+		this.once(options.masterName + '::wait', this.__handleWait.bind(this));
+		this.once(options.masterName + '::kill', this.__handleKill.bind(this));
 	}
 };
 
@@ -35,11 +37,13 @@ StepThreat.prototype.__handleReady = function() {
 
 	for (var i = 0; i < this.__clents.length; i++) {
 		this.__clents[i].subscribe('/hello' + this.__masterName, function() {
-			self.emit('subscribed');
+			if (!self.__isBlocked)
+				self.emit('subscribed');
 		});
 
-		this.__clents[i].once('error', function() {
-			self.emit('subscribeError');
+		this.__clents[i].on('error', function() {
+			if (!self.__isBlocked)
+				self.emit('subscribeError');
 		});
 	}
 };
@@ -49,19 +53,19 @@ StepThreat.prototype.__handleWait = function() {
 
 	for (var i = 0; i < this.__clents.length; i++) {
 		this.__clents[i].removeAllListeners('error');
-		this.__clents[i].once('error', function() {
-			self.emit('messageError');
+		this.__clents[i].on('error', function() {
+			if (!self.__isBlocked)
+				self.emit('messageError');
 		});
 
 		this.__clents[i].on('message', function(channel, message) {
-			self.emit('message', message);
+			if (!self.__isBlocked)
+				self.emit('message', message);
 		});
 	}
 };
 
 StepThreat.prototype.__handleKill = function() {
-	var self = this;
-
 	for (var i = 0; i < this.__clents.length; i++) {
 		this.__clents[i].removeAllListeners('error');
 		this.__clents[i].removeAllListeners('message');
@@ -69,6 +73,9 @@ StepThreat.prototype.__handleKill = function() {
 	}
 	
 	this.__clents = [];
+	this.__isBlocked = true;
+
+	this.emit('suicide', this.name);
 };
 
 module.exports.StepThreat = StepThreat;

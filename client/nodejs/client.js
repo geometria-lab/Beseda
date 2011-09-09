@@ -9,7 +9,7 @@ module.exports = Client = function(options) {
     process.EventEmitter.call(this);
 
     this.options = utils.merge({
-        host : '127.0.0.1',
+        host : 'localhost',
         port : 4000,
         ssl  : false,
 

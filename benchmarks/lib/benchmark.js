@@ -13,6 +13,7 @@ var Benchmark = function(options) {
 	this.__handleFinish = this.__handleFinish.bind(this);
 
 	if (options) {
+
 		for (var name in options.benchmarks) {
 			var bench = new Benchmark();
 			bench.name = name;
@@ -22,7 +23,7 @@ var Benchmark = function(options) {
 			for (var i in steps) {
 				bench.add(new Step(steps[i], defaults));
 			}
-
+			
 			this.add(bench);
 		}
 	}
@@ -69,7 +70,7 @@ Benchmark.prototype.add = function(child) {
 Benchmark.prototype.__runNext = function() {
 	if (this.__currentIndex < this.__children.length) {
 		var oldIndex = this.__currentIndex;
-		
+
 		this.__currentIndex++;
 
 		this.__children[oldIndex].once('finish', this.__handleFinish);

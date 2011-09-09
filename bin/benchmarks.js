@@ -2,23 +2,16 @@
 
 var cli  = require('cli');
 var util = require('util');
-var http = require('http');
 var fs = require('fs');
 var Benchmark = require('../benchmarks/lib/benchmark.js');
 
 cli.parse({
-    host : [ 'h',   'Host', 'ip', '127.0.0.1' ],
-    port : [ 'p',   'Port', 'number', 4000 ],
-    ssl  : [ false, 'SSL',  'boolean', false ],
-
-    pubSub  : [ false, 'Pub/Sub engine', 'string',  'memory' ],
-    monitor : [ 'm',   'Enable monitor', 'boolean', 0 ],
-
-    debug : ['d', 'Display debug information', 'boolean', false]
+    config  : [ 'c',   'Config', 'string' ],
+    results : [ 'r',   'Results', 'string' ]
 }, {});
 
-cli.main(function(args, options) {
-	var config = JSON.parse(fs.readFileSync( 'benchmarks/config.json', 'utf8'));
+cli.main(function(args, option) {
+	var config = JSON.parse(fs.readFileSync(option.config, 'utf8'));
 
 	var benchmark = new Benchmark(config);
 	benchmark.on('finish', function() {
@@ -34,7 +27,7 @@ cli.main(function(args, options) {
 					imgs.join('<br />') +
 					'</body></html>'
 
-		fs.writeFileSync('benchmarks/results.html', html);
+		fs.writeFileSync(option.results, html);
 
 		process.exit();
 	});
@@ -43,13 +36,14 @@ cli.main(function(args, options) {
 });
 
 function handleBenchmark(results, options, name) {
-	var result = [];
+	var result = ['<h2>' + name + '</h2>'];
 
-	var yAxis = {time:[]};
+	var yAxis = { time:[], missing: [] };
 	var xAxis = [];
 
 	for (var i in results) {
 		yAxis.time.push(results[i].time);
+		yAxis.missing.push(results[i].lost);
 	}
 
 	for (var j in options) {
@@ -60,8 +54,6 @@ function handleBenchmark(results, options, name) {
 	}
 
 	for (var key in yAxis) {
-
-		
 		result.push(
 			'<img src="http://chart.googleapis.com/chart?' +
 			'cht=s&' +
