@@ -1,7 +1,7 @@
 var util = require('util');
-var hookio = require('hook.io');
+var hookio = require('../vendor/hook.io/lib/hookio.js');
 
-var BesedaClient = require('./../../client/nodejs');
+var BesedaClient = require('../../client/nodejs');
 
 var StepThreat = function(options) {
 	hookio.Hook.call(this);

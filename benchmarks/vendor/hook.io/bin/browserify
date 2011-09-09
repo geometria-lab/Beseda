@@ -1,0 +1,42 @@
+//
+// A simple CLI tool for helping to browserify /browser/hook-shim.j
+//
+
+// TODO: Update Comments on this page
+
+var browserify = require('browserify'), 
+    fs = require('fs');
+
+var bundle = browserify();
+
+console.log('Generating browser bundle...');
+
+//
+// Use ES5 shim for older browsers
+//
+bundle.use(require('shimify'));
+
+//
+// Require the main node.js entry point for jsonForm
+//
+bundle.require(__dirname + '/../browser/hook-shim.js', { target:"/hook.js"});
+
+//
+// Read in some comments specifically for the browser,
+// we'll append these to the browserified output
+//
+var comments = fs.readFileSync(__dirname + '/../test/fixtures/browserComments.js').toString();
+comments = comments.replace(/{{newDate}}/, new Date());
+comments = comments.replace(/{{newDateUnix}}/, new Date().getTime());
+
+//
+// Output the browser version of hook.io, hook.js
+//
+
+//
+// TODO: Also create a minified bundle using:
+//       filter : require('uglify-js')
+
+fs.writeFileSync(__dirname + '/../browser/hook.js', comments + bundle.bundle());
+
+console.log('Generated: ' + './browser/hook.js');

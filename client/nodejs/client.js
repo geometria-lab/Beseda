@@ -166,3 +166,10 @@ Client.prototype.flushMessageQueue = function() {
 	this._io.send(this._messageQueue);
     this._messageQueue = [];
 };
+/*          { "subscribers" : 128 },
+	            { "subscribers" : 256 },
+	            { "subscribers" : 512 },
+	            { "subscribers" : 1024 },
+	            { "subscribers" : 2048 },
+	            { "subscribers" : 4096 },
+	            { "subscribers" : 8192 }*/

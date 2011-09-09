@@ -1,0 +1,59 @@
+/*
+ * forever-test.js: Tests for forever module
+ *
+ * (C) 2010 and Charlie Robbins
+ * MIT LICENCE
+ *
+ */
+
+var assert = require('assert'),
+    net = require('net'),
+    path = require('path'),
+    sys = require('sys'),
+    vows = require('vows'),
+    forever = require('../lib/forever');
+
+vows.describe('forever/multiple-processes').addBatch({
+  "When using forever": {
+    "and spawning two processes using the same script": {
+      topic: function () {
+        var that = this,
+            script = path.join(__dirname, '..', 'examples', 'server.js');
+            
+        this.child1 = new (forever.Monitor)(script, { 
+          silent: true,
+          maxRestart: 1,
+          options: [ "--port=8080"] 
+        });
+        
+        that.child1.on('start', function () {
+          that.child2 = new (forever.Monitor)(script, { 
+            silent: true,
+            maxRestart: 1,
+            options: [ "--port=8081"] 
+          });
+          
+          that.child2.on('start', function () {
+            forever.startServer(that.child1, that.child2, function (err, server, socketPath) {
+              var socket = new net.Socket();
+              socket.on('data', that.callback.bind(null, null));
+              socket.on('error', that.callback);
+              socket.connect(socketPath);
+            });
+          });
+
+          that.child2.start();
+        });
+
+        that.child1.start();
+      },
+      "should spawn both processes appropriately": function (err, data) {
+        assert.isNull(err);
+        data = JSON.parse(data.toString());
+        assert.length(data.monitors, 2);
+        this.child1.stop();
+        this.child2.stop();
+      }
+    }
+  },
+}).export(module);

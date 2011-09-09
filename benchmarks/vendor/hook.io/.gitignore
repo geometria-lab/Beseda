@@ -1,0 +1,7 @@
+*.DS_Store
+*.swp
+tags
+node_modules/
+node_modules/*
+npm-debug.log
+test/config.json
