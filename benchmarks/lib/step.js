@@ -163,6 +163,8 @@ Step.prototype.__handleFinish = function() {
 
 	var i = 0
 	for (var name in this.__step.children) {
+		console.log(this.__step.children);
+		
 		this.__step.children[name].monitor.once('exit', function() {
 			i++;
 
