@@ -5,8 +5,8 @@ Version 0.1.11
 ---
 September 14, 2011
 
-* Add bencmarks script
-* Use hook.io and forever to shawn child process (in bencmarks)
+* Add bencmarks suite
+* Use hook.io and forever to spawn child process (in bencmarks)
 
 Version 0.0.10
 ---
