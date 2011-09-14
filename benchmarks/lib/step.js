@@ -35,6 +35,7 @@ Step.prototype.getResults = function() {
 };
 
 Step.prototype.getOptions = function() {
+	this.__options.publish = this.__publishCount
 	return this.__options;
 };
 
@@ -68,7 +69,7 @@ Step.prototype.__startPublish = function() {
 				if (i < self.__publishCount) {
 					publish();
 				} else {
-					setTimeout(self.__handleFinish.bind(self), 20000);
+					setTimeout(self.__handleFinish.bind(self), 2000);
 				}
 			}
 		);
@@ -152,12 +153,13 @@ Step.prototype.__handleFinish = function() {
 	};
 
 	var table = new Table({
-		colWidths: [15, 15, 15, 15],
+		colWidths: [14, 14, 14, 14, 14],
 		colAligns: 'middle'
 	});
 
 	table.push([
 		this.__options.subscribers,
+		this.__publishCount,
 		this.__result.time,
 		this.__result.lost,
 		this.__result.errors

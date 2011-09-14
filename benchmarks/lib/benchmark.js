@@ -29,8 +29,8 @@ var Benchmark = function(options) {
 		}
 
 		var table = new Table({
-			head: ['subscribers', 'time', 'lost', 'errors'],
-			colWidths: [15, 15, 15, 15],
+			head: ['subscribers', 'publish', 'time', 'lost', 'errors'],
+			colWidths: [14, 14, 14, 14, 14],
 			colAligns: 'center'
 		});
 
