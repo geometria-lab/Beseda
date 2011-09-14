@@ -1,18 +1,18 @@
-var beseda = {};
-beseda.utils = {};
-beseda.events = {};
-beseda.transport = {};
-beseda.transport.request = {};
+var BesedaPackage = {};
+BesedaPackage.utils = {};
+BesedaPackage.events = {};
+BesedaPackage.transport = {};
+BesedaPackage.transport.request = {};
 
 /**
  * @constructor
  */
-beseda.events.EventEmitter = function() { };
+BesedaPackage.events.EventEmitter = function() { };
 
-beseda.events.EventEmitter.defaultMaxListeners = 10;
-beseda.events.EventEmitter.isArray = Array.isArray || function(o) { return Object.prototype.toString.call(o) === '[object Array]'; };
+BesedaPackage.events.EventEmitter.defaultMaxListeners = 10;
+BesedaPackage.events.EventEmitter.isArray = Array.isArray || function(o) { return Object.prototype.toString.call(o) === '[object Array]'; };
 
-beseda.events.EventEmitter.prototype.setMaxListeners = function(n) {
+BesedaPackage.events.EventEmitter.prototype.setMaxListeners = function(n) {
     if (!this._events) this._events = {};
     this._events.maxListeners = n;
 };
@@ -22,11 +22,11 @@ beseda.events.EventEmitter.prototype.setMaxListeners = function(n) {
  * @param {string} type
  * @param {... Object} var_args
  */
-beseda.events.EventEmitter.prototype.emit = function(type, var_args) {
+BesedaPackage.events.EventEmitter.prototype.emit = function(type, var_args) {
     // If there is no 'error' event listener then throw.
     if (type === 'error') {
         if (!this._events || !this._events.error ||
-                (beseda.events.EventEmitter.isArray(this._events.error) && !this._events.error.length))
+                (BesedaPackage.events.EventEmitter.isArray(this._events.error) && !this._events.error.length))
         {
             if (arguments[1] instanceof Error) {
                 throw arguments[1]; // Unhandled 'error' event
@@ -59,7 +59,7 @@ beseda.events.EventEmitter.prototype.emit = function(type, var_args) {
         }
         return true;
 
-    } else if (beseda.events.EventEmitter.isArray(handler)) {
+    } else if (BesedaPackage.events.EventEmitter.isArray(handler)) {
         var args = Array.prototype.slice.call(arguments, 1);
 
         var listeners = handler.slice();
@@ -75,7 +75,7 @@ beseda.events.EventEmitter.prototype.emit = function(type, var_args) {
 
 // EventEmitter is defined in src/node_events.cc
 // EventEmitter.prototype.emit() is also defined there.
-beseda.events.EventEmitter.prototype.addListener = function(type, listener) {
+BesedaPackage.events.EventEmitter.prototype.addListener = function(type, listener) {
     if ('function' !== typeof listener) {
         throw new Error('addListener only takes instances of Function');
     }
@@ -89,7 +89,7 @@ beseda.events.EventEmitter.prototype.addListener = function(type, listener) {
     if (!this._events[type]) {
         // Optimize the case of one listener. Don't need the extra array object.
         this._events[type] = listener;
-    } else if (beseda.events.EventEmitter.isArray(this._events[type])) {
+    } else if (BesedaPackage.events.EventEmitter.isArray(this._events[type])) {
 
         // If we've already got an array, just append.
         this._events[type].push(listener);
@@ -100,7 +100,7 @@ beseda.events.EventEmitter.prototype.addListener = function(type, listener) {
             if (this._events.maxListeners !== undefined) {
                 m = this._events.maxListeners;
             } else {
-                m = beseda.events.EventEmitter.defaultMaxListeners;
+                m = BesedaPackage.events.EventEmitter.defaultMaxListeners;
             }
 
             if (m && m > 0 && this._events[type].length > m) {
@@ -119,10 +119,10 @@ beseda.events.EventEmitter.prototype.addListener = function(type, listener) {
     return this;
 };
 
-beseda.events.EventEmitter.prototype.on =
-	beseda.events.EventEmitter.prototype.addListener;
+BesedaPackage.events.EventEmitter.prototype.on =
+	BesedaPackage.events.EventEmitter.prototype.addListener;
 
-beseda.events.EventEmitter.prototype.once = function(type, listener) {
+BesedaPackage.events.EventEmitter.prototype.once = function(type, listener) {
     if ('function' !== typeof listener) {
         throw new Error('.once only takes instances of Function');
     }
@@ -139,7 +139,7 @@ beseda.events.EventEmitter.prototype.once = function(type, listener) {
     return this;
 };
 
-beseda.events.EventEmitter.prototype.removeListener = function(type, listener) {
+BesedaPackage.events.EventEmitter.prototype.removeListener = function(type, listener) {
     if ('function' !== typeof listener) {
         throw new Error('removeListener only takes instances of Function');
     }
@@ -149,7 +149,7 @@ beseda.events.EventEmitter.prototype.removeListener = function(type, listener) {
 
     var list = this._events[type];
 
-    if (beseda.events.EventEmitter.isArray(list)) {
+    if (BesedaPackage.events.EventEmitter.isArray(list)) {
         var position = -1;
         for (var i = 0, length = list.length; i < length; i++) {
             if (list[i] === listener ||
@@ -173,7 +173,7 @@ beseda.events.EventEmitter.prototype.removeListener = function(type, listener) {
     return this;
 };
 
-beseda.events.EventEmitter.prototype.removeAllListeners = function(type) {
+BesedaPackage.events.EventEmitter.prototype.removeAllListeners = function(type) {
     if (arguments.length === 0) {
         this._events = {};
         return this;
@@ -184,10 +184,10 @@ beseda.events.EventEmitter.prototype.removeAllListeners = function(type) {
     return this;
 };
 
-beseda.events.EventEmitter.prototype.listeners = function(type) {
+BesedaPackage.events.EventEmitter.prototype.listeners = function(type) {
     if (!this._events) this._events = {};
     if (!this._events[type]) this._events[type] = [];
-    if (!beseda.events.EventEmitter.isArray(this._events[type])) {
+    if (!BesedaPackage.events.EventEmitter.isArray(this._events[type])) {
         this._events[type] = [this._events[type]];
     }
     return this._events[type];

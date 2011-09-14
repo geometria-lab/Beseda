@@ -1,12 +1,12 @@
 
 /**
  * @constructor
- * @extends {beseda.events.EventEmitter}
+ * @extends {BesedaPackage.events.EventEmitter}
  */
-beseda.Client = function(options) {
-    beseda.events.EventEmitter.prototype.constructor.call(this);
+BesedaPackage.Client = function(options) {
+    BesedaPackage.events.EventEmitter.prototype.constructor.call(this);
 
-    this.__options = beseda.utils.mergeObjects({
+    this.__options = BesedaPackage.utils.mergeObjects({
         host : document.location.hostname,
         port : 4000,
         ssl  : false,
@@ -16,26 +16,26 @@ beseda.Client = function(options) {
 
 	this._io = null;
 
-    this.__status = beseda.Client.__statuses.DISCONNECTED;
+    this.__status = BesedaPackage.Client.__statuses.DISCONNECTED;
     this.__messageQueue = [];
 	this.__channels = [];
 
-    this.router   = new beseda.Router(this);
+    this.router   = new BesedaPackage.Router(this);
     this.clientId = null;
 
 	this._init();
 };
 
-beseda.utils.inherits(beseda.Client, beseda.events.EventEmitter);
+BesedaPackage.utils.inherits(BesedaPackage.Client, BesedaPackage.events.EventEmitter);
 
-beseda.Client.__statuses = {
+BesedaPackage.Client.__statuses = {
     DISCONNECTED : 0,
     CONNECTING   : 1,
     CONNECTED    : 2
 };
 
-beseda.Client.prototype._init = function() {
-	this._io = new beseda.IO(this.__options);
+BesedaPackage.Client.prototype._init = function() {
+	this._io = new BesedaPackage.IO(this.__options);
 
     var self = this;
     this._io.addListener('message', function(message) {
@@ -61,19 +61,19 @@ beseda.Client.prototype._init = function() {
     };
 };
 
-beseda.Client.prototype.isConnected = function() {
-    return this.__status == beseda.Client.__statuses.CONNECTED;
+BesedaPackage.Client.prototype.isConnected = function() {
+    return this.__status == BesedaPackage.Client.__statuses.CONNECTED;
 };
 
-beseda.Client.prototype.isDisconnected = function() {
-    return this.__status == beseda.Client.__statuses.DISCONNECTED;
+BesedaPackage.Client.prototype.isDisconnected = function() {
+    return this.__status == BesedaPackage.Client.__statuses.DISCONNECTED;
 };
 
-beseda.Client.prototype.isConnecting = function() {
-    return this.__status == beseda.Client.__statuses.CONNECTING;
+BesedaPackage.Client.prototype.isConnecting = function() {
+    return this.__status == BesedaPackage.Client.__statuses.CONNECTING;
 };
 
-beseda.Client.prototype.subscribe = function(channel, callback, additionalMessage) {
+BesedaPackage.Client.prototype.subscribe = function(channel, callback, additionalMessage) {
     if (this.isDisconnected()) {
         this.connect();
     }
@@ -95,7 +95,7 @@ beseda.Client.prototype.subscribe = function(channel, callback, additionalMessag
     }
 };
 
-beseda.Client.prototype.unsubscribe = function(channel, callback, additionalMessage) {
+BesedaPackage.Client.prototype.unsubscribe = function(channel, callback, additionalMessage) {
     if (this.isDisconnected()) {
         this.connect();
     }
@@ -118,7 +118,7 @@ beseda.Client.prototype.unsubscribe = function(channel, callback, additionalMess
 };
 
 
-beseda.Client.prototype.publish = function(channel, message, callback) {
+BesedaPackage.Client.prototype.publish = function(channel, message, callback) {
     if (this.isDisconnected()) {
         this.connect();
     }
@@ -137,10 +137,10 @@ beseda.Client.prototype.publish = function(channel, message, callback) {
  * @param {boolean=} ssl
  * @param {Object=} message
  */
-beseda.Client.prototype.connect = function(host, port, ssl, message) {
+BesedaPackage.Client.prototype.connect = function(host, port, ssl, message) {
 	//TODO: Do somethinng when connecting
     if (!this.isConnected()) {
-		this.__status = beseda.Client.__statuses.CONNECTING;
+		this.__status = BesedaPackage.Client.__statuses.CONNECTING;
 		this.__firstMessage = message;
 
 	    //TODO: Nothing happen if another connet listener appear
@@ -157,7 +157,7 @@ beseda.Client.prototype.connect = function(host, port, ssl, message) {
     }
 };
 
-beseda.Client.prototype.disconnect = function() {
+BesedaPackage.Client.prototype.disconnect = function() {
     this._io.disconnect();
 
 	//TODO: Handle with it
@@ -167,19 +167,19 @@ beseda.Client.prototype.disconnect = function() {
 	this.emit('disconnect');
 };
 
-beseda.Client.prototype.applyConnection = function() {
-    this.__status = beseda.Client.__statuses.CONNECTED;
+BesedaPackage.Client.prototype.applyConnection = function() {
+    this.__status = BesedaPackage.Client.__statuses.CONNECTED;
     this.__flushMessageQueue();
 };
 
-beseda.Client.prototype.__destroy = function() {
-	this.__status = beseda.Client.__statuses.DISCONNECTED;
+BesedaPackage.Client.prototype.__destroy = function() {
+	this.__status = BesedaPackage.Client.__statuses.DISCONNECTED;
 
 	this.clientId = null;
 	this.__messageQueue = [];
 };
 
-beseda.Client.prototype.__sendMessage = function(channel, message) {
+BesedaPackage.Client.prototype.__sendMessage = function(channel, message) {
     if (!this.isDisconnected()) {
         message = this.__createMessage(channel, message);
 
@@ -193,10 +193,10 @@ beseda.Client.prototype.__sendMessage = function(channel, message) {
     }
 };
 
-beseda.Client.prototype.__createMessage = function(channel, message) {
+BesedaPackage.Client.prototype.__createMessage = function(channel, message) {
     message = message || {};
 
-    message.id       = beseda.utils.uid();
+    message.id       = BesedaPackage.utils.uid();
     message.channel  = channel;
     message.clientId = this.clientId;
 
@@ -204,7 +204,7 @@ beseda.Client.prototype.__createMessage = function(channel, message) {
 };
 
 
-beseda.Client.prototype.__flushMessageQueue = function() {
+BesedaPackage.Client.prototype.__flushMessageQueue = function() {
     for (var i = 0; i < this.__messageQueue.length; i++) {
         this.__messageQueue[i].clientId = this.clientId;
     }
@@ -213,4 +213,4 @@ beseda.Client.prototype.__flushMessageQueue = function() {
     this.__messageQueue = [];
 };
 
-var Beseda = beseda.Client;
+var Beseda = BesedaPackage.Client;

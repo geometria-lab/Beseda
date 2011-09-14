@@ -1,19 +1,23 @@
 MemoryPubSub = module.exports = function() {
-    this.subscriptions = {};
+    this._subscriptions = {};
 };
 
-MemoryPubSub.prototype.subscribe = function(channel, callback) {
-    this.subscriptions[channel] = callback;
+MemoryPubSub.prototype.setSubscriptionManager = function(subscriptionManager) {
+	this._subscriptionManager = subscriptionManager;
+};
+
+MemoryPubSub.prototype.subscribe = function(channel) {
+    this._subscriptions[channel] = true;
 };
 
 MemoryPubSub.prototype.unsubscribe = function(channel) {
-    delete this.subscriptions[channel];
+    delete this._subscriptions[channel];
 };
 
 MemoryPubSub.prototype.publish = function(channel, message) {
     var subscription = this.subscriptions[channel];
-    
+
     if (subscription) {
-        subscription(channel, message);
+		this._subscriptionManager.deliverMessage(channel, message);
     }
 };

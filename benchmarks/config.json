@@ -1,7 +1,6 @@
 {
     "benchmarks" : {
         "Long Polling" : {
-	        "intervalBeetweenStep": 20000,
 	        "defaults" : { "transport" : "longPolling", "publish": 10 },
             "steps" : [
 	            { "subscribers" : 2 },

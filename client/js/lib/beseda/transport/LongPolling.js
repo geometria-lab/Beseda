@@ -1,9 +1,9 @@
 /**
  * @constructor
- * @extends beseda.Transport
+ * @extends BesedaPackage.Transport
  */
-beseda.transport.LongPolling = function() {
-    beseda.Transport.prototype.constructor.call(this);
+BesedaPackage.transport.LongPolling = function() {
+    BesedaPackage.Transport.prototype.constructor.call(this);
 
     this._typeSuffix = 'longPolling';
 
@@ -24,13 +24,13 @@ beseda.transport.LongPolling = function() {
 	this._initListeners();
 };
 
-beseda.utils.inherits(beseda.transport.LongPolling, beseda.Transport);
+BesedaPackage.utils.inherits(BesedaPackage.transport.LongPolling, BesedaPackage.Transport);
 
-beseda.transport.LongPolling.isAvailable = function(options) {
+BesedaPackage.transport.LongPolling.isAvailable = function(options) {
     return document.location.hostname === options.host && (document.location.port || 80) == options.port;
 };
 
-beseda.transport.LongPolling.prototype.__initClosuredHandlers = function() {
+BesedaPackage.transport.LongPolling.prototype.__initClosuredHandlers = function() {
 	var self = this;
 
     this.__handleOpenClosure = function(data) {
@@ -46,15 +46,15 @@ beseda.transport.LongPolling.prototype.__initClosuredHandlers = function() {
     };
 };
 
-beseda.transport.LongPolling.prototype._initRequests = function() {
+BesedaPackage.transport.LongPolling.prototype._initRequests = function() {
 	// TODO: Use only two requests: send and data
-    this._openRequest  = new beseda.transport.request.XHRRequest('GET');
-    this._dataRequest  = new beseda.transport.request.XHRRequest('GET');
-    this._sendRequest  = new beseda.transport.request.XHRRequest('PUT');
-    this._closeRequest = new beseda.transport.request.XHRRequest('DELETE');
+    this._openRequest  = new BesedaPackage.transport.request.XHRRequest('GET');
+    this._dataRequest  = new BesedaPackage.transport.request.XHRRequest('GET');
+    this._sendRequest  = new BesedaPackage.transport.request.XHRRequest('PUT');
+    this._closeRequest = new BesedaPackage.transport.request.XHRRequest('DELETE');
 };
 
-beseda.transport.LongPolling.prototype._initListeners = function() {
+BesedaPackage.transport.LongPolling.prototype._initListeners = function() {
 	this._openRequest.addListener('ready', this.__handleOpenClosure);
 	this._openRequest.addListener('error', this.__handleCloseClosure);
 
@@ -62,14 +62,14 @@ beseda.transport.LongPolling.prototype._initListeners = function() {
 	this._dataRequest.addListener('error', this.__handleCloseClosure);
 }
 
-beseda.transport.LongPolling.prototype._initURLs = function(id) {
+BesedaPackage.transport.LongPolling.prototype._initURLs = function(id) {
 	this._sendRequest.url =
     this._dataRequest.url =
     this._closeRequest.url =
         this._url + "/" + this._typeSuffix + "/" + id;
 };
 
-beseda.transport.LongPolling.prototype.connect = function(host, port, ssl) {
+BesedaPackage.transport.LongPolling.prototype.connect = function(host, port, ssl) {
     this._url = 'http' + (ssl ? 's' : '') + '://' +
 	            host + (port ? ':' + port : '') +
 	            '/beseda/io';
@@ -77,7 +77,7 @@ beseda.transport.LongPolling.prototype.connect = function(host, port, ssl) {
     this._openRequest.send(this._url + "/" + this._typeSuffix);
 };
 
-beseda.transport.LongPolling.prototype._handleOpen = function(connectionData) {
+BesedaPackage.transport.LongPolling.prototype._handleOpen = function(connectionData) {
 	/**
 	 * @type {{ connectionId: string }}
 	 */
@@ -87,28 +87,28 @@ beseda.transport.LongPolling.prototype._handleOpen = function(connectionData) {
 
 	this._initURLs(data.connectionId);
 
-    beseda.Transport.prototype._handleConnection.call(this, data.connectionId);
+    BesedaPackage.Transport.prototype._handleConnection.call(this, data.connectionId);
 
     this.__poll();
 };
 
-beseda.transport.LongPolling.prototype._doSend = function(data) {
+BesedaPackage.transport.LongPolling.prototype._doSend = function(data) {
 	this._sendRequest.data = data;
     this._sendRequest.send();
 };
 
-beseda.transport.LongPolling.prototype.disconnect = function() {
+BesedaPackage.transport.LongPolling.prototype.disconnect = function() {
     this._closeRequest.send();
 	this._isConnected = false;
 };
 
-beseda.transport.LongPolling.prototype._handleData = function(data) {
-    beseda.Transport.prototype._handleMessages.call(this, this._decodeData(data));
+BesedaPackage.transport.LongPolling.prototype._handleData = function(data) {
+    BesedaPackage.Transport.prototype._handleMessages.call(this, this._decodeData(data));
 
     this.__poll();
 };
 
-beseda.transport.LongPolling.prototype.__poll = function() {
+BesedaPackage.transport.LongPolling.prototype.__poll = function() {
     if (this._isConnected) {
         this._dataRequest.send();
     }

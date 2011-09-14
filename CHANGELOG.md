@@ -1,13 +1,29 @@
 Changelog
 ======
 
+Version 0.1.11
+---
+September 14, 2011
+
+* Add bencmarks script
+* Use hook.io and forever to shawn child process (in bencmarks)
+
+Version 0.0.10
+---
+July 28, 2011
+
+* Fix pubSub option
+* Refactor redis and memory pubSub
+* Change redis pubSub from 'redis-node' to 'redis' package 
+
 Version 0.0.9
 ---
-Unreleased
+July 20, 2011
 
 * Benchmarks suite
 * Fix listen
-* Return form dispatch if invalid message format
+* Return from dispatch if invalid message format
+* http.Server.address() sometimes throws exception
 
 Version 0.0.8
 ---

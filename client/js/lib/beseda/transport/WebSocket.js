@@ -1,9 +1,9 @@
 /**
  * @constructor
- * @extends beseda.Transport
+ * @extends BesedaPackage.Transport
  */
-beseda.transport.WebSocket = function() {
-	beseda.Transport.prototype.constructor.call(this);
+BesedaPackage.transport.WebSocket = function() {
+	BesedaPackage.Transport.prototype.constructor.call(this);
 
 	this._typeSuffix = 'webSocket';
 
@@ -16,13 +16,13 @@ beseda.transport.WebSocket = function() {
 	this.__initClosuredHandlers();
 };
 
-beseda.utils.inherits(beseda.transport.WebSocket, beseda.Transport);
+BesedaPackage.utils.inherits(BesedaPackage.transport.WebSocket, BesedaPackage.Transport);
 
-beseda.transport.WebSocket.isAvailable = function(options) {
+BesedaPackage.transport.WebSocket.isAvailable = function(options) {
 	return  !!window.WebSocket;
 };
 
-beseda.transport.WebSocket.prototype.__initClosuredHandlers = function() {
+BesedaPackage.transport.WebSocket.prototype.__initClosuredHandlers = function() {
 	var self = this;
 
 	this.__handleOpenClosure = function(event) {
@@ -38,7 +38,7 @@ beseda.transport.WebSocket.prototype.__initClosuredHandlers = function() {
 	};
 };
 
-beseda.transport.WebSocket.prototype.connect = function(host, port, ssl) {
+BesedaPackage.transport.WebSocket.prototype.connect = function(host, port, ssl) {
 	if (!this._isConnected) {
 		this.__ws = new WebSocket(
 			'ws' + (ssl ? 's' : '') + '://' +
@@ -54,20 +54,20 @@ beseda.transport.WebSocket.prototype.connect = function(host, port, ssl) {
 	}
 };
 
-beseda.transport.WebSocket.prototype.disconnect = function() {
+BesedaPackage.transport.WebSocket.prototype.disconnect = function() {
 	this.__ws['close']();
 	this._isConnected = false;
 };
 
-beseda.transport.WebSocket.prototype._doSend = function(data) {
+BesedaPackage.transport.WebSocket.prototype._doSend = function(data) {
 	this.__ws['send'](data);
 };
 
-beseda.transport.WebSocket.prototype.__handleOpen = function(event) {
+BesedaPackage.transport.WebSocket.prototype.__handleOpen = function(event) {
 	this._isConnected = true;
 };
 
-beseda.transport.WebSocket.prototype.__handleData = function(event) {
+BesedaPackage.transport.WebSocket.prototype.__handleData = function(event) {
 	/**
 	 * @type {{ connectionId: string }}
 	 */
@@ -76,13 +76,13 @@ beseda.transport.WebSocket.prototype.__handleData = function(event) {
 	if (!this.__handshaked) {
 		this.__handshaked = true;
 
-		beseda.Transport.prototype._handleConnection.call(this, data.connectionId);
+		BesedaPackage.Transport.prototype._handleConnection.call(this, data.connectionId);
 	} else {
-		beseda.Transport.prototype._handleMessages.call(this, data);
+		BesedaPackage.Transport.prototype._handleMessages.call(this, data);
 	}
 };
 
-beseda.transport.WebSocket.prototype.__handleClose = function(event) {
+BesedaPackage.transport.WebSocket.prototype.__handleClose = function(event) {
 	this._handleError(event);
 	this.disconnect();
 };
