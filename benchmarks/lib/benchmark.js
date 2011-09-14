@@ -1,6 +1,7 @@
 var events = require('events');
 var util = require('util');
 var Step = require('./step.js');
+var Table = require('./cli-table');
 
 var Benchmark = function(options) {
 	events.EventEmitter.call(this);
@@ -26,6 +27,14 @@ var Benchmark = function(options) {
 			
 			this.add(bench);
 		}
+
+		var table = new Table({
+			head: ['subscribers', 'time', 'lost', 'errors'],
+			colWidths: [15, 15, 15, 15],
+			colAligns: 'center'
+		});
+
+		console.log(table.toString());
 	}
 };
 

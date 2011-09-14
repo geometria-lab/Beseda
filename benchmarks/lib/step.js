@@ -1,6 +1,7 @@
 var events = require('events');
 var util = require('util');
 
+var Table = require('./cli-table');
 var StepThreat = require('./step_threat').StepThreat;
 var BesedaClient = require('./../../client/nodejs');
 
@@ -150,8 +151,20 @@ Step.prototype.__handleFinish = function() {
 		'time': Math.round(this.__averageTime)
 	};
 
-	console.log(this.__result);
+	var table = new Table({
+		colWidths: [15, 15, 15, 15],
+		colAligns: 'middle'
+	});
 
+	table.push([
+		this.__options.subscribers,
+		this.__result.time,
+		this.__result.lost,
+		this.__result.errors
+	]);
+
+	console.log(table.toString());
+	
 	this.__client.disconnect();
 
 	var self = this;
