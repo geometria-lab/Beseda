@@ -182,8 +182,7 @@ Monitor.prototype.start = function (restart) {
 
   child.on('exit', function (code) {
     var spinning = Date.now() - self.ctime < self.minUptime;
-    self.warn('Forever detected script exited with code: ' + code);
-
+	  
     function letChildDie() {
       self.running = false;
       self.forceStop = false;
