@@ -7,7 +7,7 @@ var Benchmark = require('../benchmarks/lib/benchmark.js');
 
 cli.parse({
     config  : [ 'c',   'Benchmarks config file', 'string' ],
-    results : [ 'r',   'Print results to HTML file', 'string' ]
+    results : [ 'r',   'Save results to HTML file', 'string' ]
 });
 
 cli.setUsage('benchmarks [OPTIONS]');

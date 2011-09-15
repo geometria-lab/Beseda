@@ -3,8 +3,15 @@
         "Long Polling" : {
 	        "defaults" : { "transport" : "longPolling", "publish": 10 },
             "steps" : [
-	            { "subscribers" : 2 },
-	            { "subscribers" : 4 },
+	            { "subscribers" : 8 },
+	            { "subscribers" : 16 },
+	            { "subscribers" : 32 },
+	            { "subscribers" : 128 }
+            ]
+        },
+        "Web Socket" : {
+	        "defaults" : { "transport" : "webSocket", "publish": 10 },
+            "steps" : [
 	            { "subscribers" : 8 },
 	            { "subscribers" : 16 },
 	            { "subscribers" : 32 },
