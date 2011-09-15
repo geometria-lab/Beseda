@@ -52,13 +52,31 @@ function handleBenchmark(results, options, name) {
 
 	var yAxis = { time:[], missing: [] };
 	var xAxis = [];
-	var publishers = [];
+
+	var thead = '<thead><tr>' +
+					'<th>subscribers</th>' +
+					'<th>publish</th>' +
+					'<th>time</th>' +
+					'<th>lost</th>' +
+					'<th>errors</th>' +
+				'</tr></thead>';
+
+	var tbody = '<tbody>';
 
 	for (var i in results) {
 		yAxis.time.push(results[i].time);
 		yAxis.missing.push(results[i].lost);
-		publishers.push(options[i].publish);
+
+		tbody += '<tr>' +
+		'<td>' + options[i].subscribers + '</td>' +
+		'<td>' + options[i].publish + '</td>' +
+		'<td>' + results[i].time + '</td>' +
+		'<td>' + results[i].lost + '</td>' +
+		'<td>' + results[i].errors + '</td>' +
+		'</tr>'
 	}
+
+	tbody += '</tbody>'
 
 	for (var j in options) {
 		for (var key in options[j]) {
@@ -67,20 +85,22 @@ function handleBenchmark(results, options, name) {
 		}
 	}
 
+	result.push('<table border="1">' + thead + tbody + '</table>');
+
 	for (var key in yAxis) {
 		result.push(
 			'<img src="http://chart.googleapis.com/chart?' +
 			'cht=s&' +
 			'chs=600x300&' +
-			'chxt=x,y,x&' +
-			'chm=o,FF0000,0,0:' + (xAxis.length-1) + ',5|o,0000FF,0,' + xAxis.length + ':' +  (xAxis.length*2-1) +  ',5|' +
-				'D,FF0000,0,0:' + (xAxis.length-1) + ',1|D,0000FF,0,' + xAxis.length + ':' +  (xAxis.length*2-1) +  ',1|' +
+			'chxt=x,x,y,y&' +
+			'chm=o,FF0000,0,,5|' +
+				'D,FF0000,0,,1|' +
 				'N,000000,0,-1,10,1.0,hvs&' +
 			'chds=a&' +
 			'chg=20,34,1,5&' +
-			'chd=t:' + xAxis.join(',') + ',' + xAxis.join(',') + '|' +
-					   yAxis[key].join(',') + ',' + publishers.join(',') + '&' +
-			'chco=FF0000|FF0000|FF0000|FF0000|FF0000|FF0000&chdl=' + key + '|publish&' +
+			'chd=t:' + xAxis.join(',') + '|' +
+					   yAxis[key].join(',') + '&' +
+			'chxl=1:||subscribers||3:||' + key + '|' + '&' +
 			'chtt=' + name + ' (' + key + ')' + '" alt="' + name + '" />'
 		);
 	}

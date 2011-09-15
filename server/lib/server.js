@@ -22,7 +22,7 @@ Server = module.exports = function(options) {
 		    ssl  : false
 		},
 
-        pubSub : null,
+        pubSub : 'memory',
         debug   : false,
 
         transports : [ 'webSocket', 'longPolling', 'JSONPLongPolling' ]

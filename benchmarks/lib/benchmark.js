@@ -27,14 +27,6 @@ var Benchmark = function(options) {
 			
 			this.add(bench);
 		}
-
-		var table = new Table({
-			head: ['subscribers', 'publish', 'time', 'lost', 'errors'],
-			colWidths: [14, 14, 14, 14, 14],
-			colAligns: 'center'
-		});
-
-		console.log(table.toString());
 	}
 };
 
@@ -69,6 +61,18 @@ Benchmark.prototype.getOptions = function() {
 };
 
 Benchmark.prototype.run = function() {
+	if (this.name) {
+		console.log('\n' + this.name);
+
+		var table = new Table({
+			head: ['subscribers', 'publish', 'time', 'lost', 'errors'],
+			colWidths: [14, 14, 14, 14, 14],
+			colAligns: 'center'
+		});
+
+		console.log(table.toString());
+	}
+
 	this.__runNext();
 };
 

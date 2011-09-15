@@ -84,6 +84,8 @@ LongPollingTransport.prototype._holdRequest = function(request, response, params
 LongPollingTransport.prototype._destroy = function(request, response, params) {
 	this.emit('disconnect', params.id);
 	this.removeConnection(params.id);
+
+	Router.Utils.sendJSON(response, '', 200);
 };
 
 LongPollingTransport.prototype._receive = function(request, response, params) {
