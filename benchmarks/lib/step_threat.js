@@ -8,12 +8,12 @@ var StepThreat = function(options) {
 
 	this.__clents = [];
 	this.__masterName = '';
-	this.__transport = '';
+	this.__transport = null;
 
 	this.__isBlocked = false;
 
 	if (options) {
-		this.__transport = options.transport;
+		this.__besedaOptions = options.besedaOptions;
 		this.__masterName = options.masterName;
 		this.__makeClients(options.clientsCount);
 
@@ -28,7 +28,7 @@ util.inherits(StepThreat, hookio.Hook);
 
 StepThreat.prototype.__makeClients = function(count) {
 	for (var i = 0; i < count; i++) {
-		this.__clents.push(new BesedaClient({ transport: this.__transport }));
+		this.__clents.push(new BesedaClient(this.__besedaOptions));
 	}
 };
 
@@ -66,19 +66,6 @@ StepThreat.prototype.__handleWait = function() {
 };
 
 StepThreat.prototype.__handleKill = function() {
-	/*for (var i = 0; i < this.__clents.length; i++) {
-		this.__clents[i].removeAllListeners('error');
-		this.__clents[i].removeAllListeners('message');
-
-		this.__clents[i].
-		this.__clents[i].disconnect();
-	}
-	
-	this.__clents = [];
-	this.__isBlocked = true;
-
-	this.emit('suicide', this.name);*/
-
 	var self = this;
 	var j = 0;
 	var disconnectHandler = function() {

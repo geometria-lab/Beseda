@@ -5,12 +5,12 @@ var Table = require('./cli-table');
 var StepThreat = require('./step_threat').StepThreat;
 var BesedaClient = require('./../../client/nodejs');
 
-var Step = function(options, defaults) {
+var Step = function(options, defaults, besedaOptions) {
 	events.EventEmitter.call(this);
 
 	this.__subscribersCount = options.subscribers || defaults.subscribers;
 	this.__publishCount = options.publish || defaults.publish;
-	this.__transport = options.transport || defaults.transport;
+	this.__besedaOptions = besedaOptions;
 
 	this.__connectionCount = 0;
 	this.__messageCount = 0;
@@ -55,7 +55,7 @@ Step.prototype.run = function() {
 };
 
 Step.prototype.__startPublish = function() {
-	this.__client = new BesedaClient({'transport': this.__transport});
+	this.__client = new BesedaClient(this.__besedaOptions);
 
 	var self = this;
 	var i = 0;
@@ -101,7 +101,7 @@ Step.prototype.__handleReadyToRun = function() {
 			'clientsCount': threatSubscribersCount,
 			'masterName': this.__step.name,
 			'name': Date.now().toString() + Step.LAST_ID++,
-			'transport': this.__transport
+			'transport': this.__besedaOptions
 		});
 
 		restCount -= threatSubscribersCount;

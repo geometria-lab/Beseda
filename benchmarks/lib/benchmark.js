@@ -21,8 +21,9 @@ var Benchmark = function(options) {
 
 			var defaults = options.benchmarks[name].defaults;
 			var steps = options.benchmarks[name].steps;
+			var besedaOptions = options.benchmarks[name].beseda;
 			for (var i in steps) {
-				bench.add(new Step(steps[i], defaults));
+				bench.add(new Step(steps[i], defaults, besedaOptions));
 			}
 			
 			this.add(bench);
