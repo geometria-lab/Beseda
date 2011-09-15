@@ -57,7 +57,7 @@ function handleBenchmark(results, options, name) {
 					'<th>subscribers</th>' +
 					'<th>publish</th>' +
 					'<th>time</th>' +
-					'<th>lost</th>' +
+					'<th>missing</th>' +
 					'<th>errors</th>' +
 				'</tr></thead>';
 

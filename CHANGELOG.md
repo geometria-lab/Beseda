@@ -1,12 +1,11 @@
 Changelog
 ======
 
-Version 0.1.11
+Version 0.1.0
 ---
-September 14, 2011
+September 15, 2011
 
 * Add bencmarks suite
-* Use hook.io and forever to spawn child process (in bencmarks)
 
 Version 0.0.10
 ---

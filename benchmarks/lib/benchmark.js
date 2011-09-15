@@ -65,7 +65,7 @@ Benchmark.prototype.run = function() {
 		console.log('\n' + this.name);
 
 		var table = new Table({
-			head: ['subscribers', 'publish', 'time', 'lost', 'errors'],
+			head: ['subscribers', 'publish', 'time', 'missing', 'errors'],
 			colWidths: [14, 14, 14, 14, 14],
 			colAligns: 'center'
 		});

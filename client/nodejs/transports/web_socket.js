@@ -1,4 +1,8 @@
-var WebSocket = require('websocket-client').WebSocket;
+try {
+	var WebSocket = require('websocket-client').WebSocket;
+} catch (e) {
+	throw new Error("'websocket-client' package required.");
+}
 var Transport = require('./../transport.js');
 
 var util = require('util');
