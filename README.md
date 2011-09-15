@@ -12,13 +12,6 @@ Features
     * Memory
     * [Redis](http://redis.io)
     * You own
-* Security:
-    * SSL
-    * Connection
-    * Publishing
-    * Subscribing
-* Horizontal scaling (depends on Pub/Sub engine)
-* Monitor (coming soon)
 * Clients:
     * Browser
     * Node.js
@@ -26,6 +19,14 @@ Features
     * PHP (only redis publisher yet)
     * Ruby (coming soon)
     * Python (coming soon)
+* Security:
+    * SSL
+    * Connection
+    * Publishing
+    * Subscribing
+* Horizontal scaling (depends on Pub/Sub engine)
+* Monitor (coming soon)
+* Benchmarks suite
 
 Get started!
 ---
