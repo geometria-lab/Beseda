@@ -26,7 +26,12 @@ module.exports = Client = function(options) {
     this._io = new IO(this.options);
 
     this._io.on('message', this.router.dispatch.bind(this.router));
-    this._io.on('error', this._onError.bind(this));
+	this._io.on('error', this._onError.bind(this));
+	
+	var self = this;
+	this._io.on('disconnect', (function() {
+		self.emit('disconnect');
+	}).bind(this));
 };
 
 Client._statuses = {
@@ -166,10 +171,3 @@ Client.prototype.flushMessageQueue = function() {
 	this._io.send(this._messageQueue);
     this._messageQueue = [];
 };
-/*          { "subscribers" : 128 },
-	            { "subscribers" : 256 },
-	            { "subscribers" : 512 },
-	            { "subscribers" : 1024 },
-	            { "subscribers" : 2048 },
-	            { "subscribers" : 4096 },
-	            { "subscribers" : 8192 }*/

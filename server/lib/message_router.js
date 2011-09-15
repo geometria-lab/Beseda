@@ -13,7 +13,17 @@ MessageRouter = module.exports = function(server) {
     this.server = server;
 };
 
-MessageRouter.prototype.dispatch = function(connectionId, message) {
+MessageRouter.prototype.dispatch = function(connectionId, messages) {
+	var i = 0,
+		l = messages.length;
+
+	while (i < l) {
+		this._doDispatch(connectionId, messages[i]);
+		i++;
+	}
+};
+
+MessageRouter.prototype._doDispatch = function(connectionId, message) {
     if (message.channel  === undefined ||
         message.clientId === undefined || 
         message.id       === undefined) {

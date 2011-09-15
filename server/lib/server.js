@@ -75,7 +75,7 @@ Server = module.exports = function(options) {
      *  Setup IO
      **/
 	this.io = new IO(this);
-    this.io.on('message', this.messageRouter.dispatch.bind(this.messageRouter));
+    this.io.on('messages', this.messageRouter.dispatch.bind(this.messageRouter));
     this.io.on('disconnect', this._onDisconnect.bind(this));
 
     // Add request listener with static before others
@@ -160,16 +160,25 @@ Server.prototype.log = function(message) {
     }
 }
 
-Server.prototype._onDisconnect = function(connectionId) {
-    var session = Session.get(connectionId);
+Server.prototype._onDisconnect = function(connectionIds) {
+	var i = 0,
+		l = connectionIds.length;
 
-    if (session) {
-        this.log('Session ' + session.id + ' is disconnected');
-        this.emit('disconnect', session);
-        session.destroy();
-    } else {
-        this.log('Client ' + connectionId + ' without session is disconnected');
-    }
+	while (i < l) {
+		var session = Session.get(connectionIds[i]);
+
+		if (session) {
+			this.log('Session ' + session.id + ' is disconnected');
+
+			this.emit('disconnect', session);
+
+			session.destroy();
+		} else {
+			this.log('Client ' + connectionIds[i] + ' without session is disconnected');
+		}
+
+		i++;
+	}
 };
 
 Server.prototype._isHTTPServerOpened = function() {

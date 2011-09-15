@@ -32,18 +32,15 @@ Router.prototype.addRoute = function(route) {
 }
 
 Router.prototype.dispatch = function(request, response, head) {
-	var result = false;
 	var parsedURL = Router.Utils.parseURL(request.url);
-    for (var i = 0, l = this._routes.length; i < l; i++) {
-    	var route = this._routes[i];
 
-    	if (route.isValid(request, parsedURL)) {
-    		route.dispatch(request, response, parsedURL, head);
-			result = true;
-            break;
+    for (var i = 0, l = this._routes.length; i < l; i++) {
+    	if (this._routes[i].isValid(request, parsedURL)) {
+    		this._routes[i].dispatch(request, response, parsedURL, head);
+			return true;
         }
     }
-    return result;
+    return false;
 };
 
 Router.Route = function(path, callback, options) {
@@ -61,9 +58,8 @@ Router.Route = function(path, callback, options) {
 Router.Route.prototype.isValid = function(request, parsedURL) {
 	var result = false;
 
-    var method        = request.method == 'HEAD' ? 'GET' : request.method,
-        isValidMethod = this.__options.method.length === 0 ||
-        				this.__options.method.indexOf(method) !== -1;
+    var method = request.method === 'HEAD' ? 'GET' : request.method;
+    var isValidMethod = this.__options.method.indexOf(method) !== -1;
 
 
 	if (isValidMethod) {
@@ -76,14 +72,14 @@ Router.Route.prototype.isValid = function(request, parsedURL) {
 				l = this.__pathHash.length;
 
 			while (i < l) {
-				if (this.__pathHash[i] != requestPathHash[i] &&
+				if (this.__pathHash[i] !== requestPathHash[i] &&
 					this.__pathHash[i].indexOf(':') !== 0 ) {
 					result = false;
 
 					break;
 				}
 
-				++i;
+				i++;
 			}
 		} else {
 			result = false;
@@ -105,13 +101,18 @@ Router.Route.prototype.dispatch = function(request, response, parsedURL, head) {
 			 params[this.__pathHash[i].substring(1)] = parsedPath[i];
 		}
 
-		++i;
+		i++;
 	}
 
 	this.__callback(request, response, params, head);
 }
 
 Router.Utils = {};
+
+Router.Utils.JSON_HEADERS = {
+	'Server': 'Beseda',
+	'Content-Type': 'text/json'
+};
 
 Router.Utils.send = function(response, code, headers) {
     headers = headers || {};
@@ -122,12 +123,9 @@ Router.Utils.send = function(response, code, headers) {
 };
 
 Router.Utils.sendJSON = function(response, json, code, headers) {
-    headers = headers || {};
+    headers = headers || Router.Utils.JSON_HEADERS;
 
-    headers['Server']         = 'Beseda';
-    headers['Content-Type']   = 'text/json';
-
-	response.writeHead(code || 200, headers);
+	response.writeHead(code || 200, Router.Utils.JSON_HEADERS);
 	response.end(json);
 };
 

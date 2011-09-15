@@ -35,7 +35,6 @@ Step.prototype.getResults = function() {
 };
 
 Step.prototype.getOptions = function() {
-	this.__options.publish = this.__publishCount
 	return this.__options;
 };
 
@@ -69,14 +68,14 @@ Step.prototype.__startPublish = function() {
 				if (i < self.__publishCount) {
 					publish();
 				} else {
-					setTimeout(self.__handleFinish.bind(self), 2000);
+					setTimeout(self.__handleFinish.bind(self), 5 * 1000);
 				}
 			}
 		);
 	}
 
 	this.__client.once('error', function() {
-		setTimeout(self.__handleFinish.bind(self), 1000);
+		setTimeout(self.__handleFinish.bind(self), 5 * 1000);
 	});
 
 	publish();
@@ -140,8 +139,6 @@ Step.prototype.__handleMessageError = function() {
 };
 
 Step.prototype.__handleFinish = function() {
-	this.__step.emit('kill');
-
 	this.__client.removeAllListeners('error');
 	this.__client.disconnect();
 
@@ -153,20 +150,19 @@ Step.prototype.__handleFinish = function() {
 	};
 
 	var table = new Table({
-		colWidths: [14, 14, 14, 14, 14],
+		colWidths: [15, 15, 15, 15],
 		colAligns: 'middle'
 	});
 
 	table.push([
 		this.__options.subscribers,
-		this.__publishCount,
 		this.__result.time,
 		this.__result.lost,
 		this.__result.errors
 	]);
 
 	console.log(table.toString());
-	
+
 	this.__client.disconnect();
 
 	var self = this;
@@ -183,6 +179,8 @@ Step.prototype.__handleFinish = function() {
 
 		this.__step.once(name + '::suicide', this.__handleSuicide.bind(this));
 	}
+
+	this.__step.emit('kill');
 };
 
 Step.prototype.__handleSuicide = function(name) {

@@ -42,6 +42,7 @@ StepThreat.prototype.__handleReady = function() {
 		});
 
 		this.__clents[i].on('error', function() {
+			console.log(arguments)
 			if (!self.__isBlocked)
 				self.emit('subscribeError');
 		});
@@ -54,6 +55,7 @@ StepThreat.prototype.__handleWait = function() {
 	for (var i = 0; i < this.__clents.length; i++) {
 		this.__clents[i].removeAllListeners('error');
 		this.__clents[i].on('error', function() {
+			console.log(arguments);
 			if (!self.__isBlocked)
 				self.emit('messageError');
 		});
@@ -66,16 +68,25 @@ StepThreat.prototype.__handleWait = function() {
 };
 
 StepThreat.prototype.__handleKill = function() {
+	var self = this;
+	var j = 0;
+	var disconnectHandler = function() {
+		j++;
+
+		if (j === self.__clents.length) {
+			self.emit('suicide', self.name);
+			self.__clents = [];
+		}
+	}
+
 	for (var i = 0; i < this.__clents.length; i++) {
 		this.__clents[i].removeAllListeners('error');
 		this.__clents[i].removeAllListeners('message');
+		this.__clents[i].once('disconnect', disconnectHandler);
 		this.__clents[i].disconnect();
 	}
-	
-	this.__clents = [];
-	this.__isBlocked = true;
 
-	this.emit('suicide', this.name);
+	this.__isBlocked = true;
 };
 
 module.exports.StepThreat = StepThreat;

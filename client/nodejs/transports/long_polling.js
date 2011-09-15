@@ -36,7 +36,7 @@ LongPollingTransport.prototype.connect = function(host, port, ssl) {
 };
 
 LongPollingTransport.prototype.disconnect = function() {
-	this.__cleanRequest(this.__disconnectRequest);
+	this.__cleanAll();
 
     this.__disconnectRequest = new LongPollingTransport.Request
 	   (this._urlBase + '/' + this._connectionID, 'DELETE');

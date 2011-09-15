@@ -22,15 +22,18 @@ var Benchmark = function(options) {
 			var defaults = options.benchmarks[name].defaults;
 			var steps = options.benchmarks[name].steps;
 			for (var i in steps) {
+
+
 				bench.add(new Step(steps[i], defaults));
 			}
 			
 			this.add(bench);
 		}
 
+
 		var table = new Table({
-			head: ['subscribers', 'publish', 'time', 'lost', 'errors'],
-			colWidths: [14, 14, 14, 14, 14],
+			head: ['subscribers', 'time', 'lost', 'errors'],
+			colWidths: [15, 15, 15, 15],
 			colAligns: 'center'
 		});
 

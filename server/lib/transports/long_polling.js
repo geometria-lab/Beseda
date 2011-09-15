@@ -3,57 +3,45 @@ var util = require('util');
 var Router = require('./../router.js');
 
 module.exports = LongPollingTransport = function(io) {
-	process.EventEmitter.call(this);
-
     this.io = io;
     this._connections = {};
+	this._zombies = [];
 
     this._addRoutes();
 
 	this._connectionClass = LongPollingTransport.Connection;
+	this.__destroyNextTick = this.__destroyNextTick.bind(this);
+	this.__flushConnections = this.__flushConnections.bind(this);
 
-    this._flushInterval = setInterval(this._flushConnections.bind(this),
-                                      LongPollingTransport.CHECK_INTERVAL);
-}
+	this.__isRunning = true;
 
-util.inherits(LongPollingTransport, process.EventEmitter);
+	setTimeout(this.__flushConnections, LongPollingTransport.CHECK_INTERVAL);
+};
 
-LongPollingTransport.CHECK_INTERVAL = 10;
-
-LongPollingTransport.ERROR_INVALID_MESSAGES_FORMAT = new Buffer('{ "error" : "Invalid messages format" }');
+LongPollingTransport.CHECK_INTERVAL = 100;
 LongPollingTransport.ERROR_INVALID_CONNECTION_ID = new Buffer('{ "error" : "Invalid connection id" }');
+LongPollingTransport.ERROR_INVALID_CONNECTION_ID_RES = new Buffer('{ "error" : "Invalid connection id res" }');
 
-LongPollingTransport.FRUSH_LOOP_COUNT = 5000;
-LongPollingTransport.DESTROY_LOOP_COUNT = 6000;
-
-LongPollingTransport.parseMessages = function(response, data) {
+LongPollingTransport.parseMessages = function(data) {
 	try {
-		var messages = JSON.parse(data);
+		return JSON.parse(data);
 	} catch (e) {
-		return this._sendInvalidMessages(response);
+		return [];
 	}
-
-	if (!Array.isArray(messages)) {
-		return this._sendInvalidMessages(response);
-	}
-
-	return messages;
-}
-
-LongPollingTransport._sendInvalidMessages = function(response) {
-	Router.Utils.sendJSON(response, LongPollingTransport.INVALID_MESSAGES_FORMAT, 400);
-
-	return false;
-}
+};
 
 LongPollingTransport.prototype.createConnection = function(connectionId, request, response) {
-	//TODO: Move to connection class
-	this._sendApplyConnection(connectionId, request, response);
-
     this._connections[connectionId] = new this._connectionClass(this, connectionId);
+	this._connections[connectionId].apply(response);
 
+	if (!this.__isRunning) {
+		this.__isRunning = true;
+		
+		setTimeout(this.__flushConnections, LongPollingTransport.CHECK_INTERVAL);
+	}
+	
 	return this._connections[connectionId];
-}
+};
 
 LongPollingTransport.prototype._addRoutes = function() {
 	this.io.server.router.addRoute(new Router.Route(
@@ -61,143 +49,141 @@ LongPollingTransport.prototype._addRoutes = function() {
 	));
 	
 	this.io.server.router.addRoute(new Router.Route(
-		'/beseda/io/longPolling/:id/:time', this._destroy.bind(this), { method : ['DELETE'] }
+		'/beseda/io/longPolling/:id/:time', this._disconnect.bind(this), { method : ['DELETE'] }
 	));
 	
 	this.io.server.router.addRoute(new Router.Route(
 		'/beseda/io/longPolling/:id/:time', this._holdRequest.bind(this), { method : ['GET'] }
 	));
-}
-
-LongPollingTransport.prototype._sendApplyConnection = function(connectionId, request, response) {
-	Router.Utils.sendJSON(response, '{ "connectionId" : "' + connectionId + '" }');
-}
+};
 
 LongPollingTransport.prototype._holdRequest = function(request, response, params) {
-    if (!this._connections[params.id]) {
+    if (this._connections[params.id] === undefined) {
         return Router.Utils.sendJSON(response, LongPollingTransport.ERROR_INVALID_CONNECTION_ID, 404);
     }
 
     this._connections[params.id].hold(request, response, params);
-}
+};
 
-LongPollingTransport.prototype._destroy = function(request, response, params) {
-	this.emit('disconnect', params.id);
-	this.removeConnection(params.id);
+LongPollingTransport.prototype._disconnect = function(request, response, params) {
+	this.destroy(params.id);
+	
+	Router.Utils.send(response, 200);
+};
+
+LongPollingTransport.prototype.__destroyNextTick = function() {
+	this.io.emit('disconnect', this._zombies);
+	this._zombies = [];
+};
+
+LongPollingTransport.prototype.destroy = function(id) {
+	this._zombies.push(id);
+	
+	delete this._connections[id];
+
+	process.nextTick(this.__destroyNextTick);
 };
 
 LongPollingTransport.prototype._receive = function(request, response, params) {
-    if (!this._connections[params.id]) {
-        return Router.Utils.sendJSON(response, LongPollingTransport.ERROR_INVALID_CONNECTION_ID, 404);
+    if (this._connections[params.id] === undefined) {
+        return Router.Utils.sendJSON
+	        (response, LongPollingTransport.ERROR_INVALID_CONNECTION_ID_RES, 404);
     }
 
     this._connections[params.id].receive(request, response, params);
-}
+};
 
-LongPollingTransport.prototype._flushConnections = function() {
+LongPollingTransport.prototype.__flushConnections = function() {
+	var i = 0,
+		t = Date.now();
+
 	for (var id in this._connections) {
 		this._connections[id].waitOrFlush();
+		
+		i++;
 	}
-}
 
-LongPollingTransport.prototype.removeConnection = function(id) {
-	delete this._connections[id];
-}
+	if (i !== 0) {
+		var checkInterval = Math.ceil(Math.sqrt(i) * 2.5) + Date.now() - t;
+		console.log(checkInterval);
+		
+		setTimeout(this.__flushConnections, checkInterval);
+	} else {
+		this.__isRunning = false;
+	}
+};
+
+//////////////////////////////////////////////////////////////////////////////
 
 LongPollingTransport.Connection = function(transport, id) {
     this.transport = transport;
     this.id = id;
 
-    this._receivers = {};
-    this._lastReceiverId = 0;
-
 	this._updateFlag  = 0;
 	this._currentFlag = 0;
-	this._loopCount   = LongPollingTransport.DESTROY_LOOP_COUNT;
+	this._updateTime  = Date.now();
 
 	this._dataQueue = [];
 	this._response  = null;
+
+	this._flush = this._flush.bind(this);
+};
+
+LongPollingTransport.Connection.prototype.apply = function(response) {
+	Router.Utils.sendJSON(response, '{ "connectionId" : "' + this.id + '" }');
 };
 
 LongPollingTransport.Connection.prototype.send = function(data) {
     this._dataQueue.push(data);
-	++this._updateFlag;
-}
+	this._updateFlag++;
+};
 
 LongPollingTransport.Connection.prototype.hold = function(request, response, params) {
     if (this._response !== null) {
-        this._flush();
+	    process.nextTick(this._flush);
     }
 
     this._response    = response;
     this._currentFlag = this._updateFlag;
-    this._loopCount   = LongPollingTransport.DESTROY_LOOP_COUNT;
+    this._updateTime  = Date.now();
 }
-
-LongPollingTransport.Connection.prototype.disconnect = function() {
-	this.transport.emit('disconnect', this.id);
-	this.transport.removeConnection(this.id);
-};
 
 LongPollingTransport.Connection.prototype.receive = function(request, response, params) {
-    var id = ++this._lastReceiverId;
+	var self = this;
+	var data = '';
 
-    this._receivers[id] = new LongPollingTransport.Connection.Receiver(this, id, request, response);
-}
+	request.on('data', function(chunk) {
+		data += chunk;
+	});
+
+	request.on('end', function() {
+		Router.Utils.send(response, 200);
+
+		request.removeAllListeners('data');
+		request.removeAllListeners('end');
+
+		self.transport.io.emit('messages', self.id, LongPollingTransport.parseMessages(data));
+	});
+};
 
 LongPollingTransport.Connection.prototype.waitOrFlush = function() {
-	if (this._loopCount <= 0) {
-		this.disconnect();
-	} else if (this._response) {
-		if (this._loopCount <= LongPollingTransport.FRUSH_LOOP_COUNT ||
+	var lifeTime = Date.now() - this._updateTime;
+
+	if (lifeTime > 600000) {
+		this.transport.destroy(this.id)
+	} else if (this._response !== null) {
+		if (lifeTime > 25000 ||
 			this._dataQueue.length > 0 ||
 			this._currentFlag !== this._updateFlag) {
 
-			this._flush();
+			process.nextTick(this._flush);
 		}
 	}
-
-	this._loopCount--;
-}
-
-LongPollingTransport.Connection.prototype.deleteReceiver = function(receiverId) {
-	delete this._receivers[receiverId];
-}
+};
 
 LongPollingTransport.Connection.prototype._flush = function() {
-    Router.Utils.sendJSON(this._response, JSON.stringify(this._dataQueue));
-
+	Router.Utils.sendJSON(this._response, JSON.stringify(this._dataQueue));
+	
 	this._dataQueue = [];
 	this._response = null;
-}
-
-LongPollingTransport.Connection.Receiver = function(connection, id, request, response) {
-    this._connection = connection;
-    this._id = id;
-    this._data = '';
-
-    this._request = request;
-    this._response = response;
-
-    this._request.on('data', this._collectData.bind(this));
-	this._request.on('end', this._end.bind(this));
-}
-
-LongPollingTransport.Connection.Receiver.prototype._collectData = function(chunk) {
-    this._data += chunk;
-}
-
-LongPollingTransport.Connection.Receiver.prototype._end = function() {
-    Router.Utils.send(this._response, 200);
-
-	this._request.removeListener('data', this._collectData.bind(this));
-	this._request.removeListener('end', this._end.bind(this));
-
-	this._connection.deleteReceiver(this._id);
-
-	var messages = LongPollingTransport.parseMessages(this._response, this._data);
-
-	if (messages) {
-		this._connection.transport.emit('message', this._connection.id, messages);
-	}
-}
+};
