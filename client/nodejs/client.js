@@ -26,7 +26,10 @@ module.exports = Client = function(options) {
     this._io = new IO(this.options);
 
     this._io.on('message', this.router.dispatch.bind(this.router));
-    this._io.on('error', this._onError.bind(this));
+	this._io.on('error', this._onError.bind(this));
+	this._io.on('disconnect', (function() {
+		this.emit('disconnect');
+	}).bind(this));
 };
 
 Client._statuses = {

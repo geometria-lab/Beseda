@@ -33,12 +33,14 @@ WebSocketTransport.prototype.connect = function(host, port, ssl) {
 
 		this.__ws.addListener('open',    this.__handleOpenClosure);
 		this.__ws.addListener('message', this.__handleDataClosure);
-		this.__ws.addListener('error',   this.__handleCloseClosure);
+		this.__ws.addListener('error',   this.__handleError.bind(this));
 		this.__ws.addListener('close',   this.__handleCloseClosure);
 	}
 };
 
 WebSocketTransport.prototype.disconnect = function() {
+	Transport.prototype._handleDisconnect.call(this);
+
 	this.__ws.close();
 	this._isConnected = false;
 };
@@ -64,6 +66,10 @@ WebSocketTransport.prototype._handleData = function(data) {
 };
 
 WebSocketTransport.prototype.__handleClose = function(event) {
+	Transport.prototype._handleDisconnect.call(this);
+};
+
+WebSocketTransport.prototype.__handleError = function(event) {
 	this._handleError(event);
 	this.disconnect();
 };

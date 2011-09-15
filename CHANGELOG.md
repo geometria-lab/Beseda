@@ -6,6 +6,8 @@ Version 0.1.0
 September 15, 2011
 
 * Add bencmarks suite
+* Fix long polling disconnect
+* Add disconnection event to nodejs client
 
 Version 0.0.10
 ---

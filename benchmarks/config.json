@@ -5,9 +5,7 @@
             "steps" : [
 	            { "subscribers" : 8 },
 	            { "subscribers" : 16 },
-	            { "subscribers" : 32 },
-	            { "subscribers" : 128 },
-	            { "subscribers" : 256 }
+	            { "subscribers" : 32 }
             ]
         },
         "Web Socket" : {
@@ -15,8 +13,7 @@
             "steps" : [
 	            { "subscribers" : 8 },
 	            { "subscribers" : 16 },
-	            { "subscribers" : 32 },
-	            { "subscribers" : 128 }
+	            { "subscribers" : 32 }
             ]
         }
     }

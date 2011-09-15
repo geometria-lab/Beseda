@@ -66,16 +66,40 @@ StepThreat.prototype.__handleWait = function() {
 };
 
 StepThreat.prototype.__handleKill = function() {
-	for (var i = 0; i < this.__clents.length; i++) {
+	/*for (var i = 0; i < this.__clents.length; i++) {
 		this.__clents[i].removeAllListeners('error');
 		this.__clents[i].removeAllListeners('message');
+
+		this.__clents[i].
 		this.__clents[i].disconnect();
 	}
 	
 	this.__clents = [];
 	this.__isBlocked = true;
 
-	this.emit('suicide', this.name);
+	this.emit('suicide', this.name);*/
+
+	var self = this;
+	var j = 0;
+	var disconnectHandler = function() {
+		j++;
+		
+		if (j === self.__clents.length) {
+			self.emit('suicide', self.name);
+			self.__clents = [];
+		}
+	}
+
+	for (var i = 0; i < this.__clents.length; i++) {
+		this.__clents[i].removeAllListeners('error');
+		this.__clents[i].removeAllListeners('message');
+
+		this.__clents[i].once('disconnect', disconnectHandler);
+		this.__clents[i].once('error', disconnectHandler);
+		this.__clents[i].disconnect();
+	}
+
+	this.__isBlocked = true;
 };
 
 module.exports.StepThreat = StepThreat;
