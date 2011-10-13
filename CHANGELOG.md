@@ -1,6 +1,12 @@
 Changelog
 ======
 
+Version 0.1.1
+---
+Unreleased
+
+* Added possibility to use a Router separately
+
 Version 0.1.0
 ---
 September 15, 2011
