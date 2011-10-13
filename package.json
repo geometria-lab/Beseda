@@ -11,8 +11,9 @@
     ],
     "main": "./server",
     "bin" : {
-        "beseda-client" : "./bin/client.js",
-        "beseda-server" : "./bin/server.js"
+        "beseda-client"     : "./bin/client.js",
+        "beseda-server"     : "./bin/server.js",
+        "beseda-benchmarks" : "./bin/benchmarks.js"
     },
     "repository": {
         "type" : "git",
