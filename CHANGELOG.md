@@ -1,6 +1,13 @@
 Changelog
 ======
 
+Version 0.1.1
+---
+Unreleased
+
+* Added possibility to use a Router separately
+* Added beseda-benchmarks binary to package.json
+
 Version 0.1.0
 ---
 September 15, 2011
