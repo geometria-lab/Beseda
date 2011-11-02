@@ -44,9 +44,13 @@ WebSocketTransport.Connection.prototype.applyConnection = function(request, resp
 			'Sec-WebSocket-Origin: ' + request.headers.origin,
 			'Sec-WebSocket-Location: ws://' + request.headers.host + request.url
 		];
+	} else {
+		headers = [
+			'HTTP/1.1 101 Switching Protocols',
+			'Upgrade: WebSocket',
+			'Connection: Upgrade'
+		];
 	}
-
-	this.__connection.write(headers.concat('', '').join('\r\n'));
 
 	var key1 = request.headers['sec-websocket-key1'];
 	var key2 = request.headers['sec-websocket-key2'];
@@ -54,6 +58,8 @@ WebSocketTransport.Connection.prototype.applyConnection = function(request, resp
 	var keys = [key1, key2];
 
 	if (key1 && key2) {
+		this.__connection.write(headers.concat('', '').join('\r\n'));
+
 		var md5 = crypto.createHash('md5');
 
 		var numKey;
@@ -82,7 +88,23 @@ WebSocketTransport.Connection.prototype.applyConnection = function(request, resp
 		this.__connection.write(md5.digest('binary'), 'binary');
 		this.__connection.setTimeout(0);
 		this.__connection.setNoDelay(true);
-		this.__connection.setEncoding('utf-8')
+		this.__connection.setEncoding('utf-8');
+	} else {
+
+		var key = request.headers['sec-websocket-key'];
+		key += '258EAFA5-E914-47DA-95CA-C5AB0DC85B11';
+
+		var sha1 = crypto.createHash('sha1');
+		sha1.update(key)
+		
+		headers.push('Sec-WebSocket-Accept: ' + sha1.digest('base64'));
+		headers.push('Sec-WebSocket-Protocol: chat');
+		console.log(headers);
+
+		this.__connection.write(headers.concat('', '').join('\r\n'));
+		this.__connection.setTimeout(0);
+		this.__connection.setNoDelay(true);
+		this.__connection.setEncoding('utf-8');
 	}
 
 	var self = this;
