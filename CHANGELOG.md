@@ -1,19 +1,36 @@
 Changelog
 ======
 
+Version 0.1.1
+---
+Unreleased
+
+* Added possibility to use a Router separately
+* Added beseda-benchmarks binary to package.json
+* Fixed some typos
+
+Version 0.1.0
+---
+September 15, 2011
+
+* Added bencmarks suite
+* Fixed long polling disconnect
+* Added disconnection event to nodejs client
+
 Version 0.0.10
 ---
 July 28, 2011
 
-* Fix pubSub option
-* Refactor redis and memory pubSub
-* Change redis pubSub from 'redis-node' to 'redis' package 
+* Fixed pubSub option
+* Refactored redis and memory pubSub
+* Changed redis pubSub from 'redis-node' to 'redis' package 
 
 Version 0.0.9
 ---
 July 20, 2011
 
-* Fix listen
+* Benchmarks suite
+* Fixed listen
 * Return from dispatch if invalid message format
 * http.Server.address() sometimes throws exception
 

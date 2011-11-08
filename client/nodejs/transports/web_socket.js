@@ -1,4 +1,8 @@
-var WebSocket = require('websocket-client').WebSocket;
+try {
+	var WebSocket = require('websocket-client').WebSocket;
+} catch (e) {
+	throw new Error("'websocket-client' package required.");
+}
 var Transport = require('./../transport.js');
 
 var util = require('util');
@@ -27,14 +31,16 @@ WebSocketTransport.prototype.connect = function(host, port, ssl) {
 			(new Date().getTime())
 		);
 
-		this.__ws.addEventListener('open',    this.__handleOpenClosure);
-		this.__ws.addEventListener('message', this.__handleDataClosure);
-		this.__ws.addEventListener('error',   this.__handleCloseClosure);
-		this.__ws.addEventListener('close',   this.__handleCloseClosure);
+		this.__ws.addListener('open',    this.__handleOpenClosure);
+		this.__ws.addListener('message', this.__handleDataClosure);
+		this.__ws.addListener('error',   this.__handleError.bind(this));
+		this.__ws.addListener('close',   this.__handleCloseClosure);
 	}
 };
 
 WebSocketTransport.prototype.disconnect = function() {
+	Transport.prototype._handleDisconnect.call(this);
+
 	this.__ws.close();
 	this._isConnected = false;
 };
@@ -43,16 +49,16 @@ WebSocketTransport.prototype._doSend = function(data) {
 	this.__ws.send(data);
 };
 
-WebSocketTransport.prototype.__handleOpen = function(event) {
+WebSocketTransport.prototype._handleOpen = function(event) {
 	this._isConnected = true;
 };
 
-WebSocketTransport.prototype.__handleData = function(event) {
-	var data = this._decodeData(event.data);
+WebSocketTransport.prototype._handleData = function(data) {
+	var data = this._decodeData(data);
 
 	if (!this.__handshaked) {
 		this.__handshaked = true;
-
+		
 		Transport.prototype._handleConnection.call(this, data.connectionId);
 	} else {
 		Transport.prototype._handleMessages.call(this, data);
@@ -60,6 +66,10 @@ WebSocketTransport.prototype.__handleData = function(event) {
 };
 
 WebSocketTransport.prototype.__handleClose = function(event) {
+	Transport.prototype._handleDisconnect.call(this);
+};
+
+WebSocketTransport.prototype.__handleError = function(event) {
 	this._handleError(event);
 	this.disconnect();
 };

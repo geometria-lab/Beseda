@@ -256,6 +256,7 @@ MessageRouter.prototype._unsubscribe = function(connectionId, message) {
 
 MessageRouter.prototype._publish = function(connectionId, message) {
     var session = Session.get(connectionId);
+
     if (!session) {
         this.server.io.send(connectionId, {
             id           : message.id,

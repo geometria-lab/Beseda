@@ -1,0 +1,32 @@
+{
+    "benchmarks" : {
+        "Long Polling" : {
+	        "beseda": {
+		        "host" : "localhost",
+				"port" : 4000,
+				"ssl"  : false,
+				"transport" : "longPolling"
+	        },
+	        "defaults" : { "publish": 10 },
+            "steps" : [
+	            { "subscribers" : 8 },
+	            { "subscribers" : 16 },
+	            { "subscribers" : 32 }
+            ]
+        },
+        "Web Socket" : {
+	        "beseda": {
+		        "host" : "localhost",
+				"port" : 4000,
+				"ssl"  : false,
+				"transport" : "webSocket"
+	        },
+	        "defaults" : { "publish": 10 },
+            "steps" : [
+	            { "subscribers" : 8 },
+	            { "subscribers" : 16 },
+	            { "subscribers" : 32 }
+            ]
+        }
+    }
+}

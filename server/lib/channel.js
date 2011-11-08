@@ -24,11 +24,11 @@ Channel.prototype.addSubscriber = function(session) {
 };
 
 Channel.prototype.hasSubscription = function(session) {
-    return this.server.subscriptionManager.hasSubscription(session, this)
+    return this._server.subscriptionManager.hasSubscription(session, this)
 }
 
 Channel.prototype.hasSubscriptions = function() {
-    return this.server.subscriptionManager.isChannelHasSubscriptions(this);
+    return this._server.subscriptionManager.isChannelHasSubscriptions(this);
 }
 
 Channel.prototype.removeSubscriber = function(session) {

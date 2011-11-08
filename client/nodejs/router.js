@@ -26,9 +26,8 @@ Router.prototype.dispatch = function(message) {
 Router.prototype._connect = function(message) {
     if (message.successful) {
         this.client._status = Client._statuses.CONNECTED;
-
+	    
         this.client.flushMessageQueue();
-
    		this.client.emit('connection', message);
     } else {
         this.client.disconnect();
@@ -43,7 +42,7 @@ Router.prototype._error = function(message) {
 
 Router.prototype._subscribe = function(message) {
     if (message.successful) {
-        //this.client.log('Beseda subscribed to ' + message.subscription.toString(), message);
+        //this.client.log('Beseda subscribed to ' + message.subscription, message);
     } else {
         this.client.emit('error', 'Beseda subscribe request declined', message);
     }
