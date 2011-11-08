@@ -3,11 +3,11 @@ Changelog
 
 Version 0.1.1
 ---
-Unreleased
+November 8, 2011
 
 * Added possibility to use a Router separately
 * Added beseda-benchmarks binary to package.json
-* Fixed some typos
+* Fixed unsubsribe error
 
 Version 0.1.0
 ---
