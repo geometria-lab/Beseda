@@ -126,6 +126,8 @@ Server = module.exports = function(options) {
     }
 };
 
+Server.Router = Router;
+
 util.inherits(Server, process.EventEmitter);
 
 Server.prototype.publish = function(channel, message) {

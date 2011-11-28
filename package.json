@@ -1,6 +1,6 @@
 {
     "name": "beseda",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "description": "Beseda is fast, well designed and featured Pub/Sub server. Beseda offers multiple platform API to develop realtime web applications.",
     "keywords" : ["pub/sub", "commet", "bayeux", "realtime", "push", "WebSocket"],
     "homepage": "http://geometria-lab.net",
@@ -11,19 +11,20 @@
     ],
     "main": "./server",
     "bin" : {
-        "beseda-client" : "./bin/client.js",
-        "beseda-server" : "./bin/server.js"
+        "beseda-client"     : "./bin/client.js",
+        "beseda-server"     : "./bin/server.js",
+        "beseda-benchmarks" : "./bin/benchmarks.js"
     },
     "repository": {
         "type" : "git",
         "url"  : "git://github.com/geometria-lab/Beseda.git"
     },
     "dependencies" : {
-        "redis"            : ">=0.6.5",
+        "redis"            : ">=0.6.6",
         "cli"              : ">=0.3.3",
         "websocket-client" : "*"
     },
-    "engines" : [ "node >=0.4" ],
+    "engines" : [ "node >=0.4.11" ],
     "licenses" : [{
         "type" : "BSD",
         "url"  : "http://www.opensource.org/licenses/bsd-license.php"
