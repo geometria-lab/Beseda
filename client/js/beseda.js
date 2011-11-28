@@ -1250,7 +1250,7 @@ BesedaPackage.transport.LongPolling = function() {
 BesedaPackage.utils.inherits(BesedaPackage.transport.LongPolling, BesedaPackage.Transport);
 
 BesedaPackage.transport.LongPolling.isAvailable = function(options) {
-    return document.location.hostname === options.host && (document.location.port || 80) == options.port;
+    return false;// document.location.hostname === options.host && (document.location.port || 80) == options.port;
 };
 
 BesedaPackage.transport.LongPolling.prototype.__initClosuredHandlers = function() {
@@ -1447,6 +1447,7 @@ BesedaPackage.transport.WebSocket.prototype.__handleData = function(event) {
 	 * @type {{ connectionId: string }}
 	 */
 	var data = this._decodeData(event.data);
+	alert(event.data);
 
 	if (!this.__handshaked) {
 		this.__handshaked = true;

@@ -35,11 +35,11 @@ IO.prototype.send = function(connectionId, message) {
         throw new Error('Can\'t send to unavailble connection ' + connectionId)
     }
  
-    this._connections[connectionId].send(message);
+    this._connections[connectionId].write(message);
 };
 
 IO.prototype._getTransport = function(name) {
-    if (!this._transports[name]) {
+    if (this._transports[name] === undefined) {
         this._transports[name] = new IO.TRANSPORTS[name](this);
 
 		this._transports[name].on('message', this._onMessage.bind(this));
@@ -51,11 +51,11 @@ IO.prototype._getTransport = function(name) {
 
 IO.prototype._handleConnect = function(request, response, params, head) {
 	if (this.server.options.transports.indexOf(params.transport) !== -1) {
-        var connectionId = utils.uid();
+        var id = utils.uid();
         var transport = this._getTransport(params.transport);
 
-        this._connections[connectionId] 
-	        = transport.createConnection(connectionId, request, response, head);
+        this._connections[id]
+	        = transport.registerConnection(id, request, response, head);
 	} else {
         Router.Utils.sendJSON(response, JSON.stringify({
             error               : 'Invalid transport',
