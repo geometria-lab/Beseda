@@ -11,7 +11,7 @@ var JSONPLongPollingConnection = function(id) {
 
 util.inherits(JSONPLongPollingConnection, LongPollingConnection);
 
-LongPollingConnection.prototype.apply = function(request, response, head) {
+JSONPLongPollingConnection.prototype.apply = function(request, response, head) {
 	var callback = qs.parse(request.url.split('?')[1]).callback;
 
 	this.__sendJSONP

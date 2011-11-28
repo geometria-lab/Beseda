@@ -11,11 +11,23 @@ var CHECK_INTERVAL = 100;
 var LongPollingTransport = function(io) {
 	Transport.call(this, io);
 
+	this._zombies = [];
+	this.__isRunning = false;
+
 	this._initRoutes();
-	this._initConnectionsLoop();
+
+	this._flushConnections = this._flushConnections.bind(this);
+	this.__destroyNextTick = this.__destroyNextTick.bind(this);
 };
 
 util.inherits(LongPollingTransport, Transport);
+
+LongPollingTransport.prototype._start = function(id) {
+	if (!this.__isRunning) {
+		this.__isRunning = true;
+		setTimeout(this._flushConnections, CHECK_INTERVAL);
+	}
+};
 
 LongPollingTransport.prototype._createConnection = function(id) {
 	return new LongPollingConnection(id);
@@ -46,10 +58,26 @@ LongPollingTransport.prototype._receive = function(request, response, params) {
     }
 };
 
+LongPollingTransport.prototype.destroyConnection = function(id) {
+	this._zombies.push(id);
+
+	delete this._connections[id];
+	
+	process.nextTick(this.__destroyNextTick);
+};
+
+LongPollingTransport.prototype.__destroyNextTick = function() {
+	for (var i in this._zombies) {
+		this.emit('disconnect', this._zombies[i]);
+	}
+
+	this._zombies = [];
+};
+
 LongPollingTransport.prototype._destroy = function(request, response, params) {
+	this.destroyConnection(params.id);
+	
 	Router.Utils.sendJSON(response, '', 200);
-	this.removeConnection(params.id);
-	this.emit('disconnect', params.id);
 };
 
 LongPollingTransport.prototype._holdRequest
@@ -62,14 +90,22 @@ LongPollingTransport.prototype._holdRequest
     }
 };
 
-LongPollingTransport.prototype._initConnectionsLoop = function() {
-	setInterval(this._flushConnections.bind(this), CHECK_INTERVAL);
-};
-
 LongPollingTransport.prototype._flushConnections = function() {
+	var i = 0,
+		t = Date.now();
+
 	for (var id in this._connections) {
 		this._connections[id].waitOrFlush();
+		i++;
 	}
+
+	this.__isRunning = i !== 0;
+	if (this.__isRunning) {
+		setTimeout(
+			this._flushConnections,
+			Math.ceil(Math.sqrt(i) * 2.5) + Date.now() - t
+		);
+	};
 };
 
 module.exports = LongPollingTransport;

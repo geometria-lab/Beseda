@@ -3,25 +3,24 @@ var util = require('util');
 var Router = require('./../../router.js');
 var Connection = require('./connection.js');
 
-var FLUSH_LOOP_COUNT = 500;
-var DESTROY_LOOP_COUNT = 600;
-
 var LongPollingConnection = function(id) {
 	Connection.call(this, id);
 
 	this._updateFlag  = 0;
 	this._currentFlag = 0;
-	this._loopCount   = DESTROY_LOOP_COUNT;
+	this._updateTime = Date.now();
 
 	this._dataQueue = [];
 	this._response  = null;
+
+	this._flush = this._flush.bind(this);
 };
 
 util.inherits(LongPollingConnection, Connection);
 
 LongPollingConnection.prototype.write = function(data) {
     this._dataQueue.push(data);
-	++this._updateFlag;
+	this._updateFlag++;
 };
 
 LongPollingConnection.prototype.apply = function(request, response, head) {
@@ -31,44 +30,45 @@ LongPollingConnection.prototype.apply = function(request, response, head) {
 
 LongPollingConnection.prototype.hold = function(request, response, params) {
     if (this._response !== null) {
-        this._flush();
+	    process.nextTick(this._flush);
     }
 
     this._response = response;
     this._currentFlag = this._updateFlag;
-    this._loopCount = DESTROY_LOOP_COUNT;
+	this._updateTime = Date.now();
 };
 
 LongPollingConnection.prototype.receive = function(request, response, params) {
-	var data = [];
-	var push = data.push.bind(data);
-	request.on('data', push);
-
 	var self = this;
+	var data = [];
+
+	request.on('data', data.push.bind(data));
 	request.once('end', function() {
-		request.removeListener('data', push);
-		self.handleData(data.join(''));
 		Router.Utils.send(response, 200);
+
+		request.removeAllListeners('data');
+		
+		self.handleData(data.join(''));
 	});
 };
 
 LongPollingConnection.prototype.waitOrFlush = function() {
-	if (this._loopCount <= 0) {
-		this.disconnect();
-	} else if (this._response) {
-		if (this._loopCount <= FLUSH_LOOP_COUNT ||
+	var lifeTime = Date.now() - this._updateTime;
+	if (lifeTime > 600000) {
+		this._transport.destroyConnection(this._id);
+	} else if (this._response !== null) {
+		if (lifeTime > 25000 ||
 			this._dataQueue.length > 0 ||
 			this._currentFlag !== this._updateFlag) {
 
-			this._flush();
+			process.nextTick(this._flush);
 		}
 	}
-
-	this._loopCount--;
 };
 
 LongPollingConnection.prototype._flush = function() {
-	this._send(this._response, JSON.stringify(this._dataQueue))
+	this._send(this._response, JSON.stringify(this._dataQueue));
+
 	this._dataQueue = [];
 	this._response = null;
 };
