@@ -1,6 +1,14 @@
 Changelog
 ======
 
+Version 0.1.2
+---
+November 30, 2011
+
+* Refactored server transports
+* Implemented new websocket draft (fixed websocket fail in chrom)
+
+
 Version 0.1.1
 ---
 November 8, 2011
@@ -8,6 +16,7 @@ November 8, 2011
 * Added possibility to use a Router separately
 * Added beseda-benchmarks binary to package.json
 * Fixed unsubsribe error
+
 
 Version 0.1.0
 ---
@@ -17,6 +26,7 @@ September 15, 2011
 * Fixed long polling disconnect
 * Added disconnection event to nodejs client
 
+
 Version 0.0.10
 ---
 July 28, 2011
@@ -24,6 +34,7 @@ July 28, 2011
 * Fixed pubSub option
 * Refactored redis and memory pubSub
 * Changed redis pubSub from 'redis-node' to 'redis' package 
+
 
 Version 0.0.9
 ---
@@ -34,12 +45,14 @@ July 20, 2011
 * Return from dispatch if invalid message format
 * http.Server.address() sometimes throws exception
 
+
 Version 0.0.8
 ---
 June 3, 2011
 
 * Fix some crazy transpots bugs
 * Fix reconnect options bug
+
 
 Version 0.0.7
 ---
@@ -49,12 +62,14 @@ June 2, 2011
 * Compress browser client by Google Closure Compiler
 * Fix long polling transport validation
 
+
 Version 0.0.6
 ---
 June 2, 2011
 
 * Publisher for Server
 * Polling loop interval
+
 
 Version 0.0.5
 ---
@@ -70,6 +85,7 @@ May 26, 2011
 * Refactor Session and Channel: needs SubscriptionManager
 * Refactor client's transports
 * Fix reconnect bugs
+
 
 Version 0.0.4
 ---
@@ -91,12 +107,14 @@ May 23, 2011
 * Lot of optimization
 * Router parameters
 
+
 Version 0.0.3
 ---
 May 15, 2011
 
 * Disable monitor (not stable)
 * Change default port to 4000 for server and to 4001 for monitor
+
 
 Version 0.0.2
 ---
@@ -105,6 +123,7 @@ April 13, 2011
 * Monitor
 * Some fixes and refactors
 * PHP publisher
+
 
 Version 0.0.1
 ---

@@ -1337,6 +1337,8 @@ BesedaPackage.transport.LongPolling.prototype.__poll = function() {
     }
 };
 
+
+
 /**
  * @constructor
  * @extends BesedaPackage.transport.LongPolling
@@ -1447,7 +1449,6 @@ BesedaPackage.transport.WebSocket.prototype.__handleData = function(event) {
 	 * @type {{ connectionId: string }}
 	 */
 	var data = this._decodeData(event.data);
-	alert(event.data);
 
 	if (!this.__handshaked) {
 		this.__handshaked = true;
