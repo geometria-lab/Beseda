@@ -14,7 +14,11 @@ Protocol.prototype.setConnection = function(connection) {
 Protocol.prototype.handshake = function(headers, request, head) {};
 
 Protocol.prototype.write = function(data) {
-	this._stream.write(this._frame(data));
+	try {
+		this._stream.write(this._frame(data));
+	} catch (error) {
+		this._connection.disconnect();
+	}
 };
 
 Protocol.prototype._frame = function(data) {};

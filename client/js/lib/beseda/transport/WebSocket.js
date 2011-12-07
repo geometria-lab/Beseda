@@ -19,7 +19,7 @@ BesedaPackage.transport.WebSocket = function() {
 BesedaPackage.utils.inherits(BesedaPackage.transport.WebSocket, BesedaPackage.Transport);
 
 BesedaPackage.transport.WebSocket.isAvailable = function(options) {
-	return  !!window.WebSocket;
+	return  !!window.WebSocket || !!window.MozWebSocket;
 };
 
 BesedaPackage.transport.WebSocket.prototype.__initClosuredHandlers = function() {
@@ -40,7 +40,7 @@ BesedaPackage.transport.WebSocket.prototype.__initClosuredHandlers = function() 
 
 BesedaPackage.transport.WebSocket.prototype.connect = function(host, port, ssl) {
 	if (!this._isConnected) {
-		this.__ws = new WebSocket(
+		this.__ws = new (window.WebSocket || window.MozWebSocket)(
 			'ws' + (ssl ? 's' : '') + '://' +
 			host + (port ? ':' + port : '') +
 			'/beseda/io/' + this._typeSuffix + '/' +

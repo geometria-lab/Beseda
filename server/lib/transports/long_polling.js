@@ -35,6 +35,18 @@ LongPollingTransport.prototype._createConnection = function(id) {
 
 LongPollingTransport.prototype._initRoutes = function() {
 	this._io.server.router.addRoute(new Router.Route(
+		'/beseda/io/longPolling/:id/:time', function(request, response) {
+			response.writeHead(200, {
+				'Access-Control-Allow-Origin': '*',
+				'Access-Control-Allow-Methods': 'POST, PUT, GET, OPTIONS'
+			});
+			
+			response.end();
+		},
+		{ method : [ 'OPTIONS' ] }
+	));
+
+	this._io.server.router.addRoute(new Router.Route(
 		'/beseda/io/longPolling/:id/:time', this._receive.bind(this),
 		{ method : [ 'PUT' ] }
 	));
@@ -77,7 +89,7 @@ LongPollingTransport.prototype.__destroyNextTick = function() {
 LongPollingTransport.prototype._destroy = function(request, response, params) {
 	this.destroyConnection(params.id);
 	
-	Router.Utils.sendJSON(response, '', 200);
+	Router.Utils.sendJSON(response, '');
 };
 
 LongPollingTransport.prototype._holdRequest

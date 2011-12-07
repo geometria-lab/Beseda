@@ -27,7 +27,7 @@ Draft.prototype.handshake = function(headers, request, head) {
 
 		this._initListeners();
 	} catch (error) {
-		this._connection.disconnect();
+		//TODO: handle data
 	}
 };
 
@@ -69,22 +69,30 @@ Draft.prototype._collectData = function(chunk) {
 
 	this.__currentFrame.appendChunk(chunk);
 
-	if (this.__currentFrame.isReady) {
-		this.__currentPacket
-			= this.__currentPacket.concat(this.__currentFrame.flush());
+	if (this.__currentFrame.isDisconnect) {
+		console.log("disconnect");
 
-		if (this.__currentFrame.isFinal) {
-			this._connection.handleData(this.__flush());
-		}
+		this._stream.end();
+		this._connection.disconnect();
+	} else {
+		if (this.__currentFrame.isReady) {
+			this.__currentPacket
+				= this.__currentPacket.concat(this.__currentFrame.flush());
 
-		var rest = this.__currentFrame.getRest();
-		if (rest !== null) {
-			this.__currentFrame = new ProtocolFrame();
-			this.__currentFrame.appendChunk(rest);
-		} else {
-			this.__currentFrame = null;
+			if (this.__currentFrame.isFinal) {
+				this._connection.handleData(this.__flush());
+			}
+
+			var rest = this.__currentFrame.getRest();
+			if (rest !== null) {
+				this.__currentFrame = new ProtocolFrame();
+				this.__currentFrame.appendChunk(rest);
+			} else {
+				this.__currentFrame = null;
+			}
 		}
 	}
+
 };
 
 Draft.prototype.__flush = function() {
@@ -98,6 +106,7 @@ module.exports = Draft;
 var ProtocolFrame = function() {
 	this.isFinal = false;
 	this.isReady = false;
+	this.isDisconnect = false;
 
 	this.__payloadLength = 0;
 	this.__baseLength = 0;
@@ -120,9 +129,11 @@ ProtocolFrame.prototype.appendChunk = function(chunk) {
 	if (isFirstChunk) {
 		this.__baseLength = 2;
 		this.isFinal = (chunk[0] & 0x80) === 0x80;
-	}
 
-	console.log(chunk.length);
+		if ((chunk[0] & 0x08) !== 0) {
+			this.isDisconnect = true;
+		}
+	}
 
 	this.__chunkBuffer.push(chunk);
 	this.__bytesLoaded += chunk.length;

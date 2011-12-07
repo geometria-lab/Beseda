@@ -1,4 +1,6 @@
-var connection = new Beseda();
+var connection = new Beseda({
+	host: 'localhost'
+});
 
 connection.on('connect', function(message) {
     BesedaPackage.utils.log('Beseda connected with clientId=' + message.clientId);
