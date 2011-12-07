@@ -1,10 +1,11 @@
 Changelog
 ======
 
-Version 0.1.3
+Version 0.2.0
 ---
-December 08, 2012
+December 8, 2012
 
+* Implemented cross-domain XmlHttpRequest 
 * Fix websocket handshake bug
 
 Version 0.1.2
