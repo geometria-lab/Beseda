@@ -5,7 +5,6 @@ var Draft00 = require('./websocket/draft_00.js');
 var Draft07 = require('./websocket/draft_17.js');
 
 var WebSocketConnection = function(id) {
-	console.log(1);
 	Connection.call(this, id);
 	this.__protocol = null;
 };
@@ -23,8 +22,6 @@ WebSocketConnection.prototype.write = function(data) {
 };
 
 WebSocketConnection.prototype.apply = function(request, response, head) {
-	console.log(2);
-
 	this.__protocol
 		= this.__createProtocol(request.headers['sec-websocket-version']);
 
