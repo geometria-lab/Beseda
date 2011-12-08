@@ -1,9 +1,12 @@
+
 /**
  * @constructor
  * @extends BesedaPackage.Transport
  */
 BesedaPackage.transport.WebSocket = function() {
 	BesedaPackage.Transport.prototype.constructor.call(this);
+
+
 
 	this._typeSuffix = 'webSocket';
 
@@ -19,7 +22,7 @@ BesedaPackage.transport.WebSocket = function() {
 BesedaPackage.utils.inherits(BesedaPackage.transport.WebSocket, BesedaPackage.Transport);
 
 BesedaPackage.transport.WebSocket.isAvailable = function(options) {
-	return  !!window.WebSocket || !!window.MozWebSocket;
+	return  !!window.WebSocket;
 };
 
 BesedaPackage.transport.WebSocket.prototype.__initClosuredHandlers = function() {
@@ -40,7 +43,7 @@ BesedaPackage.transport.WebSocket.prototype.__initClosuredHandlers = function() 
 
 BesedaPackage.transport.WebSocket.prototype.connect = function(host, port, ssl) {
 	if (!this._isConnected) {
-		this.__ws = new (window.WebSocket || window.MozWebSocket)(
+		this.__ws = new WebSocket(
 			'ws' + (ssl ? 's' : '') + '://' +
 			host + (port ? ':' + port : '') +
 			'/beseda/io/' + this._typeSuffix + '/' +
@@ -55,7 +58,8 @@ BesedaPackage.transport.WebSocket.prototype.connect = function(host, port, ssl) 
 };
 
 BesedaPackage.transport.WebSocket.prototype.disconnect = function() {
-	this.__ws['close']();
+	this.__ws.close();
+	this.__handshaked = false;
 	this._isConnected = false;
 };
 

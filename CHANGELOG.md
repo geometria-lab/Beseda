@@ -1,12 +1,18 @@
 Changelog
 ======
 
+Version 0.1.3
+---
+December 08, 2012
+
+* Fix websocket handshake bug
+
 Version 0.1.2
 ---
 November 30, 2011
 
 * Refactored server transports
-* Implemented new websocket draft (fixed websocket fail in chrom)
+* Implemented new websocket draft (fixed websocket fail in chrome)
 
 
 Version 0.1.1
