@@ -1,0 +1,5 @@
+(function() {
+
+	var Transport = function() {};
+	
+})();
