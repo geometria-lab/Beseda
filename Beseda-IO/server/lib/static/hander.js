@@ -18,7 +18,7 @@ var Handler = function(options) {
 Handler.prototype.handleRequest = function(request, response, filePath) {
     if (this.__cache[filePath]) {
         if (this.__options.stat) {
-            this._stat(request, function(request, response, filePath, stat){
+            this.__stat(request, function(request, response, filePath, stat) {
                 if (this.__cache.get(filePath).mtime === stat.mtime) {
                     this.__processFromCache(request, response, filePath);
                 } else {
@@ -29,16 +29,12 @@ Handler.prototype.handleRequest = function(request, response, filePath) {
             this.__processFromCache(request, response, filePath);
         }
     } else {
-        this._stat(request, function(request, response, filePath, stat){
-            this.__processFromFile(request, response, filePath, stat);
-        }.bind(this));
+        this.__stat(request, this.__processFromFile.bind(this));
     }
-    
-    this._send(request, response, fileMeta);
 }
 
-Handler.prototype.__processFromCache = function(request, response, filePath, callback) {
-    var cache = this.__cache.get(request);
+Handler.prototype.__processFromCache = function(request, response, filePath) {
+    var fileMeta = this.__cache[filePath];
 }
 
 Handler.prototype.__processFromFile = function(request, response, filePath, callback) {
@@ -55,12 +51,13 @@ Handler.prototype.__processFromFile = function(request, response, filePath, call
     this.__send()
 }
 
-Handler.prototype.__stat = function(request, response, filePath, callback, callback) {
+Handler.prototype.__stat = function(request, response, filePath, callback) {
     fs.stat(request.filePath, function(error, stat){
         if (error) {
-            request.callback(error, request);
+            response.writeHead(404, { 'Server' : 'Beseda' });
+            response.end();
         } else {
-            callback(request, stat);
+            callback(request, response, filePath, stat);
         }
     });
 }
