@@ -18,43 +18,23 @@ var Handler = function(options) {
 Handler.prototype.handleRequest = function(request, response, filePath) {
     if (this.__cache[filePath]) {
         if (this.__options.stat) {
-            this._stat(request, function(request, response, filePath, callback, stat){
+            this._stat(request, function(request, response, filePath, stat){
                 if (this.__cache.get(filePath).mtime === stat.mtime) {
-                    this.__processFromCache(request, response, filePath, callback);
+                    this.__processFromCache(request, response, filePath);
                 } else {
-                    this.__processFromFile(request, response, filePath, callback);
+                    this.__processFromFile(request, response, filePath, stat);
                 }
             }.bind(this));
         } else {
-            this.__processFromCache(request, response, filePath, callback);
+            this.__processFromCache(request, response, filePath);
         }
     } else {
-        this._stat(request, function(request, response, filePath, callback, stat){
-            
-            
-            
-            
-            
-            
-            
-            if (this.__cache.get(filePath).mtime === stat.mtime) {
-                this.__processFromCache(request, response, filePath, callback);
-            } else {
-                this.__processFromFile(request, response, filePath, callback);
-            }
+        this._stat(request, function(request, response, filePath, stat){
+            this.__processFromFile(request, response, filePath, stat);
         }.bind(this));
-        
-        
-        
-        
-        
-        
-        
-        
-        this.__processFromFile(request, response, filePath, callback);
     }
     
-    this._send(request, response, )
+    this._send(request, response, fileMeta);
 }
 
 Handler.prototype.__processFromCache = function(request, response, filePath, callback) {
