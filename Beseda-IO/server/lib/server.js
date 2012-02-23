@@ -4,8 +4,8 @@ var util  = require('util');
 
 var io = require('./io');
 var router = require('./router');
+var StaticRoute = ;
 
-var Static = require('./static.js');
 var RequestStream = require('./request-stream.js');
 
 var Server = function() {
@@ -13,10 +13,14 @@ var Server = function() {
 
 	this.io = new io.IO();
 
-    this.router = new router.Router();
+    var route = new require('./static').Route(
+        '/beseda/js/',
+        __dirname + '/../../client/js/',
+        { stat : false, versioning : true }
+    );
 
-    this.__static = new Static();
-    this.router.get('/beseda/js/:filename', this.__handleStaticFile.bind(this));
+    this.router = new router.Router();
+    this.router.addRoute(route);
 
 	this.__handleConnectionData = this.__handleConnectionData.bind(this);
 	this.__handleConnectionError = this.__handleConnectionError.bind(this);
@@ -81,26 +85,6 @@ Server.prototype.__handleRequest = function(request, response) {
     }
 
 	this.emit('request', request, response);
-};
-
-Server.prototype.__handleStaticFile = function(request, response, params) {
-    var file = __dirname + '/../../client/js/' + params.filename;
-
-    this.__static.process(
-        request,
-        response,
-        file,
-        'text/javascript',
-        this.__handleStaticFileError.bind(this)
-    );
-}
-
-Server.prototype.__handleStaticFileError = function(error, request, response, filePath) {
-    if (error) {
-        util.log('Can\'t send file "' + request.url + ' (' + filePath +')": ' + error);
-
-        router.utils.send(response, 404);
-    }
 };
 
 Server.prototype.__createConnection = function(request, response) {

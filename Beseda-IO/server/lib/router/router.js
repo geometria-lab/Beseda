@@ -1,5 +1,5 @@
 var Route = require('./route.js'),
-    Utils = require('./utils.js');
+    utils = require('./utils.js');
 
 var Router = function() {
     this._routes = [];
@@ -29,7 +29,7 @@ Router.prototype.addRoute = function(route) {
 
 Router.prototype.dispatch = function(request, response) {
 	var result = false;
-	var parsedURL = Utils.parseURL(request.url);
+	var parsedURL = utils.parseURL(request.url);
     for (var i = 0, l = this._routes.length; i < l; i++) {
     	var route = this._routes[i];
 

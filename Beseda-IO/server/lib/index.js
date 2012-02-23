@@ -1,5 +1,6 @@
 module.exports = {
 	'Server' : require('./server.js'),
     'Router' : require('./router/router.js'),
-	'IO'     : require('./io/io.js')
+	'IO'     : require('./io/io.js'),
+    'Static' : require('./static.js')
 };
