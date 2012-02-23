@@ -1,6 +1,6 @@
 (function() {
 	var XHRRequest = function(method) {
-	    BesedaPackage.events.EventEmitter.prototype.constructor.call(this);
+	    beseda.events.EventEmitter.prototype.constructor.call(this);
 
 	    this.url = null;
 	    this.method = method;

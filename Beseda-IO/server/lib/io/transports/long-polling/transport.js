@@ -1,7 +1,7 @@
 var util = require('util');
 var protocol = require('../protocol');
 
-var IO = require('../transport.js');
+var Transport = require('../transport.js');
 var Connection = require('./connection.js');
 
 var INIT_PROCESS_INTERVAL = 100;
@@ -10,17 +10,17 @@ var FlushArguments = function(id) {
 	this.id = id;
 };
 
-var LongPollingIO = function() {
-	IO.call(this);
+var LongPollingTransport = function() {
+	Transport.call(this);
 
 	this.__isRunning = false;
 	this.__processConnections = this.__processConnections.bind(this);
 };
 
-util.inherits(LongPollingIO, IO);
+util.inherits(LongPollingTransport, Transport);
 
-LongPollingIO.prototype.create = function(type) {
-	var id = IO.prototype.create.call(this, type);
+LongPollingTransport.prototype.create = function(type) {
+	var id = Transport.prototype.create.call(this, type);
 
 	if (!this.__isRunning) {
 		this.__startLoop();
@@ -29,36 +29,36 @@ LongPollingIO.prototype.create = function(type) {
 	return id;
 };
 
-LongPollingIO.prototype._createConnection = function(type) {
+LongPollingTransport.prototype._createConnection = function(type) {
 	var connection = new Connection();
 	connection.setProtocol(new protocol.JSON());
 	return connection;
 };
 
-LongPollingIO.prototype.flush = function(id) {
+LongPollingTransport.prototype.flush = function(id) {
 	this._expectNextTick(new FlushArguments(id));
 };
 
-LongPollingIO.prototype.execAction = function(args) {
-	IO.prototype.execAction.call(this, args);
+LongPollingTransport.prototype.execAction = function(args) {
+	Transport.prototype.execAction.call(this, args);
 	
 	if (args instanceof FlushArguments) {
 		this.__doFlush(args.id);
 	}
 };
 
-LongPollingIO.prototype.__doFlush = function(id) {
+LongPollingTransport.prototype.__doFlush = function(id) {
 	if (this._connections[id] !== undefined) {
 		this._connections[id].flush();
 	}
 };
 
-LongPollingIO.prototype.__startLoop = function() {
+LongPollingTransport.prototype.__startLoop = function() {
 	this.__isRunning = true;
 	setTimeout(this.__processConnections, INIT_PROCESS_INTERVAL);
 };
 
-LongPollingIO.prototype.__processConnections = function() {
+LongPollingTransport.prototype.__processConnections = function() {
 	var i = 0,
 		t = Date.now();
 
@@ -72,7 +72,7 @@ LongPollingIO.prototype.__processConnections = function() {
 	if (this.__isRunning) {
 		var timeout = Math.ceil(Math.sqrt(i) * 2.5) + Date.now() - t;
 		setTimeout(this.__processConnections, timeout);
-	};
+	}
 };
 
-module.exports = LongPollingIO;
+module.exports = LongPollingTransport;

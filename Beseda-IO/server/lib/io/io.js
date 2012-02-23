@@ -5,7 +5,7 @@ var IO = function() {
 };
 
 IO.prototype.create = function(type) {
-	return this.__longPolling.create(type)
+	return this.__longPolling.create(type);
 };
 
 IO.prototype.destroy = function(id) {

@@ -1,7 +1,6 @@
-var http  = require('http');
-var beseda = require('../server/lib');
+var Beseda = require('../server');
 
-var server = new beseda.Server();
+var server = new Beseda();
 server.on('message', function(id, message) {
 	server.send(id, message);
 });
