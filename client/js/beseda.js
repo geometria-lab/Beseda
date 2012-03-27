@@ -502,7 +502,7 @@ BesedaPackage.transport.request = {};
 BesedaPackage.events.EventEmitter = function() { };
 
 BesedaPackage.events.EventEmitter.defaultMaxListeners = 10;
-BesedaPackage.events.EventEmitter.isArray = Array.isArray || function(o) { return Object.prototype.toString.call(o) === '[object Array]'; };
+BesedaPackage.events.EventEmitter.isArray = Array.isArray || function(o) { return o.prototype.toString.call(o) === '[object Array]'; };
 
 BesedaPackage.events.EventEmitter.prototype.setMaxListeners = function(n) {
     if (!this._events) this._events = {};
@@ -786,7 +786,7 @@ BesedaPackage.Client.prototype._init = function() {
 	    self.__destroy();
 
         setTimeout(function(){
-	        self.connect();
+	        self.connect(undefined, undefined, undefined, self.__firstMessage);
         }, 5000)
     });
 
@@ -797,7 +797,7 @@ BesedaPackage.Client.prototype._init = function() {
         var message = self.__createMessage('/meta/connect', self.__firstMessage);
 
         self._io.send(message);
-        self.__firstMessage = null;
+        //self.__firstMessage = null;
     };
 };
 
@@ -1558,7 +1558,7 @@ BesedaPackage.transport.request.JSONPRequest = function() {
     BesedaPackage.events.EventEmitter.prototype.constructor.call(this);
 
     this.url = null;
-    this.data = '';
+    this.data = null;
 
     this.__id = ++BesedaPackage.transport.request.JSONPRequest.__lastID;
     this.__requestIndex = 0;
@@ -1585,7 +1585,11 @@ BesedaPackage.transport.request.JSONPRequest.prototype.send = function(url) {
 
     var requestURL = this.url + '/' + (new Date().getTime()) +
         '?callback=BesedaPackage.transport.request.JSONPRequest.__callbacks["' +
-            script.id + '"]&messages=' + this.data;
+        script.id + '"]';
+
+    if (this.data !== null) {
+        requestURL += '&messages=' + this.data;
+    }
 
 	script.src = requestURL;
 
