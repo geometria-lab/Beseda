@@ -15,7 +15,7 @@ November 8, 2011
 
 * Added possibility to use a Router separately
 * Added beseda-benchmarks binary to package.json
-* Fixed unsubsribe error
+* Fixed unsubscribe error
 
 
 Version 0.1.0
