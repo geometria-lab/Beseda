@@ -1,12 +1,19 @@
 Changelog
 ======
 
+Version 0.2.0
+---
+December 8, 2012
+
+* Implemented cross-domain XmlHttpRequest 
+* Fix websocket handshake bug
+
 Version 0.1.2
 ---
 November 30, 2011
 
 * Refactored server transports
-* Implemented new websocket draft (fixed websocket fail in chrom)
+* Implemented new websocket draft (fixed websocket fail in chrome)
 
 
 Version 0.1.1

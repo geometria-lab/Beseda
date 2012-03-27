@@ -1,9 +1,12 @@
+
 /**
  * @constructor
  * @extends BesedaPackage.Transport
  */
 BesedaPackage.transport.WebSocket = function() {
 	BesedaPackage.Transport.prototype.constructor.call(this);
+
+
 
 	this._typeSuffix = 'webSocket';
 
@@ -55,7 +58,8 @@ BesedaPackage.transport.WebSocket.prototype.connect = function(host, port, ssl) 
 };
 
 BesedaPackage.transport.WebSocket.prototype.disconnect = function() {
-	this.__ws['close']();
+	this.__ws.close();
+	this.__handshaked = false;
 	this._isConnected = false;
 };
 

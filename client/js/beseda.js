@@ -1250,7 +1250,7 @@ BesedaPackage.transport.LongPolling = function() {
 BesedaPackage.utils.inherits(BesedaPackage.transport.LongPolling, BesedaPackage.Transport);
 
 BesedaPackage.transport.LongPolling.isAvailable = function(options) {
-    return document.location.hostname === options.host && (document.location.port || 80) == options.port;
+    return !!+'\v1' || window.XDomainRequest;
 };
 
 BesedaPackage.transport.LongPolling.prototype.__initClosuredHandlers = function() {
@@ -1375,12 +1375,15 @@ BesedaPackage.transport.JSONPLongPolling.prototype._decodeData = function(data) 
 };
 
 
+
 /**
  * @constructor
  * @extends BesedaPackage.Transport
  */
 BesedaPackage.transport.WebSocket = function() {
 	BesedaPackage.Transport.prototype.constructor.call(this);
+
+
 
 	this._typeSuffix = 'webSocket';
 
@@ -1432,7 +1435,8 @@ BesedaPackage.transport.WebSocket.prototype.connect = function(host, port, ssl) 
 };
 
 BesedaPackage.transport.WebSocket.prototype.disconnect = function() {
-	this.__ws['close']();
+	this.__ws.close();
+	this.__handshaked = false;
 	this._isConnected = false;
 };
 
@@ -1491,9 +1495,8 @@ BesedaPackage.transport.request.XHRRequest.prototype.send = function(url) {
     }
 
     var requestURL = this.url + '/' + (new Date().getTime());
-    var request = !!+'\v1' ? new XMLHttpRequest() :
-                             new ActiveXObject("Microsoft.XMLHTTP");
-
+    var request = this.__createRequest();
+	
     var self = this;
     request.onreadystatechange = function() {
         self.__requestStateHandler(request);
@@ -1518,7 +1521,7 @@ BesedaPackage.transport.request.XHRRequest.prototype.send = function(url) {
 
 BesedaPackage.transport.request.XHRRequest.prototype.__requestStateHandler = function(request) {
     if (request.readyState === 4) {
-        if (request.status === 200) {
+	    if (request.status === 200) {
             this.emit('ready', request.responseText);
         } else {
             this.emit('error');
@@ -1527,6 +1530,23 @@ BesedaPackage.transport.request.XHRRequest.prototype.__requestStateHandler = fun
         request.abort();
 	    request = null;
     }
+};
+
+BesedaPackage.transport.request.XHRRequest.prototype.__createRequest = function() {
+	var request =  null;
+
+	if (!+'\v1') {
+		if (window.XDomainRequest) {
+			request = new XDomainRequest();
+			request.onprocess = function(){};
+		} else {
+			request = new ActiveXObject("Microsoft.XMLHTTP");
+		}
+	} else {
+		request = new XMLHttpRequest();
+	}
+
+	return request;
 };
 
 

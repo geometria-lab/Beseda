@@ -116,18 +116,20 @@ Router.Utils = {};
 Router.Utils.send = function(response, code, headers) {
     headers = headers || {};
     headers['Server'] = 'Beseda';
+	headers['Access-Control-Allow-Origin'] = '*';
 
-    response.writeHead(code, headers);
+    response.writeHead(200, headers);
     response.end();
 };
 
 Router.Utils.sendJSON = function(response, json, code, headers) {
     headers = headers || {};
 
-    headers['Server']         = 'Beseda';
-    headers['Content-Type']   = 'text/json';
+	headers['Server'] = 'Beseda';
+	headers['Content-Type'] = 'text/json';
+	headers['Access-Control-Allow-Origin'] = '*';
 
-	response.writeHead(code || 200, headers);
+	response.writeHead(200, headers);
 	response.end(json);
 };
 

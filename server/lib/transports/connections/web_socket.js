@@ -11,6 +11,10 @@ var WebSocketConnection = function(id) {
 
 util.inherits(WebSocketConnection, Connection);
 
+WebSocketConnection.prototype.disconnect = function() {
+	this._transport.destroyConnection(this._id);
+};
+
 WebSocketConnection.prototype.write = function(data) {
 	if (this.__protocol !== null && data !== undefined) {
 		this.__protocol.write(JSON.stringify([data]));
@@ -21,17 +25,13 @@ WebSocketConnection.prototype.apply = function(request, response, head) {
 	this.__protocol
 		= this.__createProtocol(request.headers['sec-websocket-version']);
 
-	if (this.__protocol !== null) {
-		this.__protocol.setConnection(this);
-		this.__protocol.setStream(request.connection);
-		this.__protocol.handshake(request.headers, request, head);
+	this.__protocol.setConnection(this);
+	this.__protocol.setStream(request.connection);
+	this.__protocol.handshake(request.headers, request, head);
 
-		this.__protocol.write(JSON.stringify({ 'connectionId' : this._id }));
+	this.__protocol.write(JSON.stringify({ 'connectionId' : this._id }));
 
-		return true;
-	}
-
-	return false;
+	return true;
 };
 
 WebSocketConnection.prototype.__createProtocol = function(version) {
