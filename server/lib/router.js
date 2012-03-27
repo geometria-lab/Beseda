@@ -1,5 +1,5 @@
 var fs   = require('fs'),
-    url  = require('url'),
+    qs  = require('qs'),
     util = require('util');
 
 var utils = require('./utils.js');
@@ -118,7 +118,7 @@ Router.Utils.send = function(response, code, headers) {
     headers['Server'] = 'Beseda';
 	headers['Access-Control-Allow-Origin'] = '*';
 
-    response.writeHead(200, headers);
+    response.writeHead(code || 200, headers);
     response.end();
 };
 
@@ -129,7 +129,7 @@ Router.Utils.sendJSON = function(response, json, code, headers) {
 	headers['Content-Type'] = 'text/json';
 	headers['Access-Control-Allow-Origin'] = '*';
 
-	response.writeHead(200, headers);
+	response.writeHead(code || 200, headers);
 	response.end(json);
 };
 
@@ -179,46 +179,8 @@ Router.Utils.sendFile = function(request, response, file, type) {
 Router.Utils.parseURL = function(url) {
 	var pathAndSearch = url.substring(1).split('?');
 
-	var result = {
-		'path'	 : pathAndSearch[0].split('/'),
-		'search' : {}
+	return {
+		path   : pathAndSearch[0].split('/'),
+		search : qs.parse(pathAndSearch[1])
 	};
-
-	var search = pathAndSearch[1];
-	if (search) {
-		var i = 0,
-			l = search.length;
-
-		var sep = '&';
-		var temp = [];
-
-		var key = null;
-	
-		while (i < l) {
-
-			if (search[i] === '=') {
-				key = temp.join('');
-				result.search[key] = '';
-				
-				temp = [];
-			} else if (search[i] === '&') {
-				if (key) {
-					result.search[key] = unescape(temp.join(''));
-					key = null;
-				}
-				
-				temp = [];
-			} else {
-				temp.push(search[i])
-			}
-
-			++i;
-		}
-
-		if (key) {
-			result.search[key] = unescape(temp.join(''));
-		}
-	}
-
-	return result;
 };

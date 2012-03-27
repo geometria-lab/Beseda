@@ -1,9 +1,19 @@
 Changelog
 ======
 
+Version 0.2.1
+---
+March 27, 2012
+
+* Use qs for parsing routes
+* Fix pubSub option
+* Send connect message on reconnect
+* Fix sending empty message on JSONPLongPolling connect
+
+
 Version 0.2.0
 ---
-December 8, 2012
+December 8, 2011
 
 * Implemented cross-domain XmlHttpRequest 
 * Fix websocket handshake bug

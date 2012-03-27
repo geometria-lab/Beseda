@@ -46,7 +46,7 @@ BesedaPackage.Client.prototype._init = function() {
 	    self.__destroy();
 
         setTimeout(function(){
-	        self.connect();
+	        self.connect(undefined, undefined, undefined, self.__firstMessage);
         }, 5000)
     });
 
@@ -57,7 +57,7 @@ BesedaPackage.Client.prototype._init = function() {
         var message = self.__createMessage('/meta/connect', self.__firstMessage);
 
         self._io.send(message);
-        self.__firstMessage = null;
+        //self.__firstMessage = null;
     };
 };
 

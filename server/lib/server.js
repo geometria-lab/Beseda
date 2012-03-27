@@ -22,8 +22,8 @@ Server = module.exports = function(options) {
 		    ssl  : false
 		},
 
-        pubSub : 'memory',
-        debug   : false,
+        pubSub : null,
+        debug  : false,
 
         transports : [ 'webSocket', 'longPolling', 'JSONPLongPolling' ]
     };
@@ -103,6 +103,9 @@ Server = module.exports = function(options) {
     /**
      *  Setup PubSub
      **/
+    if (this.options.pubSub === null) {
+        this.options.pubSub = 'memory';
+    }
     if (typeof this.options.pubSub == 'string') {
         var PubSub = require('./pubsub/' + this.options.pubSub);
         this.pubSub = new PubSub();
@@ -187,6 +190,5 @@ Server.prototype._logBesedaStarted = function() {
 	               ':' + serverAddress.port);
 	} catch (e) {
 		logger.log('Beseda started.');
-		logger.log('ERROR: can\'t receive server address!');
 	}
 };

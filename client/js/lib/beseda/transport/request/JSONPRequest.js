@@ -6,7 +6,7 @@ BesedaPackage.transport.request.JSONPRequest = function() {
     BesedaPackage.events.EventEmitter.prototype.constructor.call(this);
 
     this.url = null;
-    this.data = '';
+    this.data = null;
 
     this.__id = ++BesedaPackage.transport.request.JSONPRequest.__lastID;
     this.__requestIndex = 0;
@@ -33,7 +33,11 @@ BesedaPackage.transport.request.JSONPRequest.prototype.send = function(url) {
 
     var requestURL = this.url + '/' + (new Date().getTime()) +
         '?callback=BesedaPackage.transport.request.JSONPRequest.__callbacks["' +
-            script.id + '"]&messages=' + this.data;
+        script.id + '"]';
+
+    if (this.data !== null) {
+        requestURL += '&messages=' + this.data;
+    }
 
 	script.src = requestURL;
 
