@@ -27,7 +27,11 @@ BesedaPackage.transport.LongPolling = function() {
 BesedaPackage.utils.inherits(BesedaPackage.transport.LongPolling, BesedaPackage.Transport);
 
 BesedaPackage.transport.LongPolling.isAvailable = function(options) {
-    return !!+'\v1' || window.XDomainRequest;
+    if (/(opera)(?:.*version)?[ \/]([\w.]+)/.test(navigator.userAgent.toLowerCase())) {
+        return document.location.hostname == options.host && (document.location.port || 80) == options.port;
+    } else {
+        return !!+'\v1' || window.XDomainRequest;
+    }
 };
 
 BesedaPackage.transport.LongPolling.prototype.__initClosuredHandlers = function() {

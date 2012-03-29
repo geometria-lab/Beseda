@@ -1,6 +1,13 @@
 Changelog
 ======
 
+Version 0.2.2
+---
+March 29, 2012
+
+* Fix Opera cross-domain XHR
+
+
 Version 0.2.1
 ---
 March 27, 2012
