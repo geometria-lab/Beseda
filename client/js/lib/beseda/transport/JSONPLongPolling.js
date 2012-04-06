@@ -4,8 +4,8 @@
  * @constructor
  * @extends BesedaPackage.transport.LongPolling
  */
-BesedaPackage.transport.JSONPLongPolling = function() {
-    BesedaPackage.transport.LongPolling.prototype.constructor.call(this);
+BesedaPackage.transport.JSONPLongPolling = function(xDomain) {
+    BesedaPackage.transport.LongPolling.prototype.constructor.call(this, xDomain);
 
     this._typeSuffix = 'JSONPLongPolling';
 };

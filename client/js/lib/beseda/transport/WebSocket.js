@@ -3,10 +3,8 @@
  * @constructor
  * @extends BesedaPackage.Transport
  */
-BesedaPackage.transport.WebSocket = function() {
-	BesedaPackage.Transport.prototype.constructor.call(this);
-
-
+BesedaPackage.transport.WebSocket = function(xDomain) {
+	BesedaPackage.Transport.prototype.constructor.call(this, xDomain);
 
 	this._typeSuffix = 'webSocket';
 
@@ -22,7 +20,7 @@ BesedaPackage.transport.WebSocket = function() {
 BesedaPackage.utils.inherits(BesedaPackage.transport.WebSocket, BesedaPackage.Transport);
 
 BesedaPackage.transport.WebSocket.isAvailable = function(options) {
-	return  !!window.WebSocket;
+	return window.MozWebSocket || (window.WebSocket && !WebSocket.__addTask);
 };
 
 BesedaPackage.transport.WebSocket.prototype.__initClosuredHandlers = function() {
@@ -43,7 +41,7 @@ BesedaPackage.transport.WebSocket.prototype.__initClosuredHandlers = function() 
 
 BesedaPackage.transport.WebSocket.prototype.connect = function(host, port, ssl) {
 	if (!this._isConnected) {
-		this.__ws = new WebSocket(
+		this.__ws = new (window.MozWebSocket || window.WebSocket)(
 			'ws' + (ssl ? 's' : '') + '://' +
 			host + (port ? ':' + port : '') +
 			'/beseda/io/' + this._typeSuffix + '/' +

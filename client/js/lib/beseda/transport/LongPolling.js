@@ -2,8 +2,8 @@
  * @constructor
  * @extends BesedaPackage.Transport
  */
-BesedaPackage.transport.LongPolling = function() {
-    BesedaPackage.Transport.prototype.constructor.call(this);
+BesedaPackage.transport.LongPolling = function(xDomain) {
+    BesedaPackage.Transport.prototype.constructor.call(this, xDomain);
 
     this._typeSuffix = 'longPolling';
 
@@ -26,12 +26,8 @@ BesedaPackage.transport.LongPolling = function() {
 
 BesedaPackage.utils.inherits(BesedaPackage.transport.LongPolling, BesedaPackage.Transport);
 
-BesedaPackage.transport.LongPolling.isAvailable = function(options) {
-    if (/(opera)(?:.*version)?[ \/]([\w.]+)/.test(navigator.userAgent.toLowerCase())) {
-        return document.location.hostname == options.host && (document.location.port || 80) == options.port;
-    } else {
-        return !!+'\v1' || window.XDomainRequest;
-    }
+BesedaPackage.transport.LongPolling.isAvailable = function(options, xDomain) {
+    return !!BesedaPackage.transport.request.XHRRequest.createRequest(xDomain);
 };
 
 BesedaPackage.transport.LongPolling.prototype.__initClosuredHandlers = function() {
@@ -52,10 +48,10 @@ BesedaPackage.transport.LongPolling.prototype.__initClosuredHandlers = function(
 
 BesedaPackage.transport.LongPolling.prototype._initRequests = function() {
 	// TODO: Use only two requests: send and data
-    this._openRequest  = new BesedaPackage.transport.request.XHRRequest('GET');
-    this._dataRequest  = new BesedaPackage.transport.request.XHRRequest('GET');
-    this._sendRequest  = new BesedaPackage.transport.request.XHRRequest('PUT');
-    this._closeRequest = new BesedaPackage.transport.request.XHRRequest('DELETE');
+    this._openRequest  = new BesedaPackage.transport.request.XHRRequest('GET', this._isXDomain);
+    this._dataRequest  = new BesedaPackage.transport.request.XHRRequest('GET', this._isXDomain);
+    this._sendRequest  = new BesedaPackage.transport.request.XHRRequest('PUT', this._isXDomain);
+    this._closeRequest = new BesedaPackage.transport.request.XHRRequest('DELETE', this._isXDomain);
 };
 
 BesedaPackage.transport.LongPolling.prototype._initListeners = function() {

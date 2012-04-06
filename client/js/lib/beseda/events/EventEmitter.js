@@ -10,7 +10,7 @@ BesedaPackage.transport.request = {};
 BesedaPackage.events.EventEmitter = function() { };
 
 BesedaPackage.events.EventEmitter.defaultMaxListeners = 10;
-BesedaPackage.events.EventEmitter.isArray = Array.isArray || function(o) { return o.prototype.toString.call(o) === '[object Array]'; };
+BesedaPackage.events.EventEmitter.isArray = Array.isArray || function (o) { return Object.prototype.toString.call(o) == '[object Array]'; };
 
 BesedaPackage.events.EventEmitter.prototype.setMaxListeners = function(n) {
     if (!this._events) this._events = {};

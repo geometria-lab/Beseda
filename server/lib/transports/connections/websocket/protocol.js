@@ -11,7 +11,7 @@ Protocol.prototype.setConnection = function(connection) {
 	this._connection = connection;
 };
 
-Protocol.prototype.handshake = function(headers, request, head) {};
+Protocol.prototype.handshake = function(request, head) {};
 
 Protocol.prototype.write = function(data) {
 	try {

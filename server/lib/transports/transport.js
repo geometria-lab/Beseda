@@ -17,13 +17,11 @@ Transport.prototype.registerConnection = function(id, request, response, head) {
 	var connection = this._createConnection(id);
 	connection.setTransport(this);
 
-	if (connection !== null) {
-		connection.apply(request, response, head);
+	if (connection !== null && connection.apply(request, response, head)) {
+        this._connections[id] = connection;
+        this._start();
 
-		this._connections[id] = connection;
-		this._start();
-
-		return connection;
+        return connection;
 	}
 
 	return null;

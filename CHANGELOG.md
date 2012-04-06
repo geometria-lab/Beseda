@@ -1,6 +1,14 @@
 Changelog
 ======
 
+Version 0.2.3
+---
+April 6, 2012
+
+* Fix browser isArray implementation
+* Fix XHR transport choice schema
+* Fix WebSocket transport
+
 Version 0.2.2
 ---
 March 29, 2012

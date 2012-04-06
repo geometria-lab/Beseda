@@ -3,17 +3,22 @@ var crypto = require('crypto');
 
 var Protocol = require('./protocol.js');
 
-var Draft = function() {
+var Version13 = function() {
 	Protocol.call(this);
 
 	this.__currentPacket = [];
 	this.__currentFrame = null;
 }
 
-util.inherits(Draft, Protocol);
+util.inherits(Version13, Protocol);
 
-Draft.prototype.handshake = function(headers, request, head) {
-	var key = headers['sec-websocket-key'];
+Version13.prototype.handshake = function(request, head) {
+    if (!request.headers['sec-websocket-key']) {
+        this._stream.end();
+        return this._connection.disconnect();
+    }
+
+	var key = request.headers['sec-websocket-key'];
 	var sha = crypto.createHash('sha1');
 	sha.update(key + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11");
 
@@ -27,11 +32,12 @@ Draft.prototype.handshake = function(headers, request, head) {
 
 		this._initListeners();
 	} catch (error) {
-		//TODO: handle data
+        this._stream.end();
+        return this._connection.disconnect();
 	}
 };
 
-Draft.prototype._frame = function(data) {
+Version13.prototype._frame = function(data) {
 	var payloadLength = data.length;
 	var payloadBytes = 0;
 	if (payloadLength > 125 && payloadLength < 65536) {
@@ -62,7 +68,7 @@ Draft.prototype._frame = function(data) {
 	return frame;
 };
 
-Draft.prototype._collectData = function(chunk) {
+Version13.prototype._collectData = function(chunk) {
 	if (this.__currentFrame === null) {
 		this.__currentFrame = new ProtocolFrame();
 	}
@@ -70,9 +76,7 @@ Draft.prototype._collectData = function(chunk) {
 	this.__currentFrame.appendChunk(chunk);
 
 	if (this.__currentFrame.isDisconnect) {
-		console.log("disconnect");
-
-		this._stream.end();
+        this._stream.end();
 		this._connection.disconnect();
 	} else {
 		if (this.__currentFrame.isReady) {
@@ -95,13 +99,13 @@ Draft.prototype._collectData = function(chunk) {
 
 };
 
-Draft.prototype.__flush = function() {
+Version13.prototype.__flush = function() {
 	var result = this.__currentPacket.join('');
 	this.__currentPacket.length = 0;
 	return result;
 };
 
-module.exports = Draft;
+module.exports = Version13;
 
 var ProtocolFrame = function() {
 	this.isFinal = false;

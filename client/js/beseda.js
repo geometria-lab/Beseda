@@ -502,7 +502,7 @@ BesedaPackage.transport.request = {};
 BesedaPackage.events.EventEmitter = function() { };
 
 BesedaPackage.events.EventEmitter.defaultMaxListeners = 10;
-BesedaPackage.events.EventEmitter.isArray = Array.isArray || function(o) { return o.prototype.toString.call(o) === '[object Array]'; };
+BesedaPackage.events.EventEmitter.isArray = Array.isArray || function (o) { return Object.prototype.toString.call(o) == '[object Array]'; };
 
 BesedaPackage.events.EventEmitter.prototype.setMaxListeners = function(n) {
     if (!this._events) this._events = {};
@@ -1092,7 +1092,9 @@ BesedaPackage.IO.prototype.disconnect = function() {
 /**
  * @constructor
  */
-BesedaPackage.Transport = function() {
+BesedaPackage.Transport = function(xDomain) {
+    this._isXDomain = xDomain;
+
     this._url          = null;
     this._typeSuffix   = null;
     this._connectionID = null;
@@ -1113,7 +1115,9 @@ BesedaPackage.Transport.__transports = {
 };
 
 BesedaPackage.Transport.getBestTransport = function(options) {
-	var TransportClass;
+	var TransportClass,
+        xDomain = document.location.hostname != options.host ||
+                  (document.location.port || (options.ssl ? 443 : 80)) != options.port;
 
     for(var i = 0; i < options.transports.length; i++) {
 	    switch (options.transports[i]) {
@@ -1133,18 +1137,17 @@ BesedaPackage.Transport.getBestTransport = function(options) {
 		         throw Error('Ivalid transport ' + options.transports[i]);
 	    }
 
-	    if (TransportClass.isAvailable(options)) {
+	    if (TransportClass.isAvailable(options, xDomain)) {
 		    break;
 	    }
     }
 
-	return new TransportClass();
+	return new TransportClass(xDomain);
 };
 
 BesedaPackage.Transport.prototype.connect = function(host, port, ssl) {
     throw Error('Abstract method calling.');
 };
-
 
 BesedaPackage.Transport.prototype.send = function(messages) {
 	if (this._isConnected) {
@@ -1225,8 +1228,8 @@ BesedaPackage.Transport.prototype._enqueue = function(data) {
  * @constructor
  * @extends BesedaPackage.Transport
  */
-BesedaPackage.transport.LongPolling = function() {
-    BesedaPackage.Transport.prototype.constructor.call(this);
+BesedaPackage.transport.LongPolling = function(xDomain) {
+    BesedaPackage.Transport.prototype.constructor.call(this, xDomain);
 
     this._typeSuffix = 'longPolling';
 
@@ -1249,8 +1252,8 @@ BesedaPackage.transport.LongPolling = function() {
 
 BesedaPackage.utils.inherits(BesedaPackage.transport.LongPolling, BesedaPackage.Transport);
 
-BesedaPackage.transport.LongPolling.isAvailable = function(options) {
-    return !!+'\v1' || window.XDomainRequest;
+BesedaPackage.transport.LongPolling.isAvailable = function(options, xDomain) {
+    return !!BesedaPackage.transport.request.XHRRequest.createRequest(xDomain);
 };
 
 BesedaPackage.transport.LongPolling.prototype.__initClosuredHandlers = function() {
@@ -1271,10 +1274,10 @@ BesedaPackage.transport.LongPolling.prototype.__initClosuredHandlers = function(
 
 BesedaPackage.transport.LongPolling.prototype._initRequests = function() {
 	// TODO: Use only two requests: send and data
-    this._openRequest  = new BesedaPackage.transport.request.XHRRequest('GET');
-    this._dataRequest  = new BesedaPackage.transport.request.XHRRequest('GET');
-    this._sendRequest  = new BesedaPackage.transport.request.XHRRequest('PUT');
-    this._closeRequest = new BesedaPackage.transport.request.XHRRequest('DELETE');
+    this._openRequest  = new BesedaPackage.transport.request.XHRRequest('GET', this._isXDomain);
+    this._dataRequest  = new BesedaPackage.transport.request.XHRRequest('GET', this._isXDomain);
+    this._sendRequest  = new BesedaPackage.transport.request.XHRRequest('PUT', this._isXDomain);
+    this._closeRequest = new BesedaPackage.transport.request.XHRRequest('DELETE', this._isXDomain);
 };
 
 BesedaPackage.transport.LongPolling.prototype._initListeners = function() {
@@ -1343,8 +1346,8 @@ BesedaPackage.transport.LongPolling.prototype.__poll = function() {
  * @constructor
  * @extends BesedaPackage.transport.LongPolling
  */
-BesedaPackage.transport.JSONPLongPolling = function() {
-    BesedaPackage.transport.LongPolling.prototype.constructor.call(this);
+BesedaPackage.transport.JSONPLongPolling = function(xDomain) {
+    BesedaPackage.transport.LongPolling.prototype.constructor.call(this, xDomain);
 
     this._typeSuffix = 'JSONPLongPolling';
 };
@@ -1380,10 +1383,8 @@ BesedaPackage.transport.JSONPLongPolling.prototype._decodeData = function(data) 
  * @constructor
  * @extends BesedaPackage.Transport
  */
-BesedaPackage.transport.WebSocket = function() {
-	BesedaPackage.Transport.prototype.constructor.call(this);
-
-
+BesedaPackage.transport.WebSocket = function(xDomain) {
+	BesedaPackage.Transport.prototype.constructor.call(this, xDomain);
 
 	this._typeSuffix = 'webSocket';
 
@@ -1399,7 +1400,7 @@ BesedaPackage.transport.WebSocket = function() {
 BesedaPackage.utils.inherits(BesedaPackage.transport.WebSocket, BesedaPackage.Transport);
 
 BesedaPackage.transport.WebSocket.isAvailable = function(options) {
-	return  !!window.WebSocket;
+	return window.MozWebSocket || (window.WebSocket && !WebSocket.__addTask);
 };
 
 BesedaPackage.transport.WebSocket.prototype.__initClosuredHandlers = function() {
@@ -1420,7 +1421,7 @@ BesedaPackage.transport.WebSocket.prototype.__initClosuredHandlers = function() 
 
 BesedaPackage.transport.WebSocket.prototype.connect = function(host, port, ssl) {
 	if (!this._isConnected) {
-		this.__ws = new WebSocket(
+		this.__ws = new (window.MozWebSocket || window.WebSocket)(
 			'ws' + (ssl ? 's' : '') + '://' +
 			host + (port ? ':' + port : '') +
 			'/beseda/io/' + this._typeSuffix + '/' +
@@ -1475,12 +1476,29 @@ BesedaPackage.transport.WebSocket.prototype.__handleClose = function(event) {
  * @constructor
  * @extends BesedaPackage.events.EventEmitter
  */
-BesedaPackage.transport.request.XHRRequest = function(method) {
+BesedaPackage.transport.request.XHRRequest = function(method, xDomain) {
     BesedaPackage.events.EventEmitter.prototype.constructor.call(this);
+
+    this._isXDomain = xDomain;
 
     this.url = null;
     this.method = method;
     this.data = null;
+};
+
+BesedaPackage.transport.request.XHRRequest.createRequest = function(xDomain) {
+    var request = null;
+
+    if (window.XMLHttpRequest && (!xDomain || (new XMLHttpRequest()).withCredentials != undefined)) {
+        request = new XMLHttpRequest();
+    } else if (window.XDomainRequest && xDomain) {
+        request = new XDomainRequest();
+        request.onprocess = function(){};
+    } else if (window.ActiveXObject && !xDomain) {
+        request = new ActiveXObject('Microsoft.XMLHTTP');
+    }
+
+    return request;
 };
 
 BesedaPackage.utils.inherits(BesedaPackage.transport.request.XHRRequest, BesedaPackage.events.EventEmitter);
@@ -1495,8 +1513,8 @@ BesedaPackage.transport.request.XHRRequest.prototype.send = function(url) {
     }
 
     var requestURL = this.url + '/' + (new Date().getTime());
-    var request = this.__createRequest();
-	
+    var request = BesedaPackage.transport.request.XHRRequest.createRequest(this._isXDomain);
+
     var self = this;
     request.onreadystatechange = function() {
         self.__requestStateHandler(request);
@@ -1531,24 +1549,6 @@ BesedaPackage.transport.request.XHRRequest.prototype.__requestStateHandler = fun
 	    request = null;
     }
 };
-
-BesedaPackage.transport.request.XHRRequest.prototype.__createRequest = function() {
-	var request =  null;
-
-	if (!+'\v1') {
-		if (window.XDomainRequest) {
-			request = new XDomainRequest();
-			request.onprocess = function(){};
-		} else {
-			request = new ActiveXObject("Microsoft.XMLHTTP");
-		}
-	} else {
-		request = new XMLHttpRequest();
-	}
-
-	return request;
-};
-
 
 /**
  * @constructor

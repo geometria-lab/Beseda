@@ -1,7 +1,9 @@
 /**
  * @constructor
  */
-BesedaPackage.Transport = function() {
+BesedaPackage.Transport = function(xDomain) {
+    this._isXDomain = xDomain;
+
     this._url          = null;
     this._typeSuffix   = null;
     this._connectionID = null;
@@ -22,7 +24,9 @@ BesedaPackage.Transport.__transports = {
 };
 
 BesedaPackage.Transport.getBestTransport = function(options) {
-	var TransportClass;
+	var TransportClass,
+        xDomain = document.location.hostname != options.host ||
+                  (document.location.port || (options.ssl ? 443 : 80)) != options.port;
 
     for(var i = 0; i < options.transports.length; i++) {
 	    switch (options.transports[i]) {
@@ -42,18 +46,17 @@ BesedaPackage.Transport.getBestTransport = function(options) {
 		         throw Error('Ivalid transport ' + options.transports[i]);
 	    }
 
-	    if (TransportClass.isAvailable(options)) {
+	    if (TransportClass.isAvailable(options, xDomain)) {
 		    break;
 	    }
     }
 
-	return new TransportClass();
+	return new TransportClass(xDomain);
 };
 
 BesedaPackage.Transport.prototype.connect = function(host, port, ssl) {
     throw Error('Abstract method calling.');
 };
-
 
 BesedaPackage.Transport.prototype.send = function(messages) {
 	if (this._isConnected) {

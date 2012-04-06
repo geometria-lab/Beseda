@@ -1,8 +1,13 @@
 var util = require('util');
 
 var Connection = require('./connection.js');
-var Draft00 = require('./websocket/draft_00.js');
-var Draft07 = require('./websocket/draft_17.js');
+
+var protocolVersions = {
+    0  : require('./websocket/v00.js'),
+    7  : require('./websocket/v13.js'),
+    8  : require('./websocket/v13.js'),
+    13 : require('./websocket/v13.js')
+};
 
 var WebSocketConnection = function(id) {
 	Connection.call(this, id);
@@ -22,12 +27,16 @@ WebSocketConnection.prototype.write = function(data) {
 };
 
 WebSocketConnection.prototype.apply = function(request, response, head) {
-	this.__protocol
-		= this.__createProtocol(request.headers['sec-websocket-version']);
+    if (request.headers.upgrade === undefined || request.headers.upgrade.toLowerCase() !== 'websocket') {
+        request.connection.end();
+        return this.disconnect();
+    }
+
+	this.__protocol = this.__createProtocol(request.headers['sec-websocket-version']);
 
 	this.__protocol.setConnection(this);
 	this.__protocol.setStream(request.connection);
-	this.__protocol.handshake(request.headers, request, head);
+	this.__protocol.handshake(request, head);
 
 	this.__protocol.write(JSON.stringify({ 'connectionId' : this._id }));
 
@@ -35,10 +44,10 @@ WebSocketConnection.prototype.apply = function(request, response, head) {
 };
 
 WebSocketConnection.prototype.__createProtocol = function(version) {
-	switch (version) {
-		case '8': return new Draft07();
-		default: return new Draft00();
-	}
+    var protocol = typeof version !== 'undefined' &&
+        protocolVersions[version] !== undefined ? version : 0;
+
+    return new protocolVersions[protocol]();
 };
 
 module.exports = WebSocketConnection;
