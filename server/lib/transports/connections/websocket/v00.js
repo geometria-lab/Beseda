@@ -75,7 +75,7 @@ Version00.prototype.handshake = function(request, head) {
         }
     }
 
-    this.__initListeners();
+    this._initListeners();
 };
 
 Version00.prototype._frame = function(data) {
