@@ -15,7 +15,9 @@ PluginsManager.prototype.use = function(plugin) {
         }
     }
 
-    this.callPlugins('initialize', this);
+	if (plugin.initialize !== undefined) {
+		plugin.initialize(this);
+	}
 };
 
 PluginsManager.prototoype.callPlugins = function() {

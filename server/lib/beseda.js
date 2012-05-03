@@ -25,16 +25,26 @@ var Beseda = function() {
 	this.__handleConnectionData = this.__handleConnectionData.bind(this);
 	this.__handleConnectionError = this.__handleConnectionError.bind(this);
 
-    this.beseda.callPlugins('createServer', this);
+	this.__httpServer = null;
+
+    this.callPlugins('createServer', this);
 };
 
 util.inherits(plugins, events.EventEmitter);
 util.inherits(PluginsManager, plugins);
 util.inherits(Beseda, PluginsManager);
 
+Beseda.prototypr.use = function(plugin) {
+	if (plugin instanceof http.Server) {
+		this.__httpServer = plugin;
+	} else {
+		PluginsManager.prototype.use(plugin)
+	}
+}
+
 Beseda.prototype.listen = function() {
     // Initialize HTTP server
-    this.__httpServer = server || this.__createDefaultHttpServer();
+    this.__httpServer = this.__httpServer || require('http').createServer();
     this.__httpServerRequestListeners = this.__httpServer.listeners('request');
     this.__httpServer.removeAllListeners('request');
     this.__httpServer.addListener('request', this.__handleRequest.bind(this));
@@ -61,9 +71,7 @@ Beseda.prototype.__handleRequest = function(request, response) {
     if (this.router.dispatch(request, response) === false) {
         for (var i = 0; i < this.__httpServerRequestListeners.length; i++) {
             this.__httpServerRequestListeners[i].call(
-                this.__httpServer,
-                request,
-                response
+                this.__httpServer, request, response
             );
         }
     }
@@ -71,13 +79,8 @@ Beseda.prototype.__handleRequest = function(request, response) {
 	this.emit('request', request, response);
 };
 
-Beseda.prototype.__createDefaultHttpServer = function() {
-    return this.beseda.callFirstPlugin('createDefaultHttpServer') ||
-           require('http').createServer();
-};
-
 Beseda.prototype.__createConnection = function(request, response) {
-	var id = this.io.create(this.__getLongPollingType(request));
+	var id = this.io.create(this.__getTransport(request));
 	this.io.setOutputStream(id, response);
 	this.io.setInputStream(id, request);
 
