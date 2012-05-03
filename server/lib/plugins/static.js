@@ -27,9 +27,9 @@ var Static = function(options) {
     this.__cache = {};
 };
 
-Static.prototype.createServerCallback = function(server) {
+Static.prototype.initialize = function(beseda) {
     for (var name in this.__options.files) {
-        server.router.get(this.__options.path + name, (function(file) {
+        beseda.router.get(this.__options.path + name, (function(file) {
             return function(request, response) {
                 this.__handleRequest(request, response, file);
             }.bind(this)

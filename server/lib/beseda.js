@@ -14,6 +14,8 @@ var Beseda = function() {
 
 	this.io = new io.IO();
 
+	this.__httpServer = null;
+
     // Initialize Router
     var route = new router.Route('/', this.__createConnection.bind(this));
     this.router = new router.Router();
@@ -22,19 +24,16 @@ var Beseda = function() {
                .post('/:connectionId', this.__handlePollingInput.bind(this))
                .delete('/:connectionId', this.__handlePollingDestroy.bind(this));
 
-	this.__handleConnectionData = this.__handleConnectionData.bind(this);
+    this.__handleRequest         = this.__handleRequest.bind(this)
+	this.__handleConnectionData  = this.__handleConnectionData.bind(this);
 	this.__handleConnectionError = this.__handleConnectionError.bind(this);
-
-	this.__httpServer = null;
-
-    this.callPlugins('createServer', this);
 };
 
 util.inherits(plugins, events.EventEmitter);
 util.inherits(PluginsManager, plugins);
 util.inherits(Beseda, PluginsManager);
 
-Beseda.prototypr.use = function(plugin) {
+Beseda.prototype.use = function(plugin) {
 	if (plugin instanceof http.Server) {
 		this.__httpServer = plugin;
 	} else {
@@ -47,7 +46,7 @@ Beseda.prototype.listen = function() {
     this.__httpServer = this.__httpServer || require('http').createServer();
     this.__httpServerRequestListeners = this.__httpServer.listeners('request');
     this.__httpServer.removeAllListeners('request');
-    this.__httpServer.addListener('request', this.__handleRequest.bind(this));
+    this.__httpServer.addListener('request', this.__handleRequest);
     
     
     this.__httpServer.listen.apply(this.__httpServer, arguments);
