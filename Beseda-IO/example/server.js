@@ -1,8 +1,9 @@
-var Beseda = require('../server');
+var Beseda = require('../lib/beseda.js');
 
-var server = new Beseda();
-server.on('message', function(id, message) {
-	server.send(id, message);
-});
+var beseda = new Beseda();
 
-server.listen(4000, 'localhost');
+beseda.use(new Beseda.Https())
+      .use(new Beseda.Static())
+      .on('message', function(id, message) {
+          beseda.send(id, message);
+      }).listen(4000, 'localhost');
