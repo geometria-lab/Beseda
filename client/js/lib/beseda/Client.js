@@ -143,7 +143,10 @@ BesedaPackage.Client.prototype.connect = function(host, port, ssl, message) {
         }
 
 		this.__status = BesedaPackage.Client.__statuses.CONNECTING;
-        this.__connectionRequestMessage = message;
+
+        if (message) {
+            this.__connectionRequestMessage = message;
+        }
 
 	    //TODO: Nothing happen if another connect listener appear
 		if (!this._io.listeners('connect').length) {
@@ -196,7 +199,6 @@ BesedaPackage.Client.prototype.__reconnect = function() {
             self.__reconnectTimeout = null;
             self.connect();
         }, delay);
-
     } else {
         this.__reconnectAttemptsCount = 0;
         this.emit('reconnectError')
