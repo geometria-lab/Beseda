@@ -1,6 +1,14 @@
 Changelog
 ======
 
+Version 0.2.5
+---
+May 5, 2012
+
+* Add 'reconnect', 'reconnectDelay', 'reconnectMaxAttempts' to browser client options
+* Add 'reconnecting', 'reconnectError' to browser client events
+* Add 'isReconnecting' method to browser client
+
 Version 0.2.4
 ---
 April 9, 2012
@@ -12,7 +20,7 @@ Version 0.2.3
 ---
 April 6, 2012
 
-* Fix browser isArray implementation
+* Fix browser 'isArray' implementation
 * Fix XHR transport choice schema
 * Fix WebSocket transport
 

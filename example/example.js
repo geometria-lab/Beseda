@@ -1,7 +1,15 @@
-var connection = new Beseda();
+var connection = new Beseda({transports : ['longPolling', 'JSONPLongPolling' ]});
 
 connection.on('connect', function(message) {
     BesedaPackage.utils.log('Beseda connected with clientId=' + message.clientId);
+});
+
+connection.on('reconnectError', function() {
+    BesedaPackage.utils.log('Beseda reconnect error!');
+});
+
+connection.on('reconnecting', function(attemt, delay) {
+    BesedaPackage.utils.log('Beseda reconnectiong ' + attemt + ' time after ' + delay + ' milliseconds');
 });
 
 connection.on('disconnect', function() {

@@ -85,8 +85,10 @@ BesedaPackage.transport.WebSocket.prototype.__handleData = function(event) {
 };
 
 BesedaPackage.transport.WebSocket.prototype.__handleClose = function(event) {
-	this._handleError(event);
-	this.disconnect();
+    if (this._isConnected) {
+        this._handleError(event);
+        this.disconnect();
+    }
 };
 
 
