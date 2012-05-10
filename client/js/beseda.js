@@ -941,15 +941,15 @@ BesedaPackage.Client.prototype.__reconnect = function() {
         }, delay);
     } else {
         this.__reconnectAttemptsCount = 0;
-        this.emit('reconnectError')
+        this.emit('reconnectError');
     }
-}
+};
 
 BesedaPackage.Client.prototype.__resetReconnection = function() {
     this.__reconnectAttemptsCount = 0;
     clearTimeout(this.__reconnectTimeout);
     this.__reconnectTimeout = null;
-}
+};
 
 BesedaPackage.Client.prototype.__destroy = function() {
 	this.__status = BesedaPackage.Client.__statuses.DISCONNECTED;
