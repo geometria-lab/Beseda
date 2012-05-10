@@ -883,7 +883,10 @@ BesedaPackage.Client.prototype.connect = function(host, port, ssl, message) {
         }
 
 		this.__status = BesedaPackage.Client.__statuses.CONNECTING;
-        this.__connectionRequestMessage = message;
+
+        if (message !== undefined) {
+            this.__connectionRequestMessage = message;
+        }
 
 	    //TODO: Nothing happen if another connect listener appear
 		if (!this._io.listeners('connect').length) {
@@ -915,8 +918,8 @@ BesedaPackage.Client.prototype.applyConnection = function() {
     this.__flushMessageQueue();
 };
 
-BesedaPackage.Client.prototype.setConnectionMessage = function(mesage) {
-    this.__connectionRequestMessage = mesage;
+BesedaPackage.Client.prototype.setConnectionMessage = function(message) {
+    this.__connectionRequestMessage = message;
 };
 
 BesedaPackage.Client.prototype.__reconnect = function() {
@@ -936,7 +939,6 @@ BesedaPackage.Client.prototype.__reconnect = function() {
             self.__reconnectTimeout = null;
             self.connect();
         }, delay);
-
     } else {
         this.__reconnectAttemptsCount = 0;
         this.emit('reconnectError')

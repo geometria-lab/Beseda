@@ -144,7 +144,7 @@ BesedaPackage.Client.prototype.connect = function(host, port, ssl, message) {
 
 		this.__status = BesedaPackage.Client.__statuses.CONNECTING;
 
-        if (message) {
+        if (message !== undefined) {
             this.__connectionRequestMessage = message;
         }
 
@@ -178,8 +178,8 @@ BesedaPackage.Client.prototype.applyConnection = function() {
     this.__flushMessageQueue();
 };
 
-BesedaPackage.Client.prototype.setConnectionMessage = function(mesage) {
-    this.__connectionRequestMessage = mesage;
+BesedaPackage.Client.prototype.setConnectionMessage = function(message) {
+    this.__connectionRequestMessage = message;
 };
 
 BesedaPackage.Client.prototype.__reconnect = function() {
