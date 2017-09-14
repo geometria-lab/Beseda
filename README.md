@@ -1,6 +1,7 @@
 Beseda
 ============
 
+**No longer maintained.**
 Beseda is fast, well designed and featured [Node.js](http://nodejs.org) Pub/Sub server.
 Beseda offers multiple platform API to develop realtime web applications.
 
